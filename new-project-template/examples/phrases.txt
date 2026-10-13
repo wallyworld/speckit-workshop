@@ -1,0 +1,4 @@
+# Curated requirement phrases (see README in the template for the rules).
+GREET-1|greet each person by name|personal greeting
+LANG-1|language parameter|default language
+OUT-1|greeting log with redacted recipient data

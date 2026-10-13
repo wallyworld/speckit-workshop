@@ -1,0 +1,9 @@
+# Requirement phrases carrying the same wording as
+# fixtures/requirements-trace.md but in different letter case: load-time
+# validation must be case-insensitive, so a phrase that is verbatim
+# modulo case validates and the spec-side match (already
+# case-insensitive) still succeeds.
+ART-1|By Locker Station and Run Identifier
+ART-6|Idempotent Success
+PLATFORM-5|Station-Status Feed
+TEL-1|Redacted Structured Logs

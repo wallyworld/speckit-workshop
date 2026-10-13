@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+
+# Agent tooling local state (OpenCode installs these on first run)
+node_modules/
+.opencode/node_modules/
+.opencode/package.json
+.opencode/package-lock.json
+
+# Editors
+.idea/
+.vscode/

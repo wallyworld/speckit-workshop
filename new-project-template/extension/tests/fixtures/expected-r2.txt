@@ -1,0 +1,58 @@
+================================================================================
+Requirements context brief - R2 (Second slice)
+================================================================================
+
+Assembled deterministically from the authoritative, human-maintained sources:
+  Roadmap:      ROADMAP.md  (row R2)
+  Requirements: REQUIREMENTS.md
+
+Roadmap status: planned
+Dependencies:   R1
+Dependency gate: R1=done (all satisfied)
+
+Intent
+--------------------------------------------------------------------------------
+Deliver the second slice with its own outcome.
+
+Scope boundary
+--------------------------------------------------------------------------------
+Uses R1 only.
+
+Requirement mapping (IDs cited from the ROADMAP.md row for R2)
+--------------------------------------------------------------------------------
+Completes: AAA-2
+Advances:  BBB-1
+
+Requirement text - Completes
+(the product fully satisfies these RQ IDs once R2 is done)
+--------------------------------------------------------------------------------
+- **AAA-2**: Second requirement on a single line.
+
+Requirement text - Advances
+(foundational only; a later feature completes these - never a completion claim)
+--------------------------------------------------------------------------------
+- **BBB-1**: Third requirement, foundational and advanced by an earlier feature.
+
+Requirements Coverage seed
+(paste into spec.md; matches extensions/requirements/templates/spec-template.md)
+--------------------------------------------------------------------------------
+Roadmap entry: `ROADMAP.md` -> **R2**
+
+- **Completes**: AAA-2
+- **Advances**: BBB-1
+  (foundational only - do NOT record these as done in this feature)
+- **Requirement digests**: AAA-2 sha256:746f1d54648966cd01968c4046f725680641f21abd1512f0697a7a1ca689ed1a
+
+Suggested spec Input line:
+**Input**: Parent roadmap: `ROADMAP.md` -> entry **R2**. Deliver the second slice with its own outcome.
+
+Ready-to-run core command (review before running)
+--------------------------------------------------------------------------------
+/speckit-specify Deliver the second slice with its own outcome. Scope boundary: Uses R1 only.
+
+--------------------------------------------------------------------------------
+NOTE: This brief was assembled deterministically from ROADMAP.md and
+REQUIREMENTS.md. It did NOT create a branch, spec, checklist, or any file, and
+resolved the existing manual ROADMAP.md mapping. The mapping remains manual and
+authoritative. A human must REVIEW this brief and then run the core
+/speckit-specify command above; only that core command creates the feature.

@@ -1,0 +1,22 @@
+# Curated requirement phrases for requirement-content traceability.
+#
+# One line per requirement ID: ID|phrase|phrase|...
+# Each phrase MUST be verbatim (case-insensitive, whitespace-collapsed)
+# wording from that requirement's own text in REQUIREMENTS.md; the verifier
+# hard-fails on any phrase that is not, so a phrase can never silently
+# satisfy a different requirement. A spec claiming an ID passes only when
+# at least one of its phrases appears in the spec body.
+#
+# Coverage is enforced: every requirement ID in REQUIREMENTS.md must have an
+# entry here (the extension's bash suite checks it), and every phrase is
+# validated against REQUIREMENTS.md on every run. A claim with no curated
+# phrase fails closed as a maintainer action.
+#
+# This file is your starting point: replace the sample entries below with
+# phrases from your own REQUIREMENTS.md. Pick distinctive wording - not
+# IDs or headings - that a spec must carry for the claim to be true.
+#
+# Sample (matches examples/ in the template):
+# GREET-1|greet each person by name|personal greeting
+# LANG-1|language parameter|default language
+# OUT-1|greeting log with redacted recipient data

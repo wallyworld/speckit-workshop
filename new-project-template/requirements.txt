@@ -1,0 +1,5 @@
+# Dependencies of the CI mirrors (tests/): pytest runs them, PyYAML parses
+# .specify/extensions.yml, the extension manifest, and the review gates in
+# tests/test_enforcement_chain.py. Install with: pip install -r requirements.txt
+pytest>=9,<10
+pyyaml>=6,<7

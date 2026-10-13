@@ -1,0 +1,119 @@
+schema_version: "1.0"
+
+extension:
+  id: requirements
+  name: "Requirements Context Preparation"
+  version: "1.3.0"
+  description: "Resolve one roadmap entry's manual mapping into a self-contained feature brief, verify requirement-content traceability, and carry the phase checklists that fire as mandatory hooks. Read-only: never creates a branch, spec, or file."
+  author: TODO-your-name-or-org
+  repository: "TODO-your-repo-url"
+  license: Apache-2.0
+  effect: read-only
+
+requires:
+  speckit_version: ">=1.0.0"
+  tools:
+    - name: bash
+      version: ">=4.0"
+      required: true
+
+provides:
+  commands:
+    - name: speckit.requirements.prepare
+      file: commands/speckit.requirements.prepare.md
+      description: "Assemble a self-contained requirements-context brief for a roadmap ID (e.g. R2) and emit a ready-to-run core /speckit-specify command for human review."
+    - name: speckit.requirements.verify
+      file: commands/speckit.requirements.verify.md
+      description: "Verify that every requirement a feature spec claims to complete is materially present in that spec (requirement-phrase traceability from REQUIREMENTS.md) and recorded against the requirement's current wording (SHA-256 digest freshness)."
+    - name: speckit.requirements.plan-checklist
+      file: commands/speckit.requirements.plan-checklist.md
+      description: "Plan checklist (escape hatches need requirement authority, thresholds are operationalized, every MUST has a task, boundaries are specified: raise to catcher, fail-closed positive-path tests, wire-format fixtures, command-surface tests on their real invocation path, validator malformed-input cases); fires as the before_plan hook."
+    - name: speckit.requirements.tasks-checklist
+      file: commands/speckit.requirements.tasks-checklist.md
+      description: "Tasks checklist (enum grounding in source and existing checkers, sequential IDs, tests-first with known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices); fires as the before_tasks and before_converge hooks."
+    - name: speckit.requirements.remediation-loop
+      file: commands/speckit.requirements.remediation-loop.md
+      description: "Analysis remediation loop (complete corrections, class checks, clean re-verification); fires as the after_analyze hook."
+  templates:
+    - name: spec-template
+      file: templates/spec-template.md
+      description: "Core spec-template plus the Requirements Coverage section (roadmap entry, Completes/Advances, FR-to-RQ mapping)."
+    - name: tasks-template
+      file: templates/tasks-template.md
+      description: "Core tasks-template with tests REQUIRED per the constitution's new-code-coverage principle and the coverage-validation note."
+
+hooks:
+  before_plan:
+  - command: speckit.requirements.plan-checklist
+    priority: 10
+    description: Inject the plan checklist (escape hatches need requirement
+      authority, operational thresholds, every MUST has a task, boundaries
+      are specified (raise to catcher, fail-closed positive-path tests,
+      wire-format fixtures, command-surface tests on their real
+      invocation path, validator malformed-input cases)) before plan
+      generation
+    prompt: Execute the plan checklist and apply it while generating
+      the plan. Report PASS or the violations before the plan is considered done.
+    optional: false
+  before_tasks:
+  - command: speckit.requirements.tasks-checklist
+    priority: 10
+    description: Inject the tasks checklist (enum grounding in source and
+      existing checkers, sequential IDs, tests-first with known-bad
+      fixtures, boundary tests (raise to catcher, command-surface tests on
+      their real invocation path), positive-path fixtures for
+      fail-closed behaviors, malformed inputs in validator matrices)
+      before task generation
+    prompt: Execute the tasks checklist and apply it while generating
+      tasks. Report PASS or the violations before tasks.md is considered done.
+    optional: false
+  before_analyze:
+  - command: speckit.requirements.verify
+    priority: 10
+    description: Surface requirement-content drift during analysis
+    prompt: Run /speckit-requirements-verify and include any DRIFT or STALE
+      findings in the analysis report, alongside the spec/plan/tasks
+      consistency findings.
+    optional: false
+  after_analyze:
+  - command: speckit.requirements.remediation-loop
+    priority: 10
+    description: Enforce the remediation loop after analysis findings
+    prompt: If the analysis reported findings, apply the remediation loop - correct
+      every statement carrying the same claim, check the other instances of each
+      defect class, and re-verify on a fresh independent pass until clean - before
+      reporting completion.
+    optional: false
+  before_converge:
+  - command: speckit.requirements.verify
+    priority: 10
+    description: Verify claimed-complete requirements are materially present in
+      the spec and recorded against current requirement wording before
+      relying on convergence
+    prompt: Run /speckit-requirements-verify first. If any claimed-complete
+      requirement is DRIFTED (its content is absent from the spec) or STALE
+      (its recorded digest no longer matches the requirement's current
+      wording), surface those findings and do not report 'converged' until
+      the spec carries the required content.
+    optional: false
+  - command: speckit.requirements.tasks-checklist
+    priority: 10
+    description: Keep convergence appends compliant (append-only,
+      sequential IDs never renumbered, enum grounding in existing
+      checkers, tests-first with known-bad fixtures, boundary tests
+      (raise to catcher, command-surface tests on their real invocation
+      path), positive-path fixtures for fail-closed behaviors,
+      malformed inputs in validator matrices)
+    prompt: When appending convergence tasks, apply the tasks checklist -
+      append at the bottom under a new phase, never renumber or retitle,
+      ground any enum-extending task in source and existing checkers, and
+      carry the boundary rules - every raise names the handler that catches
+      it, every fail-closed behavior its positive-path test, every
+      validator its malformed-input cases.
+    optional: false
+
+tags:
+  - requirements
+  - roadmap
+  - context
+  - traceability
