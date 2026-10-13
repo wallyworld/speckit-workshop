@@ -11,7 +11,7 @@ how to use it to build a small web application with an AI coding agent.
   during the workshop.
 - **Format**: works self-paced (follow the numbered steps) or instructor-led.
 
-## The one-paragraph TL;DR
+## Introduction
 
 Spec Kit is a process toolkit, not a framework. It changes how you work
 with an AI coding agent from "describe a feature and hope" to "write a
