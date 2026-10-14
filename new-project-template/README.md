@@ -120,9 +120,12 @@ exact formats). On top of that convention, the seed installs:
 
 - the `specify` CLI (spec-kit 1.0.0 or later) and your coding agent
   installed,
-- Bash 4+ for the extension scripts,
-- Python 3 with `pytest` and `PyYAML` for the mirror tests
-  (`pip install -r requirements.txt` after seeding).
+- LXD 6.8 or later and the Workshop CLI
+  (`sudo snap install --classic workshop`),
+- the uv Python package manager
+  (`make install` creates the project virtual environment and installs
+  the mirror-test dependencies),
+- Bash 4+ for the extension scripts.
 
 ## Seed a project
 
@@ -170,7 +173,62 @@ phrases). Pass `--with-examples` to the bootstrap command to install it.
 The traceability tooling then verifies green immediately; the
 no-unfilled-markers gate (a test that fails while any `@FILL-IN@` marker
 remains) stays red until you fill the skeletons, which is the expected
-fresh-seed state.
+state of a freshly seeded project.
+
+## Workshop development environment
+
+A new project gets a [Workshop](https://ubuntu.com/workshop) definition:
+`.workshop/<name>.yaml`, named for the project by the bootstrap (the
+tool keys its image cache by workshop name, so no two projects on one
+machine share a name). It defines an `ubuntu@24.04` environment with the
+`uv`, `opencode`, `copilot`, `gh-cli`, and project `dev-tools` SDKs, the
+`dev-tools` in-project SDK (its `setup-base` and `setup-project` hooks
+install the system packages and mirror-test dependencies inside the workshop),
+and `scripts/workshop.sh`, the host-side helper.
+
+Start it from the project root:
+
+```bash
+scripts/workshop.sh
+```
+
+The script launches or refreshes the workshop and mounts this
+machine's agent configuration (`~/.copilot`, `~/.config/opencode`,
+`~/.local/share/opencode`) into it, so agents inside the workshop share
+your credentials. Inside the workshop the project is mounted at
+`/project`, the setup hooks recreate the project's `.venv` on every
+launch (a venv built inside one container must not survive into the
+next), and the project's work runs sandboxed, isolated from the host.
+Project-specific system packages (a build tool the project needs, for
+example) are added to the `setup-base` hook; re-running the bootstrap
+preserves a customized `.workshop/` tree.
+
+The definition also carries named actions (run them with
+`workshop run -- <action>`; the tool infers the workshop from the
+single definition):
+
+```bash
+workshop run -- test             # run the mirror-test suite (make test)
+workshop run -- test-extension   # run the extension's Bash suite
+workshop run -- install          # install the specify CLI, the project
+                                  # venv, and the requirements extension
+workshop run -- make <target>    # any Makefile target (generic passthrough)
+workshop run -- opencode ...     # shell out to OpenCode
+workshop run -- copilot ...      # shell out to Copilot
+```
+
+The named actions mirror the Makefile's public entry points: a new
+target that defines done gains a matching action, and
+`tests/test_workshop_actions.py` fails on drift in either direction
+(an action naming a target that no longer exists; a public target with
+no action). Targets deliberately left unnamed - sub-targets of an
+aggregate, build artifacts - are recorded in the test's allowlist with
+their reasons.
+
+Inside the workshop the project is mounted at `/project`; `workshop shell`
+opens an interactive shell in it, and the `uv` SDK's shared virtual
+environment (which the setup hooks make the default `python3`) carries the
+mirror-test dependencies.
 
 ## Conventions the tooling expects
 
@@ -220,7 +278,7 @@ claim with no recorded digest fails as UNDIGESTED.
 
 | Mode | What runs |
 | --- | --- |
-| `make test` (and CI) | Traceability verifier over every committed spec; the extension's Bash test suite; the style gate (the em-dash and marker rules); the installed extension matching the tracked source; the enforcement-chain mirror tests (hook registrations, checklist rules surviving into every mirror, domain neutrality of the seedable checklists, the AGENTS.md checklist-instances section - see below). The mirror tests gate on adoption: a project without the extension skips them; an adopting project missing an integral file fails. |
+| `make test` (and CI) | Traceability verifier over every committed spec; the extension's Bash test suite; the style gate (the em-dash and marker rules); the installed extension matching the tracked source; the enforcement-chain mirror tests (hook registrations, checklist rules surviving into every mirror, domain neutrality of the seedable checklists, the AGENTS.md checklist-instances section - see below); the workshop-action sync test (the `.workshop/` definition's actions name real Makefile targets; every public target is exposed or allowlisted); the bootstrap-manifest coverage test (every Python file under `tests/` ships in the seed's copy manifest). The mirror tests gate on adoption: a project without the extension skips them; an adopting project missing an integral file fails. The manifest test is tree-gated: it fires here and skips in a seeded project. |
 | Skills mode (`/speckit-*` commands) | The hooks registered in `.specify/extensions.yml` inject the checklists before plan, tasks, and converge, run the traceability verifier before analyze and converge, and enforce the analysis remediation loop after analyze. |
 | Workflow mode (`specify workflow run speckit`) | The same checks fire as approve/reject gates in the bundled workflow. |
 | Acceptance | A human confirms every `Completes` claim (the roadmap's assertion that the feature fully delivers those requirements) has realizing implementation before the roadmap status flips to `done`. |
@@ -252,6 +310,15 @@ that adopted it with a broken chain.
   the skills surfacing them, template resolution, gate composition,
   checklist-rule incorporation into every mirror, and domain neutrality of
   the seedable surfaces.
+- `tests/test_workshop_actions.py` - re-checks the Workshop definition
+  against the Makefile: every named action's make target exists, and
+  every public Makefile target is exposed as an action or allowlisted
+  with a reason.
+- `tests/test_bootstrap_manifest.py` - checks the seed's own installer:
+  every Python file under `tests/` appears in `bootstrap.sh`'s copy
+  manifest, and every manifested `tests/` path exists. Tree-gated: it
+  fires in this template tree and skips in a seeded project (which
+  carries no `bootstrap.sh`).
 
 ## Constitution parts
 
@@ -295,3 +362,9 @@ the extension commands - the commands are the source of truth - so
 regenerate them with the extension's `generate-skills.sh`, and the mirror
 tests under `make test` fail on any drift between the commands, the
 registrations, the gates, and the skills.
+
+The seed's copy manifest in `bootstrap.sh` is mirrored the same way:
+`tests/test_bootstrap_manifest.py` fails when a Python file under
+`tests/` is added without a matching copy line, or when a line names a
+file that no longer exists. A new mirror test ships with its copy line
+or the gate goes red in this tree.

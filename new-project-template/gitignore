@@ -12,6 +12,7 @@ node_modules/
 
 # Runtime output
 artifacts/
+.workshop.lock
 
 # Editors
 .idea/

@@ -14,10 +14,14 @@
 #   - the two-part constitution (replacing the one seeded by specify init)
 #   - the mirror tests (tests/test_style.py,
 #     tests/test_requirement_traceability.py,
-#     tests/test_enforcement_chain.py)
+#     tests/test_enforcement_chain.py, tests/test_workshop_actions.py,
+#     tests/test_bootstrap_manifest.py)
 #   - the AGENTS.md and CONTRIBUTING.md skeletons and the mechanics stub
 #   - .github/copilot-instructions.md (where Copilot discovers it)
 #   - the mirror dependencies (requirements.txt) and a seed .gitignore
+#   - the Workshop development environment (.workshop/<name>.yaml,
+#     named for the project, and the dev-tools SDK hooks), plus
+#     scripts/workshop.sh, the host-side helper
 #   - agent command shims (dot-form, registered by `specify extension add`)
 # It then installs the extension and prints the fill-in checklist.
 #
@@ -193,6 +197,8 @@ mkdir -p "$TARGET/tests"
 copy "$HERE/tests/test_style.py" "$TARGET/tests/test_style.py"
 copy "$HERE/tests/test_requirement_traceability.py" "$TARGET/tests/test_requirement_traceability.py"
 copy "$HERE/tests/test_enforcement_chain.py" "$TARGET/tests/test_enforcement_chain.py"
+copy "$HERE/tests/test_workshop_actions.py" "$TARGET/tests/test_workshop_actions.py"
+copy "$HERE/tests/test_bootstrap_manifest.py" "$TARGET/tests/test_bootstrap_manifest.py"
 copy "$HERE/Makefile" "$TARGET/Makefile"
 copy "$HERE/requirements.txt" "$TARGET/requirements.txt"
 if [ -f "$TARGET/.gitignore" ]; then
@@ -207,6 +213,27 @@ copy_skeleton "$HERE/CONTRIBUTING.md" "$TARGET/CONTRIBUTING.md"
 copy_skeleton "$HERE/agent-instructions.md" "$TARGET/agent-instructions.md"
 mkdir -p "$TARGET/.github"
 copy_skeleton "$HERE/copilot-instructions.md" "$TARGET/.github/copilot-instructions.md"
+mkdir -p "$TARGET/.workshop/dev-tools/hooks"
+# The workshop definition is named for the project: the tool keys its
+# image cache by workshop name, so no two projects on one machine
+# should share a name. A fresh copy is named and its name field
+# rewritten; an existing definition (however named) is always kept.
+if compgen -G "$TARGET/.workshop/*.yaml" > /dev/null; then
+  echo "  = .workshop definition kept, already present"
+else
+  SEED_WS_NAME=$(basename "$TARGET")
+  SEED_WS_ESC=${SEED_WS_NAME//\\/\\\\}
+  SEED_WS_ESC=${SEED_WS_ESC//&/\\&}
+  copy_skeleton "$HERE/.workshop/workshop.yaml" "$TARGET/.workshop/${SEED_WS_NAME}.yaml"
+  if grep -q "^name: workshop$" "$TARGET/.workshop/${SEED_WS_NAME}.yaml"; then
+    sed --in-place "s/^name: workshop$/name: ${SEED_WS_ESC}/" "$TARGET/.workshop/${SEED_WS_NAME}.yaml"
+  fi
+fi
+copy_skeleton "$HERE/.workshop/dev-tools/sdk.yaml" "$TARGET/.workshop/dev-tools/sdk.yaml"
+copy_skeleton "$HERE/.workshop/dev-tools/hooks/setup-base" "$TARGET/.workshop/dev-tools/hooks/setup-base"
+copy_skeleton "$HERE/.workshop/dev-tools/hooks/setup-project" "$TARGET/.workshop/dev-tools/hooks/setup-project"
+mkdir -p "$TARGET/scripts"
+copy "$HERE/scripts/workshop.sh" "$TARGET/scripts/workshop.sh"
 mkdir -p "$TARGET/.opencode"
 copy "$HERE/.opencode/opencode.json" "$TARGET/.opencode/opencode.json"
 mkdir -p "$TARGET/docs"
@@ -224,8 +251,8 @@ fi
 
 cat <<'CHECKLIST'
 
-Seeded. The mirror tests (tests/) need pytest and PyYAML installed
-(pip install -r requirements.txt). Then fill in the @FILL-IN@ markers,
+Seeded. Run `make install` to create the project virtual environment
+and install the mirror-test dependencies. Then fill in the @FILL-IN@ markers,
 in this order:
 
   1. REQUIREMENTS.md: your product scope with stable, section-scoped

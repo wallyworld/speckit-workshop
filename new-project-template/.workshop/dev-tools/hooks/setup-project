@@ -1,0 +1,7 @@
+# The project is mounted at /project inside the workshop. The venv is
+# rebuilt on every launch: /project is a host bind-mount, so a venv
+# created by one container must not survive into the next (its
+# interpreter symlinks dangle); rm -rf then make install recreates it.
+cd /project
+rm -rf .venv
+make install

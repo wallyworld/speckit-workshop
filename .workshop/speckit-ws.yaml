@@ -1,0 +1,17 @@
+name: speckit-ws
+base: ubuntu@24.04
+sdks:
+  - name: copilot
+  - name: gh-cli
+  - name: opencode
+  - name: project-dev-tools
+  - name: uv
+
+actions:
+  opencode: |
+    set -euo pipefail
+    opencode "$@"
+
+  copilot: |
+    set -euo pipefail
+    copilot "$@"

@@ -1,0 +1,24 @@
+export DEBIAN_FRONTEND=noninteractive
+apt-get update
+apt-get install --assume-yes --no-install-recommends git make tmux byobu
+
+cat <<EOF >/etc/skel/.vimrc
+set expandtab
+set tabstop=4
+set shiftwidth=4
+set smarttab
+set incsearch
+set wildmode=longest,list
+EOF
+
+sed --in-place --expression '/PS1=/ { /\\n\\[$]/! s/\\[$]/\\n\\$/; }' /etc/skel/.bashrc
+
+cat <<'EOF' >>/etc/skel/.bashrc
+if [[ $- == *i* && -z ${TMUX} ]] && command -v byobu >&/dev/null; then
+  TMUX_SESSION_NAME="dev"
+  byobu attach-session -t "${TMUX_SESSION_NAME}" || byobu new-session -s "${TMUX_SESSION_NAME}"
+fi
+EOF
+
+rsync -av /etc/skel/ /home/workshop/
+chown -R workshop:workshop /home/workshop

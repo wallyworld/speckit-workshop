@@ -1,15 +1,41 @@
-.PHONY: test test-style test-traceability test-enforcement
+.PHONY: install test test-style test-traceability test-enforcement \
+       test-workshop-actions test-bootstrap-manifest test-extension \
+       _guard-uv _guard-venv
 
-test: test-style test-traceability test-enforcement
+_guard-uv:
+	@command -v uv >/dev/null 2>&1 || { echo "Error: 'uv' is required. Install it from https://docs.astral.sh/uv/#installation" >&2; exit 1; }
 
-test-style:
-	python3 -m pytest tests/test_style.py -v
+_guard-venv:
+	@[ -f .venv/bin/activate ] || { echo "Error: run 'make install' first to create the virtual environment" >&2; exit 1; }
 
-test-traceability:
-	python3 -m pytest tests/test_requirement_traceability.py -v
+.venv/bin/activate: requirements.txt | _guard-uv
+	uv venv 2>/dev/null || uv venv --clear
+	uv pip install -r requirements.txt
 
-test-enforcement:
-	python3 -m pytest tests/test_enforcement_chain.py -v
+install: .venv/bin/activate
+	uv tool install --upgrade specify-cli
+
+test: test-style test-traceability test-enforcement test-workshop-actions \
+      test-bootstrap-manifest
+
+test-style: | _guard-venv
+	.venv/bin/python -m pytest tests/test_style.py -v
+
+test-traceability: | _guard-venv
+	.venv/bin/python -m pytest tests/test_requirement_traceability.py -v
+
+test-enforcement: | _guard-venv
+	.venv/bin/python -m pytest tests/test_enforcement_chain.py -v
+
+# The workshop-action sync mirror: the named actions in the .workshop
+# definition must track the Makefile's public targets (both directions).
+test-workshop-actions: | _guard-venv
+	.venv/bin/python -m pytest tests/test_workshop_actions.py -v
+
+# The bootstrap-manifest mirror: the copy manifest in bootstrap.sh must
+# cover every Python file under tests/ (both directions).
+test-bootstrap-manifest: | _guard-venv
+	.venv/bin/python -m pytest tests/test_bootstrap_manifest.py -v
 
 # The extension Bash suite: run it directly when the extension is
 # installed; the pytest mirrors also drive it under test-traceability.

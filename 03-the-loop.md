@@ -1,9 +1,9 @@
 # 03 - The Loop, Demoed: Pet Catalog
 
 Run each command and let the agent work - watch what happens at each
-step. This walkthrough assumes you are in the `petstore` project created
-in [01](01-setup.md), with the agent open and `/speckit` commands
-available.
+step. This walkthrough assumes you are inside your workshop container
+([01](01-setup.md)), in the `~/petstore` project you created there, with
+the agent open and `/speckit` commands available.
 
 ## The feature description
 
@@ -32,11 +32,14 @@ for this feature.
 
 What you should see happen (narrate as you go):
 
-- The agent generates a feature directory: `specs/001-<slug>/` (the slug
-  is derived from your description - in this run: `specs/001-pet-store-users/`).
+- The agent generates a feature directory: `specs/001-<slug>/` - the slug
+  is derived from your description, so yours will differ (in one run it
+  was `specs/001-pet-store-management/`).
 - Inside it, `spec.md` is created from the spec template.
 - The spec is filled in with: user stories, functional requirements,
-  success criteria, edge cases, assumptions.
+  success criteria, edge cases, assumptions. (The run may also produce a
+  checklist and research notes alongside the spec - extra artifacts,
+  not contradictions.)
 
 Open `spec.md` and read it: the user stories have priorities, the
 functional requirements are each testable, the agent derived the
@@ -52,7 +55,8 @@ as a requirement.
 The clarify command asks up to 5 targeted questions about underspecified
 areas - typical ones are scope ("is X in this feature?"), validation,
 and data-shape choices. Accept its questions and answer them - the
-answers get folded back into the spec.
+answers get folded back into the spec. It is interactive: the questions
+arrive one at a time, so keep answering until it is done.
 
 Clarify exists to prevent the "informed guess that turns out wrong"
 failure mode. If the agent asks a question whose answer materially
@@ -65,9 +69,10 @@ changes the feature, that is the mechanism working.
 pytest for tests. Tests are run with "uv run pytest" from the project
 root. Name the API module petstore_app.py and expose the app object as
 "app" (so the server runs as "uv run uvicorn petstore_app:app
---reload"). Keep it minimal - no auth, no pagination, no extra
+--reload --host 0.0.0.0"). Keep it minimal - no auth, no pagination, no extra
 application libraries beyond FastAPI, uvicorn, and pytest (a dev-only
-HTTP client for TestClient is fine).
+HTTP client for TestClient is fine). Include pytest tests covering
+every functional requirement.
 ```
 
 What you should see:
@@ -84,7 +89,9 @@ What you should see:
 What you should see:
 
 - `specs/001-<slug>/tasks.md` is created: a dependency-ordered task
-  list. Each task has a checkbox, a clear action, and a file path.
+  list. Each task has a checkbox, a clear action, and a file path. The
+  checkboxes are the plan, not a progress tracker - implementations do
+  not always tick them off, so read the list, not the marks.
 
 ## Step 5: `/speckit.implement`
 
@@ -110,7 +117,9 @@ What you should see:
   current code against them, and reports whether the implementation is
   complete.
 - It may append missing work to `tasks.md` (for example: a test for an
-  edge case you specified but the agent did not implement).
+  edge case you specified but the agent did not implement). Review what
+  it appends before re-running implement - appended findings can name
+  work the code already contains.
 - The loop repeats: re-run `/speckit.implement`, then `/speckit.converge`
   again, until it reports **converged**.
 
@@ -122,17 +131,28 @@ the discrepancy and re-enters the loop.
 ## Step 7: See it live
 
 ```
-uv run uvicorn petstore_app:app --reload
+uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 
-Run it in the foreground in a separate terminal (or use your editor's
-terminal split) and leave it running for the demo, so the request log
-and the reload output stay visible as you click through the UI. Stop
-the server with Ctrl-C when done.
+Run it in the foreground in a second byobu window (F2; the tmux prefix
+Ctrl-b c still works) or a separate terminal inside the container, and
+leave it running for the demo, so the request log and the reload output
+stay visible as you click through the UI. 
+About `--host 0.0.0.0`: without it uvicorn binds to the container's
+loopback only, which your host browser cannot reach.
+Stop the server with Ctrl-C when done.
 
-Open <http://127.0.0.1:8000/docs> in a browser. FastAPI auto-serves an
-interactive UI (Swagger) here - every endpoint is now clickable. Try it
-like a real pet store:
+Open the served docs UI in a browser **on your host**. Your host
+browser cannot reach the container's 127.0.0.1 - that address is the
+container's own loopback. The workshop tool instead registers a DNS
+name for your container that your host *can* reach: run `workshop info`
+from your clone directory and read the `hostname:` line. The name
+follows the pattern `<workshop-name>.<clone-name>.wp` - for a clone
+named `speckit-workshop`, that is `speckit-ws.speckit-workshop.wp`, so
+the served UI lives at
+<http://speckit-ws.speckit-workshop.wp:8000/docs>.
+FastAPI auto-serves an interactive UI (Swagger) there - every endpoint
+is now clickable. Try it like a real pet store:
 
 - **POST** `/pets` - add a pet with a name and a stock count.
 - **GET** `/pets` - list the pets and their availability.
@@ -150,4 +170,4 @@ like a real pet store:
 - You then pointed a browser at it: the feature is live at `/docs`, a
   clickable pet store rendered by FastAPI itself.
 
-Next: [hands-on](04-hands-on.md) - your turn, with a landmine.
+Next: [hands-on](04-hands-on.md) - your turn, with a non-trivial requirement.

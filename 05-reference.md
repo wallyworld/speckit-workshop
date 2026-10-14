@@ -15,10 +15,10 @@ is active).
 | `/speckit.clarify` | Asks up to 5 targeted questions about underspecified areas; folds answers back into the spec | Any time the spec is thin |
 | `/speckit.plan` | Creates `plan.md` (technical design, files, data model) from the spec | After the spec is solid |
 | `/speckit.tasks` | Breaks the plan into ordered, testable tasks (`tasks.md`) | After the plan |
-| `/speckit.analyze` | Cross-checks spec, plan, and tasks for consistency; findings feed a remediation loop | After task generation, or after corrections |
+| `/speckit.analyze` | Cross-checks spec, plan, and tasks for consistency; findings feed an optional remediation pass | After task generation, or after corrections |
 | `/speckit.implement` | Executes tasks, writes code, runs tests | After tasks |
 | `/speckit.converge` | Re-reads spec/plan/tasks, diffs code against them, appends missing work | At the end of every implement iteration |
-| `/speckit.taskstoissues` | Converts tasks into GitHub issues | If you track work externally |
+| `/speckit.taskstoissues` | Deprecated: converts tasks into GitHub issues (the bundled `github` extension provides the namespaced replacement) | Only if you track work externally and have not installed the `github` extension |
 | `/speckit.checklist` | Generates a custom checklist for the feature | During planning/review |
 | `/speckit.constitution` | Creates/updates the project constitution (principles) | Project setup, or when rules change |
 
@@ -33,20 +33,25 @@ specify preset resolve spec-template                                   # see act
 ## Running the app
 
 ```bash
-uv run uvicorn petstore_app:app --reload
+uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 
-- The API is live at <http://127.0.0.1:8000>.
-- FastAPI auto-serves an interactive, clickable UI at
-  <http://127.0.0.1:8000/docs> (Swagger) and <http://127.0.0.1:8000/redoc>
-  (ReDoc) - no frontend code needed to use the pet store from a browser.
+- The API is live at <http://127.0.0.1:8000> inside the container; from
+  your host browser, use the `hostname:` line from `workshop info` (run
+  from your clone; `<workshop-name>.<clone-name>.wp` -
+  <http://speckit-ws.speckit-workshop.wp:8000> for a clone named
+  `speckit-workshop`), because a host browser cannot reach the
+  container's 127.0.0.1.
+- FastAPI auto-serves an interactive, clickable UI at `/docs` (Swagger)
+  and `/redoc` (ReDoc) - no frontend code needed to use the pet store
+  from a browser.
 - `--reload` restarts the server as you edit; stop it with Ctrl-C.
 
 ## Artifacts
 
 | Artifact | Path | Contents | Written by |
 |---|---|---|---|
-| Spec | `specs/NNN-feature/spec.md` | User stories, functional requirements (testable), success criteria, assumptions, edge cases | `/speckit.specify`, refined by clarify |
+| Spec | `specs/NNN-feature/spec.md` | User scenarios, functional requirements (testable), success criteria, assumptions, edge cases | `/speckit.specify`, refined by clarify |
 | Plan | `specs/NNN-feature/plan.md` | Technical approach, files, data model, interface design | `/speckit.plan` |
 | Tasks | `specs/NNN-feature/tasks.md` | Ordered, checked-off task list, each naming a file | `/speckit.tasks`, appended by converge |
 | Constitution | `.specify/memory/constitution.md` | Project principles and governance the agent must honor | `/speckit.constitution` |
@@ -76,7 +81,7 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 | Feature directory | `specs/NNN-name/`; the folder holding spec.md, plan.md, tasks.md |
 | Converge | The step that compares code to spec/plan/tasks and restarts the loop if they disagree |
 | Testable requirement | A functional requirement that can be verified by a test (as opposed to a sentiment) |
-| Landmine | A requirement stated in the spec that a naive implementation violates while still passing happy-path tests |
+| Potential flaw | A requirement stated in the spec that a naive implementation violates while still passing happy-path tests |
 | Closed loop | The property that the loop will not declare "done" while code and spec disagree |
 | Extension | An optional pack that adds behaviors to Spec Kit (see [06](06-whats-next.md)) |
 | Preset | A packaged selection of command/template/script overrides, selectable at `specify init --preset` |
@@ -88,12 +93,13 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 
 | Error | Fix |
 |---|---|
-| `/speckit.specify` says no feature description | You passed an empty description. Re-run with the text inline. |
-| Command says "no feature directory" | Run `/speckit.specify` first; it sets `.specify/feature.json`. |
+| `/speckit.specify` reports "No feature description provided" | You passed an empty description. Re-run with the text inline. |
+| "Feature directory not found" | Run `/speckit.specify` first; it sets `.specify/feature.json`. |
 | `specify --version` command not found | `uv tool install specify-cli` was not run, or the tool binary is not on PATH. Re-run the install. |
+| `command not found: specify` (or `uv`) in your shell | You are in the host shell, not the workshop container - the sdks live inside it. Re-enter with `workshop shell`. |
 | Agent plans against the wrong feature | Check `.specify/feature.json`; if it points at a prior feature, the agent is resolving the wrong directory. |
-| Test suite passes but converge complains | Converge compares against the *spec*, not just the tests. The spec likely states a requirement the tests do not assert (see the hands-on landmine). |
-| `ModuleNotFoundError: petstore_app` when starting the server | The plan args pinned the module name `petstore_app.py`; if your agent chose a different name, run uvicorn against the module it created (`uv run uvicorn <that-module>:app --reload`). |
+| Test suite passes but converge complains | Converge compares against the *spec*, not just the tests. The spec likely states a requirement the tests do not assert (see the hands-on non-trivial requirement). |
+| uvicorn reports `Could not import module "petstore_app"` when starting the server | The plan args pinned the module name `petstore_app.py`; if your agent chose a different name, run uvicorn against the module it created (`uv run uvicorn <that-module>:app --reload --host 0.0.0.0`). |
 | Agent reports `pytest: command not found` | The venv is not activated in the agent's shell. Run tests with `uv run pytest` (see [01](01-setup.md) §1.4). |
 | `uv pip install` fails for the venv | Run from the project root, after `uv venv` has created `.venv`. |
 | Question about whether something is in scope | Ask `/speckit.clarify`, or edit the spec directly. Scope is a spec property, not an implementation detail. |

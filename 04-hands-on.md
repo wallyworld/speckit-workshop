@@ -1,15 +1,15 @@
 # 04 - Hands-On: The Order Placement You Implement
 
 This is the hands-on phase: you run the same loop on order placement in
-your own repo. The feature you will specify contains a verification
-landmine. Checkpoints are inline and timed as minutes into the phase
-(target: 28 minutes for the full loop).
+your own project, inside your workshop container ([01](01-setup.md)).
+The feature you will specify contains a verification deliverable for a
+non-trivial requirement. Checkpoints are inline and timed as minutes into
+the phase (target: 28 minutes for the full loop).
 
 If the instructor demoed the pet catalog with you, your `petstore`
 project already has `specs/001-<slug>/` (the catalog feature you just
-built - in this run it was `specs/001-pet-store-users/`) with a working
-implementation. If you worked self-paced, complete [03](03-the-loop.md)
-first, or start from your own pet catalog slice.
+built) with a working implementation. If you worked self-paced, complete
+[03](03-the-loop.md) first, or start from your own pet catalog slice.
 
 ## The feature description you will run
 
@@ -19,10 +19,11 @@ first, or start from your own pet catalog slice.
 > still open must restore the pet's stock by one. An order may not bring a
 > pet's stock below zero.
 
-That final sentence is the landmine. Notice how the description states it
-flatly: "An order may not bring a pet's stock below zero." The whole
-hands-on phase is about whether the loop turns that sentence into a real
-check - and whether a naive implementation survives it.
+That final sentence is the non-trivial requirement. Notice how the
+description states it flatly: "An order may not bring a pet's stock
+below zero." The whole hands-on phase is about whether the loop turns
+that sentence into a real check - and whether a naive implementation
+survives it.
 
 ## Checkpoint 0 (0 min): you understand the task
 
@@ -46,7 +47,8 @@ may not bring a pet's stock below zero.
 pytest for tests. Tests are run with "uv run pytest" from the project
 root. Name the API module petstore_app.py and expose the app object as
 "app". Keep it minimal - no auth, no pagination (a dev-only HTTP client
-for TestClient is fine). Reuse the
+for TestClient is fine). Include pytest tests covering every functional
+requirement. Reuse the
 pet catalog schema and endpoints already present.
 /speckit.tasks
 /speckit.implement
@@ -73,20 +75,23 @@ from the catalog-only project, the implementation will have added an
 
 **The hard question**: does the suite include a test that an order for a
 zero-stock pet **fails**, and a test that placing an order never drives
-stock below zero? Open the test file and look. If the tests only cover the
-happy path (order for an in-stock pet succeeds), you have exactly the
-landmine: the loop will have produced tests that pass, but the *requirement*
-is not asserted.
+stock below zero? Open the test file and look. If the tests only cover
+the happy path (order for an in-stock pet succeeds), you have exactly
+the potential flaw: the loop will have produced tests that pass, but
+the *requirement* is not asserted.
 
 **See it in the browser**: with the server running
-(`uv run uvicorn petstore_app:app --reload`), open
-<http://127.0.0.1:8000/docs> and try it like a real pet store: create a
-pet with stock 1, place an order for it, then place a second order for
-the same pet. Whether that second order **fails in the UI** - or is
-silently accepted - is the landmine made visible. Write down what you
-see; the debrief will compare notes.
+(`uv run uvicorn petstore_app:app --reload --host 0.0.0.0`), open the
+served docs UI in a browser on your host: the `hostname:` line of
+`workshop info` (run from your clone) gives the address
+(`<workshop-name>.<clone-name>.wp`), so a clone named `speckit-workshop`
+uses <http://speckit-ws.speckit-workshop.wp:8000/docs>. Then try it like
+a real pet store: create a pet with stock 1, place an order for it,
+then place a second order for the same pet. Whether that second order
+**fails in the UI** - or is silently accepted - is the flaw made
+visible. Write down what you see; the debrief will compare notes.
 
-## Checkpoint 3 (26 min): the landmine, or the loop closing
+## Checkpoint 3 (26 min): the non-trivial requirement, or the loop closing
 
 Now run the loop's hard check again - the converge step re-reads the
 spec and compares the code to it:
@@ -135,6 +140,15 @@ The loop does not prevent you from writing a bad spec - no process does.
 But it makes a *bad or incomplete spec* visible, because the loop's last
 step checks the code against the spec you wrote, and it refuses to call
 it done when the two disagree.
+
+One more gap this exercise can expose: out of the box, Spec Kit treats
+test tasks as optional, so a tasks list can omit them - the requirement
+is then asserted only if the implementer writes tests on its own
+initiative. This project's
+[`new-project-template/`](new-project-template/) closes that gap with
+teeth: its constitution principle 8 makes test coverage mandatory, its
+tasks template states tests are required, and a hook checks the test
+list before tasks and converge.
 
 ## If you finish early
 

@@ -1,0 +1,43 @@
+name: workshop
+base: ubuntu@24.04
+sdks:
+  - name: copilot
+  - name: gh-cli
+  - name: opencode
+  - name: project-dev-tools
+  - name: uv
+
+actions:
+  install: |
+    set -euo pipefail
+    cd /project
+    make install
+    specify check
+    specify extension add --dev --force extensions/requirements
+
+  test: |
+    set -euo pipefail
+    cd /project
+    make test
+
+  test-extension: |
+    set -euo pipefail
+    cd /project
+    make test-extension
+
+  # Generic passthrough: any Makefile target, without a per-target
+  # stanza (workshop run -- make <target>). The named actions above
+  # are the advertised entry points; test_workshop_actions.py checks
+  # the sync.
+  make: |
+    set -euo pipefail
+    cd /project
+    make "$@"
+
+  opencode: |
+    set -euo pipefail
+    opencode "$@"
+
+  copilot: |
+    set -euo pipefail
+    copilot "$@"
