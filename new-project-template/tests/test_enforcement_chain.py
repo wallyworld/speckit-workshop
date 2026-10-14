@@ -306,6 +306,7 @@ PLAN_CHECKLIST_RULES = (
 TASKS_CHECKLIST_RULES = (
     ("enum", "checker"),
     ("sequential", "IDs"),
+    ("tests-first", "known-good"),
     ("tests-first", "known-bad"),
     ("raise", "catch"),
     ("command", "invocation path"),
@@ -579,6 +580,13 @@ def test_seedable_checklist_surfaces_stay_domain_neutral():
     assert len(surfaces) == (
         7 + 5 * has_skills
     ), "scan inventory changed"
+    required_terms = {"acme-storefront"}
+    assert required_terms <= set(DOMAIN_TERM_DENY_LIST), (
+        f"deny list lost baseline terms: "
+        f"{sorted(required_terms - set(DOMAIN_TERM_DENY_LIST))}; the "
+        f"placeholder entry ships with the seed - removing it is a "
+        f"conscious decision alongside the floor, never a silent edit"
+    )
     assert len(DOMAIN_TERM_DENY_LIST) >= 1, (
         "the deny list must never ship empty; the placeholder entry "
         "demonstrates the shape - extend it with your project's domain "
@@ -629,11 +637,16 @@ def test_attribution_lines_never_trip_the_domain_scan():
 # that created it belongs in make test. Markers are matched on
 # whitespace-collapsed text so line wrapping cannot hide a removal.
 # The AGENTS.md checklist-instances section the seedable checklists point at.
-# In a seeded project the section is filled in (the
-# no-unfilled-markers test enforces it); this test asserts only
-# that the destination section exists.
+# The section must exist AND carry a non-empty record for each of the
+# two instance kinds the checklists promise (the labels are the
+# universal contract; the recorded values are the project's own).
 CHECKLIST_INSTANCE_MARKERS = (
     "## Project checklist instances",
+)
+
+CHECKLIST_INSTANCE_RECORDS = (
+    "Command surfaces:",
+    "Coverage-critical artifact kinds:",
 )
 
 POINTER_SENTENCE = (
@@ -669,6 +682,35 @@ def test_checklist_instances_and_pointer_are_asserted():
     assert not missing_record, (
         f"AGENTS.md lost the checklist-instances section: {missing_record}; "
         f"the seedable checklists point at this section"
+    )
+    # The section must carry a non-empty record for each instance kind
+    # the checklists promise: a bare heading with the records deleted
+    # would leave every pointer dangling over an empty destination.
+    # The labels are the contract; the recorded values are the
+    # project's own, so only emptiness and unfilled placeholders fail.
+    section_lines = agents_path.read_text(encoding="utf-8").splitlines()
+    in_section = False
+    recorded = {label: "" for label in CHECKLIST_INSTANCE_RECORDS}
+    for line in section_lines:
+        if line.strip() == CHECKLIST_INSTANCE_MARKERS[0]:
+            in_section = True
+            continue
+        if in_section and line.startswith("#"):
+            break
+        if not in_section:
+            continue
+        for label in CHECKLIST_INSTANCE_RECORDS:
+            if line.lstrip("- ").startswith(label):
+                recorded[label] = line.split(":", 1)[1].strip()
+    unfilled_marker = "@" + "FILL-IN" + "@"
+    empty_records = [
+        label for label, value in recorded.items()
+        if not value or value.startswith(unfilled_marker)
+    ]
+    assert not empty_records, (
+        f"AGENTS.md checklist-instances section is missing or has empty "
+        f"records for {empty_records}; the checklists point at these "
+        f"instances and every one must be recorded"
     )
     for command in ("plan-checklist", "tasks-checklist"):
         path = (

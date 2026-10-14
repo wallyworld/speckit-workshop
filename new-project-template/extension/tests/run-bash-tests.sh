@@ -220,6 +220,102 @@ OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
 assert_failure "missing digest rejected"
 assert_contains "undigested verdict named" "UNDIGESTED"
 
+# 15e. A recorded digest that is not exactly 64 hex characters - a
+# correct 64-hex prefix with trailing alphanumerics included - fails as
+# MALFORMED: freshness must never validate on a shared prefix.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-garbage.md" 2>&1); RC=$?
+assert_failure "malformed digest rejected"
+assert_contains "malformed verdict named" "MALFORMED"
+
+# 15f. A Completes claim for a well-formed ID the requirements source
+# does not define fails as UNKNOWN - never an unbound-variable crash -
+# when a digest is recorded for it.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-unknown-id.md" 2>&1); RC=$?
+assert_failure "unknown requirement rejected"
+assert_contains "unknown verdict named" "UNKNOWN"
+
+# 15g. A digest recorded more than once in the requirement-digests
+# field is MALFORMED: duplicates are never first-match-wins.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-duplicate.md" 2>&1); RC=$?
+assert_failure "duplicate digest rejected"
+assert_contains "duplicate verdict named" "more than once"
+
+# 15h. A digest outside the requirement-digests field - prose, a
+# comment, an earlier sentence - never satisfies freshness for a
+# stale field entry.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-outfield.md" 2>&1); RC=$?
+assert_failure "out-of-field digest rejected"
+assert_contains "out-of-field still stale" "STALE"
+
+# 15i. A digest token of non-hex characters is MALFORMED, never a
+# STALE comparison against the real wording.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-nonhex.md" 2>&1); RC=$?
+assert_failure "non-hex digest rejected"
+assert_contains "non-hex verdict named" "MALFORMED"
+
+# 15j. A 64-hex digest with a punctuation suffix is MALFORMED, never
+# fresh on the shared prefix.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-punct.md" 2>&1); RC=$?
+assert_failure "punctuation-suffixed digest rejected"
+assert_contains "punctuation-suffix verdict named" "MALFORMED"
+
+# 15k. A second requirement-digests field - a stale or conflicting
+# record riding a valid first field - fails the whole spec closed,
+# never first-field-wins.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-dupfield.md" 2>&1); RC=$?
+assert_failure "duplicate digests field rejected"
+assert_contains "duplicate-field error named" "requirement-digests fields"
+
+# 15l. Stray text inside the requirement-digests field is unparsed
+# content, never silently ignored.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-stray.md" 2>&1); RC=$?
+assert_failure "stray in-field content rejected"
+assert_contains "unparsed-content error named" "unparsed content"
+
+# 15m. A phrase entry with a leading, adjacent, or trailing separator is
+# an empty phrase field: read drops trailing empties, so the separator
+# shape is rejected before the split, never slipped past the field loop.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-separator.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-traceable.md" 2>&1); RC=$?
+assert_failure "separator-broken phrase table rejected"
+assert_contains "separator table error named" "empty phrase field"
+
+# 15n. A heading at any level following the digests field bounds the
+# field - a valid digest list is never rejected because a level-three
+# heading leaked into the field as unparsed content.
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$FIX/phrases-fixture.txt" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-digest-heading.md" 2>&1); RC=$?
+assert_success "heading after digests field bounds the field"
+assert_contains "heading fixture confirms OK" "OK"
+
 # 16. The project's phrases table validates against the real
 # REQUIREMENTS.md, and every committed spec verifies clean: the verifier
 # with no arguments checks every spec.md under specs/ and validates every
@@ -248,7 +344,14 @@ if [ ! -f "$ROOT_REQUIREMENTS" ]; then
 elif [ ! -f "$PHRASES_FILE" ]; then
   bad "phrases table not found ($PHRASES_FILE); every REQUIREMENTS ID needs an entry"
 elif [ -z "$(grep -vE '^#|^$' "$PHRASES_FILE")" ]; then
-  ok "phrases table still all comments (fresh seed); nothing to check"
+  # An all-comments table is a fresh seed only while REQUIREMENTS.md
+  # declares no IDs; once it does, an empty table is a vacuous pass,
+  # not a fresh seed.
+  if grep -qE '^\- \*\*[A-Z]+-[0-9]+[a-z]?\*\*' "$ROOT_REQUIREMENTS"; then
+    bad "phrases table is empty but REQUIREMENTS.md declares IDs; every ID needs an entry"
+  else
+    ok "phrases table still all comments (fresh seed); no IDs declared yet"
+  fi
 else
   _missing=$(comm -23 \
     <(grep -oE '^\- \*\*[A-Z]+-[0-9]+[a-z]?\*\*' "$ROOT_REQUIREMENTS" | grep -oE '[A-Z]+-[0-9]+[a-z]?' | sort -u) \
@@ -257,6 +360,17 @@ else
     ok "phrases table covers every requirement ID in REQUIREMENTS.md"
   else
     bad "phrases table is missing requirement ID(s): $_missing"
+  fi
+  # Two-way coverage: an entry citing an ID REQUIREMENTS.md does not
+  # define survives one-way checking and lets a deleted requirement's
+  # phrases linger as dead weight (and a false coverage signal).
+  _extra=$(comm -13 \
+    <(grep -oE '^\- \*\*[A-Z]+-[0-9]+[a-z]?\*\*' "$ROOT_REQUIREMENTS" | grep -oE '[A-Z]+-[0-9]+[a-z]?' | sort -u) \
+    <(grep -vE '^#|^$' "$PHRASES_FILE" | cut -d'|' -f1 | tr -d ' ' | sort -u))
+  if [ -n "$_extra" ]; then
+    bad "phrases table cites requirement ID(s) absent from REQUIREMENTS.md: $_extra"
+  else
+    ok "phrases table cites no IDs absent from REQUIREMENTS.md"
   fi
 fi
 

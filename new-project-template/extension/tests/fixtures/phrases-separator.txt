@@ -1,0 +1,15 @@
+# Hermetic requirement phrases for the verifier's fixture specs. Validated
+# verbatim against fixtures/requirements-trace.md at load time, so the
+# fixture tests below never depend on the project's own phrases file.
+# The phrases mirror the fixture requirements wording exactly.
+ART-1|stored beneath the gitignored|by locker station and run identifier
+ART-3|identity and ownership
+ART-6|idempotent success|already-absent
+PLATFORM-5|station-status feed|dispatch register
+QUAL-3|static locker caps|bounded by booking controls
+QUAL-6|retain 14 days by default|projected peak storage|70% of discovered usable storage
+SCEN-1|select a built-in delivery profile|valid custom profile
+SCEN-6|cancelled deliveries|retries are separate attempts
+TEL-1|structured logs|redacted structured|
+TEL-2a|reporting coverage for door activity
+TEL-4|delivery readiness and accounting|separate boards for weekdays and weekends

@@ -30,7 +30,7 @@ provides:
       description: "Plan checklist (escape hatches need requirement authority, thresholds are operationalized, every MUST has a task, boundaries are specified: raise to catcher, fail-closed positive-path tests, wire-format fixtures, command-surface tests on their real invocation path, validator malformed-input cases); fires as the before_plan hook."
     - name: speckit.requirements.tasks-checklist
       file: commands/speckit.requirements.tasks-checklist.md
-      description: "Tasks checklist (enum grounding in source and existing checkers, sequential IDs, tests-first with known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices); fires as the before_tasks and before_converge hooks."
+      description: "Tasks checklist (enum grounding in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices); fires as the before_tasks and before_converge hooks."
     - name: speckit.requirements.remediation-loop
       file: commands/speckit.requirements.remediation-loop.md
       description: "Analysis remediation loop (complete corrections, class checks, clean re-verification); fires as the after_analyze hook."
@@ -59,7 +59,7 @@ hooks:
   - command: speckit.requirements.tasks-checklist
     priority: 10
     description: Inject the tasks checklist (enum grounding in source and
-      existing checkers, sequential IDs, tests-first with known-bad
+      existing checkers, sequential IDs, tests-first with known-good and known-bad
       fixtures, boundary tests (raise to catcher, command-surface tests on
       their real invocation path), positive-path fixtures for
       fail-closed behaviors, malformed inputs in validator matrices)
@@ -100,7 +100,7 @@ hooks:
     priority: 10
     description: Keep convergence appends compliant (append-only,
       sequential IDs never renumbered, enum grounding in existing
-      checkers, tests-first with known-bad fixtures, boundary tests
+      checkers, tests-first with known-good and known-bad fixtures, boundary tests
       (raise to catcher, command-surface tests on their real invocation
       path), positive-path fixtures for fail-closed behaviors,
       malformed inputs in validator matrices)

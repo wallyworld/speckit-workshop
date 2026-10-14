@@ -121,8 +121,14 @@ def test_extension_skills_match_source_commands():
     surfaces; the rule text may not."""
     if not SEEDED:
         pytest.skip("extension not installed yet; run bootstrap.sh first")
+    skills_dir = ROOT / ".github" / "skills"
+    if not all(
+        (skills_dir / skill / "SKILL.md").is_file()
+        for skill in _SKILL_COMMAND_PAIRS
+    ):
+        pytest.skip("requirements skills not fully vendored; nothing to compare")
     for skill_name, command_file in sorted(_SKILL_COMMAND_PAIRS.items()):
-        skill = (ROOT / ".github" / "skills" / skill_name / "SKILL.md").read_text(
+        skill = (skills_dir / skill_name / "SKILL.md").read_text(
             encoding="utf-8"
         )
         command = (
@@ -131,6 +137,116 @@ def test_extension_skills_match_source_commands():
         assert _prose_after_frontmatter(skill) == _prose_after_frontmatter(command), (
             f"{skill_name}/SKILL.md prose diverges from {command_file}; "
             f"regenerate the skill from the extension command"
+        )
+
+
+def test_skill_generator_output_hermetic(tmp_path):
+    """generate-skills.sh run against a synthetic project produces the
+    skills the mirrors guard: quoted frontmatter that parses even for
+    descriptions carrying a colon-and-space, the command body verbatim,
+    the manifest author in the metadata (never the target's basename),
+    and pruning of a generator-owned skill directory whose command no
+    longer exists, while vendored core skills are never touched.
+
+    The committed-skill mirrors (prose sync, frontmatter parse) guard
+    drift between regeneration runs; this test guards the generator
+    itself, so a quoting or pruning regression fails at the generator's
+    real invocation path instead of surfacing as churn on the next
+    regeneration."""
+    import yaml
+
+    if not SEEDED:
+        pytest.skip("extension not installed yet; run bootstrap.sh first")
+    generator = EXTENSION_SOURCE / "scripts" / "bash" / "generate-skills.sh"
+    manifest = (EXTENSION_SOURCE / "extension.yml").read_text(encoding="utf-8")
+    author_match = re.search(r'^\s+author:\s*"?([^"\n]+)"?\s*$', manifest, re.M)
+    if author_match is None:
+        pytest.fail(
+            "extension.yml has no author field; the generator's "
+            "manifest-author default has nothing to read"
+        )
+    expected_author = author_match.group(1).strip()
+
+    stale = tmp_path / ".github" / "skills" / "speckit-requirements-olddiscipline"
+    stale.mkdir(parents=True)
+    (stale / "SKILL.md").write_text("stale\n", encoding="utf-8")
+    vendored = tmp_path / ".github" / "skills" / "speckit-plan"
+    vendored.mkdir(parents=True)
+    (vendored / "SKILL.md").write_text("vendored\n", encoding="utf-8")
+
+    result = subprocess.run(
+        ["bash", str(generator), str(tmp_path)],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    colon_skill = (
+        tmp_path / ".github" / "skills" / "speckit-requirements-plan-checklist"
+        / "SKILL.md"
+    )
+    assert colon_skill.is_file(), (
+        "generator did not write the plan-checklist skill whose "
+        "description carries a colon-and-space"
+    )
+    text = colon_skill.read_text(encoding="utf-8")
+    lines = text.splitlines()
+    end = lines.index("---", 1)
+    parsed = yaml.safe_load("\n".join(lines[1:end]))
+    assert isinstance(parsed, dict), "generated frontmatter is not a mapping"
+    assert parsed["name"] == "speckit-requirements-plan-checklist"
+    assert ": " in parsed["description"], (
+        "fixture lost its colon-carrying description; the quoting check "
+        "no longer tests anything"
+    )
+    assert parsed["metadata"]["author"] == expected_author, (
+        "generator did not take the manifest author; a bare "
+        "`generate-skills.sh .` would churn every skill's author"
+    )
+    command_text = (
+        EXTENSION_SOURCE / "commands" / "speckit.requirements.plan-checklist.md"
+    ).read_text(encoding="utf-8")
+    command_lines = command_text.splitlines()
+    command_body = "\n".join(command_lines[command_lines.index("---", 1) + 1:]).strip()
+    assert _prose_after_frontmatter(text) == command_body.strip(), (
+        "generated skill body diverges from the command body"
+    )
+    assert not stale.exists(), "stale generator-owned skill directory survived"
+    assert vendored.is_dir() and (vendored / "SKILL.md").read_text(
+        encoding="utf-8"
+    ) == "vendored\n", "vendored core skill was touched"
+
+
+def test_generated_skill_frontmatter_parses():
+    """Every generated SKILL.md frontmatter parses as YAML.
+
+    The generator writes the command's description into the frontmatter
+    raw; a description carrying a colon-and-space would break the
+    scalar and skill discovery with it. The check is part of the mirror
+    pair: frontmatter may differ in plumbing, but it may never be
+    invalid. Skips when the requirements skills are not vendored (the
+    same convention the enforcement-chain tests use)."""
+    import yaml
+
+    skills_dir = ROOT / ".github" / "skills"
+    if not (
+        skills_dir.is_dir()
+        and any(skills_dir.glob("speckit-requirements-*/SKILL.md"))
+    ):
+        pytest.skip("no vendored requirements skills; nothing to parse")
+    for skill in sorted(skills_dir.glob("speckit-requirements-*/SKILL.md")):
+        text = skill.read_text(encoding="utf-8")
+        lines = text.splitlines()
+        assert lines[0].strip() == "---", f"{skill.name}: missing frontmatter"
+        try:
+            end = lines.index("---", 1)
+        except ValueError:
+            assert False, f"{skill.name}: frontmatter never closes"
+        parsed = yaml.safe_load("\n".join(lines[1:end]))
+        assert isinstance(parsed, dict), f"{skill.name}: frontmatter is not a mapping"
+        assert isinstance(parsed.get("description"), str) and parsed["description"], (
+            f"{skill.name}: description is not a non-empty string - "
+            f"regenerate with the current generator"
         )
 
 

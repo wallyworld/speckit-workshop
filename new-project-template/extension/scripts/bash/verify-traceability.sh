@@ -22,15 +22,18 @@ fi
 # transcription drift where a requirement is claimed as complete but never
 # represented in the spec.
 #
-# Every Completes claim is also freshness-checked: the spec must record
-# "<ID> sha256:<hex>" where hex is the SHA-256 over the requirement's
-# normalized text (trimmed, wrapped lines joined - the same normalized
-# text the requirement phrases are validated against). A recorded digest that
-# no longer matches the requirement's current wording is STALE; a claimed
-# requirement with no recorded digest is UNDIGESTED. Both fail closed: a
-# claim that cannot be freshness-checked never passes silently. The
-# requirements brief (/speckit-requirements-prepare) emits these digests;
-# sha256sum (GNU) or shasum (BSD/macOS) must be available.
+# Every Completes claim is also freshness-checked: the requirement-digests
+# field must record "<ID> sha256:<hex>" where hex is the SHA-256 over the
+# requirement's normalized text (trimmed, wrapped lines joined - the same
+# normalized text the requirement phrases are validated against). A
+# recorded digest that no longer matches the requirement's current wording
+# is STALE; a claimed requirement with no recorded digest is UNDIGESTED; a
+# digest that is not exactly one 64-hex token - duplicates, non-hex
+# characters, punctuation suffixes - is MALFORMED. All fail closed: a
+# claim that cannot be freshness-checked never passes silently, and only
+# the digests field is read, never prose. The requirements brief
+# (/speckit-requirements-prepare) emits these digests; sha256sum (GNU) or
+# shasum (BSD/macOS) must be available.
 #
 # Override environment hooks used to localize the check against fixtures:
 #   SPECKIT_REQUIREMENTS_FILE  path to REQUIREMENTS.md   (default: repo root)
@@ -48,6 +51,21 @@ PROG=$(basename "$0")
 
 err() { printf '%s: error: %s\n' "$PROG" "$1" >&2; }
 die() { err "$1"; exit "${2:-1}"; }
+
+# canonical_path PATH: absolute physical path, portable (GNU readlink -f
+# is unavailable on macOS, and a failing readlink would compare empty
+# against empty and silently turn a fixture run into a live one). The
+# parent directory must exist - true for every caller here, whose files
+# were already checked - and the final component need not.
+canonical_path() {
+  local _p=$1 _d
+  _d=$(dirname -- "$_p")
+  if (cd -- "$_d" >/dev/null 2>&1); then
+    printf '%s/%s\n' "$(cd -- "$_d" && pwd -P)" "$(basename -- "$_p")"
+  else
+    printf '%s\n' "$_p"
+  fi
+}
 
 trim() {
   local s=$1
@@ -142,9 +160,31 @@ while IFS= read -r _kline || [ -n "$_kline" ]; do
   [[ -z "$_kline" || "$_kline" == \#* ]] && continue
   [[ "$_kline" == *\|* ]] || die "phrases file line is not 'ID|phrase|...': $_kline"
   _kid=$(trim "${_kline%%|*}")
+  [ -n "$_kid" ] \
+    || die "phrases file line has an empty requirement ID field: $_kline"
   if [ -n "${PHRASES_SEEN[$_kid]:-}" ]; then
     die "phrases file has duplicate entry for requirement ID '$_kid'"
   fi
+  # An empty phrase field matches every spec text (grep of the empty
+  # string) and lets a Completes claim pass with no required content;
+  # an entry with no fields at all is the same vacuity one field later.
+  # Every field must carry non-whitespace text. Separator shapes are
+  # rejected before the split: read drops a trailing empty field, so a
+  # leading, adjacent, or trailing '|' would otherwise slip an empty
+  # phrase past the field loop.
+  _phrase_fields=${_kline#*|}
+  if [[ "$_phrase_fields" == '|'* || "$_phrase_fields" == *'|' || "$_phrase_fields" == *'||'* ]]; then
+    die "phrases file entry for requirement ID '$_kid' has an empty phrase field"
+  fi
+  _kfields=()
+  IFS='|' read -ra _kfields <<<"$_phrase_fields"
+  [ "${#_kfields[@]}" -gt 0 ] \
+    || die "phrases file entry for requirement ID '$_kid' has no phrase fields"
+  for _kf in "${_kfields[@]}"; do
+    _kf=$(trim "$_kf")
+    [ -n "$_kf" ] \
+      || die "phrases file entry for requirement ID '$_kid' has an empty phrase field"
+  done
   PHRASES_SEEN[$_kid]=1
   PHRASES[$_kid]=$(trim "${_kline#*|}")
 done <"$PHRASES_FILE"
@@ -201,8 +241,16 @@ for id in "${!PHRASES[@]}"; do
     # localize the claim checks), IDs the fixture does not define are
     # skipped; full validation against the real REQUIREMENTS.md is asserted
     # by the Bash suite, which runs this verifier against it.
+    # The live-requirements check compares canonical paths: a caller
+    # may pass the live file as a relative path (SPECKIT_REQUIREMENTS_
+    # FILE=REQUIREMENTS.md from the project root), and the string
+    # comparison would then miss it and treat a stale phrase-table
+    # entry as a fixture-only exception instead of failing.
+    # canonical_path never fails: an existing requirements file always
+    # resolves, and a project root that cannot be resolved falls back
+    # to its own path, which never equals a resolved requirements file.
     if [ -n "${PROJECT_ROOT:-}" ] \
-       && [ "$REQUIREMENTS_FILE" = "$PROJECT_ROOT/REQUIREMENTS.md" ]; then
+       && [ "$(canonical_path "$REQUIREMENTS_FILE")" = "$(canonical_path "$PROJECT_ROOT/REQUIREMENTS.md")" ]; then
       die "phrase entry '$id' has no matching requirement in $REQUIREMENTS_FILE (stale phrase?)"
     fi
     continue
@@ -234,15 +282,65 @@ phrase_hit() {
 # ---------------------------------------------------------------------------
 verify_spec() {
   local spec_file=$1 name resolved line cells id tokens phrases_csv phrase found
-  local claimed_count=0 id_l recorded
+  local claimed_count=0 id_l recorded digests_field digests_field_count leftovers
   local -a spec_drifted=() spec_uncurated=() spec_stale=() spec_undigested=()
+  local -a spec_unknown=() spec_malformed=() dtokens=()
 
   [ -f "$spec_file" ] || die "spec file not found: $spec_file"
   name=$(basename "$(dirname -- "$spec_file")")  # e.g. 001-relation-smoke
-  resolved=$(readlink -f "$spec_file") || true
+  resolved=$(canonical_path "$spec_file")
   # Lowercase and collapse all whitespace (including line breaks) to a single
   # space so requirement phrases match across wrapped source lines.
   spec=$(tr '[:upper:]' '[:lower:]' <"$spec_file" | tr -s '[:space:]' ' ')
+  # The requirement-digests field: the only surface a Completes ID's
+  # digest is ever read from. Exactly one field is accepted - a second
+  # field is a stale or conflicting record riding a valid one and
+  # fails closed, never first-wins. Every entry in it must parse as
+  # "<ID> sha256:<token>": prose or stray text inside the field is
+  # rejected, never silently ignored. Bounded by the next bullet
+  # field, table row, or heading in the collapsed text, so a digest
+  # mentioned in prose, a comment, or an earlier sentence never
+  # satisfies freshness for a stale or absent field entry, and
+  # duplicates inside the field are visible instead of
+  # first-match-wins.
+  # grep exits 1 on no match; under set -o pipefail the unguarded
+  # pipeline would abort the assignment. The guard treats exactly
+  # grep's no-match status as a zero count and lets any other failure
+  # (a broken pipe, a bad flag) propagate - never masked, never
+  # fail-open. The count still counts every occurrence, duplicates
+  # included.
+  digests_field_count=$(printf '%s' "$spec" \
+    | { grep -oF -- "- **requirement digests**: " || [ "$?" -eq 1 ]; } \
+    | wc -l)
+  if [ "$digests_field_count" -gt 1 ]; then
+    err "$resolved carries $digests_field_count requirement-digests fields; exactly one is required - conflicting digest records fail closed"
+    return 1
+  fi
+  digests_field=$(printf '%s' "$spec" | awk '
+    {
+      m = "- **requirement digests**: "
+      i = index($0, m)
+      if (i == 0) { print ""; exit }
+      r = substr($0, i + length(m))
+      c = 0
+      if (index(r, " - **") > 0) c = index(r, " - **")
+      if (index(r, " | ") > 0 && (c == 0 || index(r, " | ") < c)) c = index(r, " | ")
+      if (match(r, " #[#]* ") > 0 && (c == 0 || RSTART < c)) c = RSTART
+      if (c > 0) r = substr(r, 1, c - 1)
+      print r
+    }')
+  # Unparsed content: strip every well-formed entry and require that
+  # nothing but separators remains. Prose, stray words, or an entry
+  # that does not parse as "<ID> sha256:<token>" (an empty token
+  # included) fail the whole spec closed.
+  if [ -n "$digests_field" ]; then
+    leftovers=$(printf '%s' "$digests_field" \
+      | sed -E 's/[a-z]+-[0-9]+[a-z]? sha256:[^ ,]+//g' | tr -d ' ,')
+    if [ -n "$leftovers" ]; then
+      err "requirement-digests field of $resolved carries unparsed content (every entry must be '<ID> sha256:<token>'): ${leftovers:0:70}"
+      return 1
+    fi
+  fi
 
   while IFS= read -r line || [ -n "$line" ]; do
     line=$(trim "$line")
@@ -263,24 +361,50 @@ verify_spec() {
         return 1
       fi
       claimed_count=$((claimed_count + 1))
-      # Freshness: the spec must record "<ID> sha256:<hex>" where hex
-      # is the digest of the requirement's normalized text. A digest
-      # that no longer matches the current wording is STALE; a claimed
-      # requirement with no recorded digest is UNDIGESTED. The pattern
-      # is extracted from the whitespace-collapsed spec, so line
-      # wrapping cannot hide it.
+      # A well-formed ID the requirements source does not define fails
+      # closed as UNKNOWN - never an unbound-lookup crash under set -u -
+      # and skips the digest and phrase checks, which are meaningless
+      # without the requirement text.
+      if [ -z "${REQ_TEXT[$id]+x}" ]; then
+        printf '  %s %-12s %s\n' "$name" "$id" \
+          "UNKNOWN (completes an ID the requirements source does not define)"
+        spec_unknown+=("$id")
+        continue
+      fi
+      # Freshness: the Completes ID's digest is recorded in the
+      # requirement-digests field as exactly one "sha256:<64 hex>"
+      # token. No token there is UNDIGESTED; more than one is
+      # MALFORMED (a duplicate or conflicting entry, never
+      # first-match-wins); a token that is not exactly 64 hex
+      # characters - non-hex letters, punctuation suffixes riding a
+      # correct prefix, wrong lengths - is MALFORMED and never
+      # freshness-validated on its prefix. Only a well-formed token
+      # is compared against the requirement's current wording (a
+      # mismatch is STALE). The field is bounded at extraction, so
+      # digests outside it never reach this check.
       id_l=$(printf '%s' "$id" | tr '[:upper:]' '[:lower:]')
-      recorded=$(printf '%s' "$spec" \
-        | grep -oE "(^|[^a-z0-9])${id_l} sha256:[0-9a-f]{64}" \
-        | head -n1 | grep -oE '[0-9a-f]{64}' || true)
-      if [ -z "$recorded" ]; then
+      dtokens=()
+      mapfile -t dtokens < <(printf '%s\n' "$digests_field" \
+        | grep -oE "(^|[^a-z0-9])${id_l} sha256:[^ ,]*" || true)
+      if [ "${#dtokens[@]}" -eq 0 ]; then
         printf '  %s %-12s %s\n' "$name" "$id" \
-          "UNDIGESTED (no recorded requirement digest in the spec)"
+          "UNDIGESTED (no digest recorded in the requirement-digests field)"
         spec_undigested+=("$id")
-      elif [ "$recorded" != "$(sha256_of "${REQ_TEXT[$id]}")" ]; then
+      elif [ "${#dtokens[@]}" -gt 1 ]; then
         printf '  %s %-12s %s\n' "$name" "$id" \
-          "STALE - requirement wording changed since this spec recorded its digest"
-        spec_stale+=("$id")
+          "MALFORMED (digest recorded more than once in the requirement-digests field)"
+        spec_malformed+=("$id")
+      else
+        recorded=${dtokens[0]##*sha256:}
+        if [[ ! "$recorded" =~ ^[0-9a-f]{64}$ ]]; then
+          printf '  %s %-12s %s\n' "$name" "$id" \
+            "MALFORMED (recorded digest is not exactly 64 hex characters; fail closed)"
+          spec_malformed+=("$id")
+        elif [ "$recorded" != "$(sha256_of "${REQ_TEXT[$id]}")" ]; then
+          printf '  %s %-12s %s\n' "$name" "$id" \
+            "STALE - requirement wording changed since this spec recorded its digest"
+          spec_stale+=("$id")
+        fi
       fi
       phrases_csv=${PHRASES[$id]:-""}
       if [ -z "$phrases_csv" ]; then
@@ -323,6 +447,12 @@ verify_spec() {
   if [ "${#spec_undigested[@]}" -gt 0 ]; then
     UNDIGESTED+=("${spec_undigested[@]}")
   fi
+  if [ "${#spec_unknown[@]}" -gt 0 ]; then
+    UNKNOWN+=("${spec_unknown[@]}")
+  fi
+  if [ "${#spec_malformed[@]}" -gt 0 ]; then
+    MALFORMED+=("${spec_malformed[@]}")
+  fi
   TOTAL_CLAIMED=$((TOTAL_CLAIMED + claimed_count))
   return 0
 }
@@ -350,6 +480,8 @@ DRIFTED=()
 UNCURATED=()
 STALE=()
 UNDIGESTED=()
+UNKNOWN=()
+MALFORMED=()
 for spec_file in "${SPEC_FILES[@]}"; do
   verify_spec "$spec_file" || exit 1
 done
@@ -361,7 +493,8 @@ echo "  Requirements: $REQUIREMENTS_FILE"
 echo
 
 if [ "${#DRIFTED[@]}" -eq 0 ] && [ "${#UNCURATED[@]}" -eq 0 ] \
-   && [ "${#STALE[@]}" -eq 0 ] && [ "${#UNDIGESTED[@]}" -eq 0 ]; then
+   && [ "${#STALE[@]}" -eq 0 ] && [ "${#UNDIGESTED[@]}" -eq 0 ] \
+   && [ "${#UNKNOWN[@]}" -eq 0 ] && [ "${#MALFORMED[@]}" -eq 0 ]; then
   echo "OK - every claimed-complete requirement has distinctive content in its spec."
   exit 0
 fi
@@ -406,13 +539,41 @@ fi
 
 if [ "${#UNDIGESTED[@]}" -gt 0 ]; then
   echo
-  echo "UNDIGESTED - claimed requirements with no recorded digest (every"
-  echo "Completes claim must carry '<ID> sha256:<digest>' in its spec):"
+  echo "UNDIGESTED - claimed requirements with no digest recorded in the"
+  echo "requirement-digests field (every Completes claim must carry"
+  echo "'<ID> sha256:<digest>' there):"
   for id in "${UNDIGESTED[@]}"; do
     printf '  %s\n' "== ${id} =="
   done
   echo
   echo "Record each digest from the requirements brief (rerun"
   echo "/speckit-requirements-prepare for the current digests)."
+fi
+
+if [ "${#UNKNOWN[@]}" -gt 0 ]; then
+  echo
+  echo "UNKNOWN - Completes claims for requirement IDs the requirements"
+  echo "source does not define:"
+  for id in "${UNKNOWN[@]}"; do
+    printf '  %s\n' "== ${id} =="
+  done
+  echo
+  echo "Resolve each finding by fixing the ID (or defining the requirement)"
+  echo "and re-recording its digest, then run a fresh"
+  echo "/speckit-requirements-verify."
+fi
+
+if [ "${#MALFORMED[@]}" -gt 0 ]; then
+  echo
+  echo "MALFORMED - recorded digests that are not exactly 64 hex"
+  echo "characters (a correct 64-hex prefix with extra trailing"
+  echo "alphanumerics never passes freshness):"
+  for id in "${MALFORMED[@]}"; do
+    printf '  %s\n' "== ${id} =="
+  done
+  echo
+  echo "Re-record each digest verbatim from the requirements brief (rerun"
+  echo "/speckit-requirements-prepare); the digest must be the full"
+  echo "sha256: line with no extra characters."
 fi
 exit 1

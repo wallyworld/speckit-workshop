@@ -84,36 +84,64 @@ def _actions() -> dict[str, str]:
 
 
 def test_actions_name_real_makefile_targets():
-    """Forward: every named action's make target exists in the Makefile."""
+    """Forward: every named action's make target exists in the Makefile,
+    and an action named after a Makefile target invokes that target:
+    an action `test` calling `make test-charm` would pass an
+    existence-only check while `workshop run -- test` runs the wrong
+    suite."""
     _skip_unless_workshop_served()
     targets = _makefile_targets()
     offenders: list[str] = []
     for name, script in sorted(_actions().items()):
-        for match in MAKE_CALL.finditer(script):
-            target = match.group(1)
+        called = [match.group(1) for match in MAKE_CALL.finditer(script)]
+        for target in called:
             if target not in targets:
                 offenders.append(f"action {name}: make {target}")
+        if name in targets and name not in called:
+            offenders.append(f"action {name}: does not invoke make {name}")
     assert not offenders, (
-        "workshop actions name missing Makefile targets "
-        "(rename or delete drift):\n  " + "\n  ".join(offenders)
+        "workshop actions name missing Makefile targets or fail to "
+        "invoke their own target (rename or delete drift):\n  "
+        + "\n  ".join(offenders)
     )
 
 
 def test_public_makefile_targets_are_exposed_or_allowed():
-    """Reverse: every public target is a named action or allowlisted."""
+    """Reverse: every public target has a same-named action, or is
+    allowlisted with a reason.
+
+    A call-site check would pass while an action is renamed: an action
+    `run-tests` calling `make test` still exercises the target, but the
+    advertised entry point `workshop run -- test` is gone. The action's
+    name is the advertised interface, so each public target must be
+    covered by an action of the same name. The generic `make`
+    passthrough names no specific target and never counts. An
+    allowlist entry whose Makefile target no longer exists is a stale
+    exemption documenting nothing: deleting or renaming a target must
+    retire its entry, not leave it as dead documentation."""
     _skip_unless_workshop_served()
-    called = {
-        match.group(1)
-        for script in _actions().values()
-        for match in MAKE_CALL.finditer(script)
-    }
+    stale_allowlist = sorted(set(ALLOWLIST) - _makefile_targets())
+    assert not stale_allowlist, (
+        "ALLOWLIST names missing Makefile targets (stale exemptions "
+        "documenting nothing - retire the entry when the target goes):"
+        "\n  " + "\n  ".join(stale_allowlist)
+    )
+    for target, reason in ALLOWLIST.items():
+        assert reason.strip(), (
+            f"ALLOWLIST entry {target} states no reason; every entry "
+            f"records why its target needs no same-name action - a "
+            f"blank reason lets a public target vanish from the "
+            f"advertised actions with no explanation"
+        )
+    action_names = set(_actions())
     offenders: list[str] = []
     for target in sorted(_makefile_targets()):
-        if target in called or target in ALLOWLIST:
+        if target in action_names or target in ALLOWLIST:
             continue
-        offenders.append(f"{target}: no action, no ALLOWLIST entry")
+        offenders.append(f"{target}: no same-name action, no ALLOWLIST entry")
     assert not offenders, (
-        "public Makefile targets without a workshop action; add a "
-        ".workshop definition action or an ALLOWLIST entry with a reason:"
+        "public Makefile targets without a same-name workshop action; "
+        "add a .workshop definition action named for the target or an "
+        "ALLOWLIST entry with a reason:"
         "\n  " + "\n  ".join(offenders)
     )

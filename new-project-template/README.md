@@ -324,8 +324,8 @@ that adopted it with a broken chain.
 
 Part 1 (delivery principles) is universal and travels with the
 tooling. Part 2 (project principles) is yours. Add one principle per
-domain concern through `/speckit-constitution`, recording the
-amendment in the plan of the feature that makes it. Part 1 stays
+domain concern through `/speckit-constitution`, which versions and
+records the amendment in the constitution. Part 1 stays
 domain-neutral (it names no product, technology, or domain), so it
 travels unchanged; reviewing your own artifacts against it keeps that
 boundary in practice.

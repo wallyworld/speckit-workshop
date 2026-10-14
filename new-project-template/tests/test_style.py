@@ -90,7 +90,15 @@ EM_DASH = "\u2014"  # kept as an escape so this file passes its own rule
 
 def _iter_project_files():
     for root, dirs, files in os.walk(REPO_ROOT, topdown=True):
-        dirs[:] = sorted(d for d in dirs if d not in EXCLUDED_DIRS)
+        # ``*.egg-info`` directories are generated install state
+        # (editable installs recreate them; .gitignore treats them the
+        # same way) - the gates scan project-authored files, not
+        # install output.
+        dirs[:] = sorted(
+            d
+            for d in dirs
+            if d not in EXCLUDED_DIRS and not d.endswith(".egg-info")
+        )
         for filename in sorted(files):
             path = Path(root) / filename
             rel = path.relative_to(REPO_ROOT)
