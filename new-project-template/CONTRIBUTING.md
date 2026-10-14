@@ -51,6 +51,16 @@ reading the roadmap row, the full text of its Completes/Advances IDs, the
 
 ## Local setup
 
+The project's standard development environment is a
+[Workshop](https://ubuntu.com/workshop) sandbox: `scripts/workshop.sh`
+launches or refreshes it and mounts the host's agent configuration so
+agents inside share your credentials. See the README's Workshop
+section for the actions it provides. The named actions mirror the
+Makefile's public entry points: when you add a target that defines
+done, add a matching action (the generic `make` passthrough covers
+ad-hoc targets), and `tests/test_workshop_actions.py` fails on drift
+in either direction.
+
 @FILL-IN@ Dependency installation and the test-gate commands with the
 canonical environment they must run in.
 
@@ -186,7 +196,7 @@ truth. After any change to a command, regenerate its skill copy:
 extensions/requirements/scripts/bash/generate-skills.sh .
 ```
 
-The pytest mirror fails while a command and its skill have drifted
+The mirror test fails while a command and its skill have drifted
 apart, so never hand-edit a generated skill.
 
 Review the Git diff before committing: the enforcement-chain mirror tests in

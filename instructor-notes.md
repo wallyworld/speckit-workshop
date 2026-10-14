@@ -8,25 +8,55 @@ pages.
 
 ## Timing
 
-The agent's plan and implement steps each take several minutes of
-generating. In a measured trial the full demo loop ran ~40 minutes
-including clarify and live checks - pre-run the feature beforehand and
-demo it in playback, or narrate over the thinking time, to keep the
-30-50 minute slot honest.
+The agent's plan and implement steps each take minutes of generating.
+Validated with `openrouter/z-ai/glm-4.6`, the hands-on loop measured
+~21 minutes of agent work end to end (specify 1 min, clarify with 3
+questions, plan 2, tasks 1, implement 11, two converge cycles 3) -
+inside its 28-minute slot. The demo loop's artifact steps are similar
+(specify 2 min, plan 8, tasks 2), but plan and implement vary most
+with the model. Two consequences: pre-run the feature beforehand and
+demo it in playback, or narrate over the thinking time; and expect the
+overrun to come from clarify and retried commands, not from the
+artifact steps.
 
-The hands-on block is 28 minutes for a full student loop: hold the class
-to the checkpoint pacing in [04-hands-on.md](04-hands-on.md), and if the
-room's agents or machines run slow, have students pair up or start from
-your pre-run catalog repo (04 permits this) so the order-placement loop
-starts from a warm base. Let the "if you finish early" work run into the
-debrief.
+One failure mode to rehearse: if the agent starts the dev server in
+the foreground during implement, the turn hangs on it. Escape does not
+always recover the turn; the reliable recovery is to quit the TUI
+(Ctrl-C), relaunch `opencode`, and continue - the speckit commands
+re-read the artifacts from disk, so nothing is lost. Any message typed
+while the turn is stuck queues and runs when the session continues.
+
+The hands-on block targets 28 minutes for a full student loop: hold the
+class to the checkpoint pacing in [04-hands-on.md](04-hands-on.md), and
+if the room's containers or agents run slow, have students pair up or
+start from your pre-run catalog repo (04 permits this; students clone
+it into their container home) so the order-placement loop starts from a
+warm base. Let the "if you finish early" work run into the debrief.
 
 ## Setup (01-setup.md)
 
-Aim for everyone green by minute 25 (the next section can absorb a few
-minutes of slip). The single most common failure is a stale or
+Have students run `./scripts/workshop.sh` before the session or as they
+walk in: the first container build takes minutes, and the 8-18 setup slot
+cannot absorb it. Re-runs are fast (the script only restarts the
+container when a mount is stale), so a pre-launch also flushes the
+host-side failures - the workshop CLI, snap, the sudo prompt for `yq` -
+before the clock starts. The most common in-room failure is a container
+that never launches, not a broken project: walk the room at minute 0 and
+re-launch anyone whose container is not ready (`workshop info`
+prints the status).
+
+Inside the container, the most common failure is a stale or
 partially-installed CLI - the "Confirm it works" step at the end is a
-hard gate; do not proceed past it until everyone passes it.
+hard gate; do not proceed past it until everyone passes it. A student
+whose shell says `command not found: specify` is in the host shell,
+not the container: send them back in with `workshop shell`.
+
+1.3 also includes the model check: every attendee confirms their
+agent's model indicator shows a usable model before the loop starts.
+Walk the room there - a dead default or missing auth found at minute
+15 is recoverable; the same failure mid-loop is the day's casualty.
+Copilot users run `copilot` then `/login` inside the container first
+(GitHub device flow; their host credential store does not carry).
 
 This is a rare case where you may want to pre-pin a version for the
 room so everyone is on the same CLI. If so, tell them the exact tag to
@@ -39,6 +69,10 @@ demonstrates the loop far better than slides. Target 10-15 minutes with
 questions.
 
 ## Demo (03-the-loop.md)
+
+Pre-run the loop in your own workshop container (the same launch path as
+[01](01-setup.md)); the timing note above covers playback versus
+narration.
 
 - Pause after each step and walk through what was produced:
   - After Step 1: open `spec.md` together - the user stories (with

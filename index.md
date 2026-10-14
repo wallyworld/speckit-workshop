@@ -6,9 +6,13 @@ how to use it to build a small web application with an AI coding agent.
 
 - **Audience**: experienced software engineers, proficient with agentic
   coding, new to Spec Kit.
-- **Prerequisites**: OpenCode installed. Everything else you need - the
-  `specify` CLI, a virtual environment, the pet store skeleton - is set up
-  during the workshop.
+- **Prerequisites**: a Linux host with git, snap, and the workshop CLI -
+  the workshop runs in a container it builds and manages - plus a
+  working agent setup on your host: OpenCode (your provider auth and
+  model carry into the container) or GitHub Copilot (log in inside the
+  container on first use; its host credential store does not carry).
+  Everything else - uv, the `specify` CLI, a virtual environment, the
+  pet store skeleton - is provisioned inside the container during setup.
 - **Format**: works self-paced (follow the numbered steps) or instructor-led.
 
 ## Introduction
@@ -33,10 +37,10 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 
 | # | Phase | What happens |
 |---|---|---|
-| 1 | [Setup](01-setup.md) | Install the CLI, create an empty project, confirm the commands are live |
+| 1 | [Setup](01-setup.md) | Launch the workshop container, install the CLI, create an empty project, confirm the commands are live |
 | 2 | [Core concepts](02-core-concepts.md) | The agentic loop, the artifacts, the commands, where validation fires |
 | 3 | [The loop, demoed](03-the-loop.md) | Instructor runs the full loop on a pet catalog |
-| 4 | [Hands-on](04-hands-on.md) | You implement order placement with a hidden-landmine invariant |
+| 4 | [Hands-on](04-hands-on.md) | You implement order placement with a non-trivial invariant |
 | 5 | [What's next](06-whats-next.md) | Extensions, presets, phasing for larger projects |
 
 [05-reference.md](05-reference.md) is the untimed cheat sheet students keep
@@ -52,7 +56,7 @@ By the end you will be able to:
 3. Explain where and how "validation" actually fires (converge's
    check-the-code-against-the-spec step).
 4. Identify why requirements-first beats vibe-implement-and-hope, using
-   a real validation landmine you will hit in the hands-on phase.
+   a real validation flaw you will hit in the hands-on phase.
 5. Know what to read next: extensions, presets, and how larger projects
    layer phased delivery.
 
@@ -64,14 +68,14 @@ By the end you will be able to:
 | 8-18 | Setup ([01-setup.md](01-setup.md)) | Instructor + you follow |
 | 18-30 | Core concepts ([02-core-concepts.md](02-core-concepts.md)) | Explain |
 | 30-50 | Demo: full loop on pet catalog ([03-the-loop.md](03-the-loop.md)) | Instructor demo (pre-run, played back or narrated) |
-| 50-78 | Hands-on: order placement with the invariant ([04-hands-on.md](04-hands-on.md)) | You build |
+| 50-78 | Hands-on: order placement with the non-trivial invariant ([04-hands-on.md](04-hands-on.md)) | You build |
 | 78-85 | Debrief: what the loop caught in the room | Group |
 | 85-90 | Extensions, phasing note, Q&A ([06-whats-next.md](06-whats-next.md)) | Instructor |
 
 ## How to use these materials
 
 - **Self-paced**: work through [01](01-setup.md) through [04](04-hands-on.md)
-  in order. The demo ([03](03-the-loop.md)) is written as a script; follow
+  in order. The demo ([03](03-the-loop.md)) reads as a walkthrough; follow
   it in your own repo.
 - **Reference**: [05-reference.md](05-reference.md) is the cheat sheet -
   commands, artifacts, glossary, common errors. Point students at it

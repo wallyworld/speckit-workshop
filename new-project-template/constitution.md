@@ -36,9 +36,9 @@ specific to this project are recorded with the project commitments in
 ### 4. Build and verify incrementally
 
 Each feature delivers an independently testable outcome. Plans identify
-design, implementation, and runtime-readiness checks separately. The Spec
-Kit analyze and converge stages check feature consistency; they do not
-replace product evidence gates.
+design, implementation, and runtime-readiness checks separately. The
+process tooling's analyze and converge stages check feature consistency;
+they do not replace product evidence gates.
 
 ### 5. Plan staged delivery
 

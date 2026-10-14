@@ -1,7 +1,7 @@
-"""Requirement traceability enforcement (speckit): pytest mirror.
+"""Requirement traceability enforcement (speckit): mirror test.
 
 Runs the `requirements` extension's deterministic Bash verifier
-(`verify-traceability.sh`) as the pytest mirror of the agent-facing
+(`verify-traceability.sh`) as the mirror test of the agent-facing
 `/speckit-requirements-verify` command. Keeping one source of truth: the Bash
 suite under `extensions/requirements/tests/run-bash-tests.sh` owns the
 behavioral assertions, and this module simply drives it under `make test`,

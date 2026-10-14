@@ -69,11 +69,11 @@ incremental gates that force the agent to read and reconcile the intent
 it wrote down. If the code drifts from the spec, converge does not say
 "done" - it appends the missing work and re-enters the loop.
 
-### The landmine (preview)
+### A non-trivial requirement (preview)
 
 In the hands-on phase, the spec will include requirements along these
 lines: *"Placing an order for a pet that is no longer listed as available
-must fail"* and - the sharp one - *"An order may not bring a pet's stock
+must fail"* and - a more complex one - *"An order may not bring a pet's stock
 below zero."* There is a subtle way to violate both at once: an
 implementation that checks availability in the wrong order, or not at
 all, can still pass happy-path tests ("place an order when stock is 1,

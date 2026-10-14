@@ -101,7 +101,7 @@ EXPECTED_WORKFLOW_GATES = (
 )
 
 
-def _pin_requirements_extension_surfaces() -> None:
+def _assert_requirements_extension_surfaces() -> None:
     """Gate the extension's mirror tests on adoption, not on file presence.
 
     The two-tier rule the enforcement mirror tests follow: a project that has
@@ -143,12 +143,12 @@ def test_hook_registrations_present():
     stop firing. The test asserts the full firing-relevant shape including
     enabled and condition: a registration with enabled: false or a
     non-empty condition is a silent no-fire that leaves every other test
-    green. Also guards against vacuity: the assertion is on the exact
+    green. Also a can-it-fail guard: the assertion is on the exact
     expected set, so an empty or partial hooks section fails. Skips
     only when the extension itself is not adopted; a deleted
     registration with the extension present fails here - a wiped
     registration is the failure this module exists to catch."""
-    _pin_requirements_extension_surfaces()
+    _assert_requirements_extension_surfaces()
     config = yaml.safe_load(EXTENSIONS_YML.read_text(encoding="utf-8"))
     hooks = config.get("hooks") or {}
     observed = {
@@ -203,7 +203,7 @@ def test_extension_templates_declared():
     here in any environment, including a bare checkout. Skips only
     when the extension itself is not adopted; a deleted manifest with
     the extension present fails here."""
-    _pin_requirements_extension_surfaces()
+    _assert_requirements_extension_surfaces()
     manifest = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))
     declared = {
         entry["name"]: entry["file"]
@@ -265,7 +265,7 @@ def test_workflow_gates_compose():
     bootstrap runs) or when the specify CLI is not on PATH (CI runners
     do not install it; the composition is also verified manually in the
     upgrade runbook)."""
-    _pin_requirements_extension_surfaces()
+    _assert_requirements_extension_surfaces()
     if shutil.which("specify") is None:
         pytest.skip("specify CLI not on PATH")
     result = subprocess.run(
@@ -383,7 +383,7 @@ def test_checklist_rules_survive_into_every_mirror():
     surface - the vendored skills - drops out with a stated reason
     when the requirements skills are not vendored, the same
     convention the core-skills test uses."""
-    _pin_requirements_extension_surfaces()
+    _assert_requirements_extension_surfaces()
     for command, rules in (
         ("plan-checklist", PLAN_CHECKLIST_RULES),
         ("tasks-checklist", TASKS_CHECKLIST_RULES),
@@ -571,7 +571,7 @@ def test_seedable_checklist_surfaces_stay_domain_neutral():
     manifest and the workflow overlay are integral (the helper gate
     asserted them), and the skill surfaces drop out when the vendored
     skills do not exist."""
-    _pin_requirements_extension_surfaces()
+    _assert_requirements_extension_surfaces()
     has_skills = _requirements_skills_vendored()
     surfaces = DOMAIN_NEUTRAL_SURFACES
     if has_skills:
@@ -642,7 +642,7 @@ POINTER_SENTENCE = (
 )
 
 
-def test_checklist_instances_and_pointer_are_pinned():
+def test_checklist_instances_and_pointer_are_asserted():
     """The AGENTS.md section the seedable checklists point at exists,
     carries what the pointers promise, and the pointers exist.
 
@@ -656,7 +656,7 @@ def test_checklist_instances_and_pointer_are_pinned():
     present, the AGENTS.md destination the checklists point at is
     integral - a missing destination is a broken pointer contract,
     not an absent surface."""
-    _pin_requirements_extension_surfaces()
+    _assert_requirements_extension_surfaces()
     agents_path = ROOT / "AGENTS.md"
     assert agents_path.is_file(), (
         "AGENTS.md missing while the requirements extension is present; "
@@ -713,7 +713,7 @@ def test_extension_gate_fails_on_missing_integral_files(tmp_path, monkeypatch):
 
     # Never adopted: no extension source tree at all - skip.
     with pytest.raises(pytest.skip.Exception):
-        _pin_requirements_extension_surfaces()
+        _assert_requirements_extension_surfaces()
 
     # Adopted: the extension source tree exists.
     (tmp_path / "extensions" / "requirements").mkdir(parents=True)
@@ -724,12 +724,12 @@ def test_extension_gate_fails_on_missing_integral_files(tmp_path, monkeypatch):
         "schema_version: '1.0'\n"
     )
     with pytest.raises(AssertionError, match="broken enforcement chain"):
-        _pin_requirements_extension_surfaces()
+        _assert_requirements_extension_surfaces()
 
     # Adopted but the manifest is missing - fail, never skip.
     (tmp_path / "extensions" / "requirements" / "extension.yml").unlink()
     with pytest.raises(AssertionError, match="broken enforcement chain"):
-        _pin_requirements_extension_surfaces()
+        _assert_requirements_extension_surfaces()
 
     # Adopted but the workflow overlay is missing - fail, never skip:
     # the composition test skips in CI for lack of the specify CLI, so
@@ -740,12 +740,12 @@ def test_extension_gate_fails_on_missing_integral_files(tmp_path, monkeypatch):
     (tmp_path / ".specify").mkdir()
     (tmp_path / ".specify" / "extensions.yml").write_text("installed: []\n")
     with pytest.raises(AssertionError, match="broken enforcement chain"):
-        _pin_requirements_extension_surfaces()
+        _assert_requirements_extension_surfaces()
 
     # Adopted and intact - the gate passes.
     gates.mkdir(parents=True)
     (gates / "review-gates.yml").write_text("id: review-gates\n")
-    _pin_requirements_extension_surfaces()
+    _assert_requirements_extension_surfaces()
 
 
 def _owned_state_snapshot():

@@ -40,10 +40,13 @@ which invocation is the single definition of done.
 ## Where enforcement fires
 
 - `make test` (and CI running the same): the traceability verifier over
-  every committed spec, the extension bash suite, the style gate, and the
+  every committed spec, the extension bash suite, the style gate, the
   enforcement-chain mirror tests (hook registrations, checklist rules surviving
   into every mirror, domain neutrality of the seedable checklists, the
-  project checklist instances below).
+  project checklist instances below), and the workshop-action sync test
+  (the `.workshop/` definition's actions name real Makefile targets;
+  every public Makefile target is exposed as an action or allowlisted
+  with a reason).
 - Skills mode: the hooks registered in `.specify/extensions.yml` inject
   the checklists before plan and tasks, run the traceability
   verifier before analyze and converge, and enforce the analysis

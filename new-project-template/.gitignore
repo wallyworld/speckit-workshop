@@ -13,3 +13,6 @@ node_modules/
 # Editors
 .idea/
 .vscode/
+
+# Workshop runtime lock file
+.workshop.lock

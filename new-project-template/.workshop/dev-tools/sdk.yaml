@@ -1,0 +1,6 @@
+name: dev-tools
+version: "0.1"
+summary: Tools required by the project
+description: |
+  In-project SDK that installs system packages (such as make) needed to
+  build and test the project inside the workshop.

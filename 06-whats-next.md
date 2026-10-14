@@ -23,8 +23,9 @@ learned. They are optional; the core loop works without any.
     the exact command) - the mechanism is the same `extensions.yml`
     registration.
 - **Community catalog**: a catalog of community-contributed extensions
-  exists (for example TDD scaffolding, BDD story capture, architecture
-  governance checks). Browse it for shapes you can adopt or adapt.
+  exists (for example TDD scaffolding, BDD scenario conversion,
+  architecture governance checks). Browse it for shapes you can adopt or
+  adapt.
 - **Writing your own**: an extension is a directory with an
   `extension.yml` manifest declaring what it provides - commands
   (agent-facing markdown docs), templates (overriding the core spec and
@@ -78,22 +79,24 @@ in front of it. Each requirement that the roadmap declares "done" has to
 earn that status through a feature that went through the loop. The
 mechanics ship ready-made in
 [`new-project-template/`](new-project-template/) in this repository: it
-seeds exactly this model - requirements source, roadmap map, phrase
+seeds exactly this model - requirements source, roadmap map, requirement
 phrases and requirement digests - together with tooling that verifies
 each completion claim, and its README documents the formats and the
 fill-in workflow.
 
 ## Reading list (all upstream)
 
-- The spec-kit README (install instructions, preset/bundle reference,
-  extension API).
+- The [spec-kit README](https://github.com/github/spec-kit) (install
+  instructions, preset/bundle reference, extension API).
 - The spec-kit `/speckit.constitution` output as a model of writing
   project principles.
-- The community extension catalog for workflow shapes.
+- The [community extension
+  catalog](https://github.github.io/spec-kit/community/extensions.html)
+  for workflow shapes.
 
 ## Close-out questions
 
-- Why did the order-placement landmine survive a happy-path test suite?
+- Why did the order-placement flaw survive a happy-path test suite?
 - What does converge add that a plain "run the tests" loop does not?
 - What would you change in the loop if your team used it for a large,
   long-lived codebase next quarter?

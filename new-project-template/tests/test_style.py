@@ -43,6 +43,9 @@ EXCLUDED_FILES = {
     # Terraform-generated provider lock file: same class as uv.lock,
     # generated upstream content rather than a project artifact.
     ".terraform.lock.hcl",
+    # Workshop runtime lock file: written by the Workshop CLI, not a
+    # project artifact.
+    ".workshop.lock",
 }
 
 # Upstream Spec Kit surfaces and local install state. Everything else under

@@ -7,7 +7,7 @@
 # command docs under extensions/requirements/commands/ - the commands are
 # the source of truth, the skills are the agent-facing distribution
 # copies. After any change to a command, regenerate its skill copy:
-# drift between the two fails the pytest mirror
+# drift between the two fails the mirror test
 # (test_extension_skills_match_source_commands). Idempotent: re-running
 # overwrites the generated skills with the current command bodies.
 set -euo pipefail
