@@ -9,21 +9,21 @@ the agent open and `/speckit` commands available.
 
 We ask the agent to build the *pet catalog* slice of the pet store:
 
-> A pet store. Users can list pets with an availability status, add a new
-> pet, view a pet by id, and delete a pet. Each pet has a name, a stock
-> count, and an availability status that is derived from whether stock is
+> You are building a pet store. Users can list pets with an availability status,
+> add a new pet, view a pet by id, and delete a pet. Each pet has a name, a
+> stock count, and an availability status that is derived from whether stock is
 > above zero. Placing an order for a pet is out of scope for this feature.
 
 Notice that order placement is deliberately **excluded**: features are
 independent slices, and the spec records what is out of scope. The
-hands-on phase ([04](04-hands-on.md)) is the order-placement slice.
+next phase ([04](04-the-refinement.md)) is the order-placement slice.
 
 ## Step 1: `/speckit.specify <the feature description>`
 
 Run:
 
 ```
-/speckit.specify A pet store. Users can list pets with an availability
+/speckit.specify You are building a pet store. Users can list pets with an availability
 status, add a new pet, view a pet by id, and delete a pet. Each pet has a
 name, a stock count, and an availability status that is derived from
 whether stock is above zero. Placing an order for a pet is out of scope
@@ -34,12 +34,11 @@ What you should see happen (narrate as you go):
 
 - The agent generates a feature directory: `specs/001-<slug>/` - the slug
   is derived from your description, so yours will differ (in one run it
-  was `specs/001-pet-store-management/`).
+  was `specs/001-pet-crud/`).
 - Inside it, `spec.md` is created from the spec template.
 - The spec is filled in with: user stories, functional requirements,
   success criteria, edge cases, assumptions. (The run may also produce a
-  checklist and research notes alongside the spec - extra artifacts,
-  not contradictions.)
+  checklist and research notes alongside the spec).
 
 Open `spec.md` and read it: the user stories have priorities, the
 functional requirements are each testable, the agent derived the
@@ -123,7 +122,7 @@ What you should see:
 - The loop repeats: re-run `/speckit.implement`, then `/speckit.converge`
   again, until it reports **converged**.
 
-This is the closed-loop proof: converge is the step that checks the code
+This is how the loop is closed: converge is the step that checks the code
 against the stated intent. If the agent planned a `status` field but
 implemented it as a column when the plan said "derived," converge flags
 the discrepancy and re-enters the loop.
@@ -134,8 +133,8 @@ the discrepancy and re-enters the loop.
 uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 
-Run it in the foreground in a second byobu window (F2; the tmux prefix
-Ctrl-b c still works) or a separate terminal inside the container, and
+Run it in the foreground in a second byobu window (F2, or the tmux prefix
+Ctrl-b c) or a separate terminal inside the container, and
 leave it running for the demo, so the request log and the reload output
 stay visible as you click through the UI. 
 About `--host 0.0.0.0`: without it uvicorn binds to the container's
@@ -170,4 +169,4 @@ is now clickable. Try it like a real pet store:
 - You then pointed a browser at it: the feature is live at `/docs`, a
   clickable pet store rendered by FastAPI itself.
 
-Next: [hands-on](04-hands-on.md) - your turn, with a non-trivial requirement.
+Next: [the-refinement](04-the-refinement.md) - add a non-trivial requirement.

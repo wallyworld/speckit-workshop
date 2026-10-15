@@ -1,7 +1,6 @@
-# 05 - Reference: Commands, Artifacts, Glossary, Errors
+# 06 - Reference: Commands, Artifacts, Glossary, Errors
 
-The cheat sheet for working with Spec Kit after the workshop. This is the
-page to bookmark.
+The cheat sheet for working with Spec Kit after the workshop.
 
 ## Commands
 
@@ -83,7 +82,7 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 | Testable requirement | A functional requirement that can be verified by a test (as opposed to a sentiment) |
 | Potential flaw | A requirement stated in the spec that a naive implementation violates while still passing happy-path tests |
 | Closed loop | The property that the loop will not declare "done" while code and spec disagree |
-| Extension | An optional pack that adds behaviors to Spec Kit (see [06](06-whats-next.md)) |
+| Extension | An optional pack that adds behaviors to Spec Kit (see [05-whats-next](05-whats-next.md)) |
 | Preset | A packaged selection of command/template/script overrides, selectable at `specify init --preset` |
 | Bundle | A versioned stack of extensions, presets, and workflows, installed with `specify bundle install` |
 | Requirement phrase | A distinctive phrase copied verbatim from a requirement's own wording, used to verify a spec materially contains that requirement (see [new-project-template/README.md](new-project-template/README.md)) |
@@ -98,11 +97,9 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 | `specify --version` command not found | `uv tool install specify-cli` was not run, or the tool binary is not on PATH. Re-run the install. |
 | `command not found: specify` (or `uv`) in your shell | You are in the host shell, not the workshop container - the sdks live inside it. Re-enter with `workshop shell`. |
 | Agent plans against the wrong feature | Check `.specify/feature.json`; if it points at a prior feature, the agent is resolving the wrong directory. |
-| Test suite passes but converge complains | Converge compares against the *spec*, not just the tests. The spec likely states a requirement the tests do not assert (see the hands-on non-trivial requirement). |
+| Test suite passes but converge complains | Converge compares against the *spec*, not just the tests. The spec likely states a requirement the tests do not assert (see the non-trivial requirement phase). |
 | uvicorn reports `Could not import module "petstore_app"` when starting the server | The plan args pinned the module name `petstore_app.py`; if your agent chose a different name, run uvicorn against the module it created (`uv run uvicorn <that-module>:app --reload --host 0.0.0.0`). |
 | Agent reports `pytest: command not found` | The venv is not activated in the agent's shell. Run tests with `uv run pytest` (see [01](01-setup.md) §1.4). |
 | `uv pip install` fails for the venv | Run from the project root, after `uv venv` has created `.venv`. |
 | Question about whether something is in scope | Ask `/speckit.clarify`, or edit the spec directly. Scope is a spec property, not an implementation detail. |
 | Multiple features in one session | Spec Kit is one-feature-per-loop. Start a fresh session for a new feature. |
-
-Next: [what's next](06-whats-next.md).

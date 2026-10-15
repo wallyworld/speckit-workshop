@@ -2,7 +2,7 @@
 
 How Spec Kit's moving parts work, from first principles.
 
-## The mental model: an agentic loop around a written spec
+## The mental model: an agentic loop around a requirements spec
 
 You already know how to work with a coding agent: you describe a problem,
 it reads your files, edits code, runs tests, and iterates. The problem
@@ -11,10 +11,10 @@ and is discarded when the session ends. Nothing preserves *what you asked
 for* independently of what the agent decided to build.
 
 Spec Kit's answer is to make the specification a **first-class artifact in
-your repository**: a file (`spec.md`) that states what the feature must
+your repository**. This is a file (`spec.md`) that states what the feature must
 do, in a form the agent re-reads at every phase. Each command in the loop
 reads the artifacts written by the previous command, and writes its own.
-The result is a chain: spec -> plan -> tasks -> code. When the chain is
+The result is a chain: `spec -> plan -> tasks -> code`. When the chain is
 complete, you have an audit trail from "what the user asked for" to "the
 code that implements it."
 
@@ -37,7 +37,7 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 | 5 | `/speckit.implement` | Executes the tasks, writing code | code changes |
 | 6 | `/speckit.converge` | Re-reads spec/plan/tasks, diffs the code against them, and adds any missing work as new tasks | updated `tasks.md` (and the loop repeats) |
 
-## The artifacts: the chain of written intent
+## The artifacts
 
 - **`spec.md`** - *what* and *why*. User stories, functional requirements,
   success criteria. This is the contract the whole loop is accountable to.
@@ -49,10 +49,10 @@ specify -> clarify -> plan -> tasks -> implement -> converge
   independently-testable tasks, each with a checkbox and a file path.
 
 The loop is "closed" because each artifact must be traceable to the one
-before it: every task comes from a plan, every plan from a spec, and
+before it: ie every task comes from a plan, every plan from a spec, and
 converge checks the code against all of them.
 
-## Where validation actually fires
+## Where validation occurs
 
 This is the key concept to internalize.
 
@@ -71,22 +71,21 @@ it wrote down. If the code drifts from the spec, converge does not say
 
 ### A non-trivial requirement (preview)
 
-In the hands-on phase, the spec will include requirements along these
+In this part of the workshop, the spec will include requirements along these
 lines: *"Placing an order for a pet that is no longer listed as available
-must fail"* and - a more complex one - *"An order may not bring a pet's stock
+must fail"* and *"An order may not bring a pet's stock
 below zero."* There is a subtle way to violate both at once: an
 implementation that checks availability in the wrong order, or not at
 all, can still pass happy-path tests ("place an order when stock is 1,
 expect success") while silently letting a sold-out pet be ordered and
-stock go negative. The **loop** catches this strain, because the spec's
-requirements drive tests that a naive implementation cannot pass. You
-will experience this directly.
+stock count go negative. The **loop** catches this error, because the spec's
+requirements drive tests that a naive implementation won't pass.
 
-Why not just write the test? You do write the test - the spec drives the
-test, the test drives the implementation, and converge confirms the test
+Why not just write the test? You actually do write the test :-) The spec drives
+the test, the test drives the implementation, and converge confirms the test
 exists and passes. The point of putting a spec in front is that the
-*requirement* is stated independently of any one implementation, so a
-later refactor or rewrite has to re-honor it.
+*requirement* is stated independently of any one implementation, so a later
+refactor or rewrite has to still honor it.
 
 ## The agent side: context management
 
@@ -105,9 +104,9 @@ things make it practical:
 
 ## What you now know
 
-- The loop is: specify -> plan -> tasks -> implement -> converge.
+- The loop is: `specify -> plan -> tasks -> implement -> converge`.
 - The artifacts form a chain of written intent: spec, plan, tasks.
 - Validation is incremental gates, not an end-of-project review.
-- The spec is the contract the whole loop is accountable to.
+- The spec is the contract the whole loop must adhere to.
 
 Next: [the loop, demoed](03-the-loop.md).

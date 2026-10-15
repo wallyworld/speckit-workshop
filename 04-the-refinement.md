@@ -1,43 +1,29 @@
-# 04 - Hands-On: The Order Placement You Implement
+# 04 - Refinement: The Order Placement Logic
 
-This is the hands-on phase: you run the same loop on order placement in
+This is the refinement phase: you run the same loop on order placement in
 your own project, inside your workshop container ([01](01-setup.md)).
 The feature you will specify contains a verification deliverable for a
 non-trivial requirement. Checkpoints are inline and timed as minutes into
 the phase (target: 28 minutes for the full loop).
 
-If the instructor demoed the pet catalog with you, your `petstore`
-project already has `specs/001-<slug>/` (the catalog feature you just
-built) with a working implementation. If you worked self-paced, complete
-[03](03-the-loop.md) first, or start from your own pet catalog slice.
-
 ## The feature description you will run
 
-> A pet store. Users can place an order for a pet. Placing an order for a
-> pet that is no longer listed as available must fail. A successful order
-> reduces the pet's available stock by one. Canceling an order that is
-> still open must restore the pet's stock by one. An order may not bring a
-> pet's stock below zero.
+> You are building a pet store. Users can place an order for a pet. Placing an
+> order for a pet that is no longer listed as available must fail. A successful
+> order reduces the pet's available stock by one. Canceling an order that is
+> still open must restore the pet's stock by one. An order may not bring a pet's
+> stock below zero.
 
-That final sentence is the non-trivial requirement. Notice how the
-description states it flatly: "An order may not bring a pet's stock
-below zero." The whole hands-on phase is about whether the loop turns
-that sentence into a real check - and whether a naive implementation
-survives it.
+That final sentence is the non-trivial requirement. The whole refinement phase
+is about whether the loop turns that sentence into a real check - and whether a
+naive implementation survives it.
 
-## Checkpoint 0 (0 min): you understand the task
-
-Before running anything, answer this out loud or to a neighbor: which
-sentences in the description are **requirements** that tests must prove,
-and which are **behavior** you can implement freely? There is no wrong
-answer; the exercise is to notice the distinction.
-
-## Checkpoint 1 (5 min): the spec states the invariant
+## Implement the requirement
 
 Run the full loop on the order-placement feature:
 
 ```
-/speckit.specify A pet store. Users can place an order for a pet. Placing
+/speckit.specify You are building a pet store. Users can place an order for a pet. Placing
 an order for a pet that is no longer listed as available must fail. A
 successful order reduces the pet's available stock by one. Canceling an
 order that is still open must restore the pet's stock by one. An order
@@ -65,18 +51,17 @@ If the spec does not state the "must not go below zero" requirement
 explicitly, that is the spec being loose - a loose requirement cannot be
 verified at converge time.
 
-## Checkpoint 2 (18 min): the implementation and its tests exist
+## Implementation and its tests exist
 
 **Pass condition**: `pytest` passes in your project. You now have an
-implementation of order placement and a test suite. If you are working
-from the catalog-only project, the implementation will have added an
-`orders` table and `POST /orders` (and possibly a cancel action, e.g.
+implementation of order placement and a test suite. The implementation will have
+added an `orders` table and `POST /orders` (and possibly a cancel action, e.g.
 `POST /orders/{id}/cancel`) to your FastAPI app.
 
-**The hard question**: does the suite include a test that an order for a
+**Check**: does the suite include a test that an order for a
 zero-stock pet **fails**, and a test that placing an order never drives
 stock below zero? Open the test file and look. If the tests only cover
-the happy path (order for an in-stock pet succeeds), you have exactly
+the happy path (order for an in-stock pet succeeds), you have discovered
 the potential flaw: the loop will have produced tests that pass, but
 the *requirement* is not asserted.
 
@@ -88,12 +73,11 @@ served docs UI in a browser on your host: the `hostname:` line of
 uses <http://speckit-ws.speckit-workshop.wp:8000/docs>. Then try it like
 a real pet store: create a pet with stock 1, place an order for it,
 then place a second order for the same pet. Whether that second order
-**fails in the UI** - or is silently accepted - is the flaw made
-visible. Write down what you see; the debrief will compare notes.
+**fails in the UI** - or is silently accepted - is the $64,000,000 question.
 
-## Checkpoint 3 (26 min): the non-trivial requirement, or the loop closing
+## Converge
 
-Now run the loop's hard check again - the converge step re-reads the
+Now run the loop's converge check again - the converge step re-reads the
 spec and compares the code to it:
 
 ```
@@ -104,8 +88,7 @@ Two outcomes:
 
 - **The loop closes**: converge reports the implementation matches the
   spec. Your tests assert the invariant, the code enforces it, and
-  converge finds no gap. The feature is done. *This is the ideal outcome
-  and the payoff.*
+  converge finds no gap. The feature is (hopefully) done.
 - **The loop re-enters**: converge points at a missing test or gap in the
   code. A common one: the spec says "must not go below zero" but the
   implementation decrements stock without checking availability first -
@@ -114,14 +97,13 @@ Two outcomes:
   missing task ("write a test asserting an order for zero-stock fails")
   and you re-run implement and converge.
 
-**Either** outcome is a successful exercise. The point is the *loop's*
-behavior: it does not let "the tests pass" stand in for "the requirement
-is met."
+**Either** outcome is a successful exercise. The loop does not let "the tests
+pass" stand in for "the requirement is met."
 
-## Debrief (28 min): what just happened
+## Summary
 
 The demonstrable lesson of this phase is that **specs and tests are not
-the same thing, and the loop keeps them honest with each other**:
+the same thing, and the loop keeps them consistent with each other**:
 
 - The spec is the *requirement* (stock must not go below zero).
 - The tests are the *assertions* (the invariant is checked).
@@ -130,38 +112,36 @@ the same thing, and the loop keeps them honest with each other**:
 
 A naive implementation - "place an order, decrement stock, done" - passes
 tests that only check the happy path, but violates the spec. The loop
-catches it exactly because the *requirement* was stated independently of
+catches it because the *requirement* was stated independently of
 the code. If you had just told the agent "write an order endpoint," the
 agent would have produced the happy-path implementation, the tests would
 have passed, and nobody would have noticed the drain below zero until
 production.
 
-The loop does not prevent you from writing a bad spec - no process does.
+The loop does not prevent you from writing a bad spec.
 But it makes a *bad or incomplete spec* visible, because the loop's last
 step checks the code against the spec you wrote, and it refuses to call
 it done when the two disagree.
 
-One more gap this exercise can expose: out of the box, Spec Kit treats
-test tasks as optional, so a tasks list can omit them - the requirement
-is then asserted only if the implementer writes tests on its own
-initiative. This project's
-[`new-project-template/`](new-project-template/) closes that gap with
-teeth: its constitution principle 8 makes test coverage mandatory, its
-tasks template states tests are required, and a hook checks the test
-list before tasks and converge.
+One more gap this exercise can expose: out of the box, Spec Kit treats test
+tasks as optional, so a tasks list can omit them - the requirement is then
+asserted only if the implementer writes tests on its own initiative. This
+project's [`new-project-template/`](new-project-template/) closes that gap: its
+constitution principle 8 makes test coverage mandatory, its tasks template
+states tests are required, and a hook checks the test list before tasks and
+converge.
 
 ## If you finish early
 
 Add one more requirement to the order feature and run the loop again, for
 example: *"An order that has not been canceled must not be modified after
 it is placed."* Watch how the loop carries that requirement through to
-converge. This is a positive exercise - it shows how a *complete* spec
-produces *verified* code.
+converge. It shows how a *complete* spec  produces *verified* code.
 
 Or, for fun (explicitly **outside** the loop): ask the agent, in a fresh
-non-spec-kit session, to add a single `index.html` storefront page served
-by FastAPI (`StaticFiles`) that lists the pets and places orders against
-the API. Hand-written for fun, it does not enter the requirements chain -
+non-spec-kit session, to add a single `index.html` storefront page served by
+FastAPI (`StaticFiles`) that lists the pets and places orders against the API.
+Because it's hand-written for "fun", it does not enter the requirements chain -
 notice the contrast with everything you just did through the loop.
 
-Next: [reference](05-reference.md) and [what's next](06-whats-next.md).
+Next: [what's next](05-whats-next.md) and [reference](06-reference.md).

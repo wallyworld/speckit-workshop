@@ -1,8 +1,4 @@
-# 06 - What's Next: Extensions, Presets, Phasing
-
-Where to go after the workshop. This page is deliberately short - it
-points at concepts and the official upstream docs, not re-implements them
-(which keeps it from going stale as the product evolves).
+# 05 - What's Next: Extensions, Presets, Phasing
 
 ## Extensions
 
@@ -93,12 +89,3 @@ fill-in workflow.
 - The [community extension
   catalog](https://github.github.io/spec-kit/community/extensions.html)
   for workflow shapes.
-
-## Close-out questions
-
-- Why did the order-placement flaw survive a happy-path test suite?
-- What does converge add that a plain "run the tests" loop does not?
-- What would you change in the loop if your team used it for a large,
-  long-lived codebase next quarter?
-
-That is the workshop. Thank you for building with Spec Kit.

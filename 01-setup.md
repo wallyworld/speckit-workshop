@@ -5,10 +5,10 @@ with the pet store empty skeleton.
 
 ## 1.0 Launch your workshop environment
 
-This workshop runs inside a workshop container: a fresh Ubuntu 24.04
+This workshop runs inside a LXC container. This is a fresh Ubuntu 24.04
 environment the `workshop` CLI builds from this repository's definition
 (`.workshop/speckit-ws.yaml`). Your host needs git, snap, and the
-workshop CLI; everything else is provisioned inside.
+workshop CLI; everything else is provisioned inside the container.
 
 From a clone of this repository on your host:
 
@@ -29,11 +29,11 @@ Then connect:
 workshop shell
 ```
 
-You land in a byobu session (a tmux front-end with a status bar) as
-user `workshop`, with this repository's materials mounted at `/project`.
-Everything from here on happens inside this container. Your build work
-goes in your home directory (`~`), not `/project` - that is the shared
-workshop material.
+You land in a byobu session, as user `workshop`, with this repository's
+materials mounted at `/project`. Everything from here on happens inside this
+container. Your build work goes in your home directory (`~`), not `/project`,
+which is the shared workshop material, not the petstore this workshop is
+building.
 
 ## 1.1 Install the `specify` CLI
 
@@ -76,7 +76,7 @@ specify init --here --non-interactive --integration opencode --force
 Notes:
 
 - `--here` initializes in the current directory.
-- `--non-interactive` and `--force` let it run unattended (ie no picker, no
+- `--non-interactive` and `--force` let it run unattended (ie no picker or
   confirmation prompt). Because `git init` has already created `.git`, the
   directory is not empty, so `--force` is required here (it makes the
   command idempotent).
@@ -104,10 +104,10 @@ ls .opencode/commands/
 You should see 10 files: `speckit.specify.md`, `speckit.plan.md`,
 `speckit.tasks.md`, `speckit.implement.md`, `speckit.converge.md`, and
 others. These are the slash commands your agent will run. (The OpenCode
-integration creates only `.opencode/commands/` - the ten files above;
-there is no plugin install step. specify's own output suggests adding
+integration creates only `.opencode/commands/`;
+there is no plugin install step. specify's output suggests adding
 `.opencode/` to your `.gitignore` for credential hygiene - optional
-here, the project is throwaway.)
+here, the project is throwaway and the credential comes from elsewhere.)
 
 Open the project in OpenCode and confirm the `/speckit` command surface is
 available: from `~/petstore`, run `opencode`, then in the TUI type `/` and
@@ -115,15 +115,14 @@ confirm the `speckit.*` commands appear. While you are there, confirm
 your model: the input line shows the active model and provider (the
 build indicator, e.g. `Build · <model> OpenRouter`). If it shows a
 model you cannot use - or a provider you have not authenticated - pick
-one that works for you before continuing; the workshop assumes your
-agent can generate.
+one that works for you before continuing.
 
 Also confirm there are **no** `REQUIREMENTS.md` or `ROADMAP.md` files at
 the project root. There should not be. Spec Kit's core is
 one-feature-at-a-time; the "phased delivery" concept (a requirements
 source, a roadmap mapping many features) is a layer some larger projects
 add *on top of* this core - the workshop will show you the core first, and
-the [What's next](06-whats-next.md) page mentions the phased layer.
+the [What's next](05-whats-next.md) page mentions the phased delivery layer.
 
 ## 1.4 (For the hands-on) Set up the pet store app dependencies
 
@@ -145,13 +144,13 @@ Confirm the venv works before moving on:
 uv run pytest --version
 ```
 
-`uv run` runs a command inside the project's `.venv` - it is the one
-canonical way to run the tests throughout the workshop, because it works
-without activating the venv (the agent's shell is not activated).
+`uv run` runs a command inside the project's `.venv` and is used to
+run the tests throughout the workshop because it works
+without activating the venv itself.
 
 > If `uv venv` complains that no Python interpreter was found, install
 > one explicitly first:
-> `uv python install 3.12 && uv venv --python 3.12`
+> `uv python install 3.14 && uv venv --python 3.14`
 
 ## Summary
 

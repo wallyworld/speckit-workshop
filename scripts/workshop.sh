@@ -2,7 +2,7 @@
 
 set -e -u -o pipefail
 
-# The workshop name is the definition file's name (.workshop/<name>.yaml);
+# NB: the workshop name is the definition file's name (.workshop/<name>.yaml);
 # it keys the tool's image cache, so it is per-project. Derived from the
 # single definition present; set WORKSHOP_NAME to override (for example,
 # in a tree with more than one definition).

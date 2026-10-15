@@ -39,12 +39,11 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 |---|---|---|
 | 1 | [Setup](01-setup.md) | Launch the workshop container, install the CLI, create an empty project, confirm the commands are live |
 | 2 | [Core concepts](02-core-concepts.md) | The agentic loop, the artifacts, the commands, where validation fires |
-| 3 | [The loop, demoed](03-the-loop.md) | Instructor runs the full loop on a pet catalog |
-| 4 | [Hands-on](04-hands-on.md) | You implement order placement with a non-trivial invariant |
-| 5 | [What's next](06-whats-next.md) | Extensions, presets, phasing for larger projects |
+| 3 | [The loop](03-the-loop.md) | You implement a basic pet store |
+| 4 | [The refinement](04-the-refinement.md) | You implement order placement with a non-trivial requirement |
+| 5 | [What's next](05-whats-next.md) | Extensions, presets, phasing for larger projects |
 
-[05-reference.md](05-reference.md) is the untimed cheat sheet students keep
-at hand; the 78-85 debrief is part of the hands-on phase.
+[06-reference.md](06-reference.md) is the cheat sheet students keep at hand.
 
 ## Learning objectives
 
@@ -56,7 +55,7 @@ By the end you will be able to:
 3. Explain where and how "validation" actually fires (converge's
    check-the-code-against-the-spec step).
 4. Identify why requirements-first beats vibe-implement-and-hope, using
-   a real validation flaw you will hit in the hands-on phase.
+   a real validation flaw you will hit in the refinement phase.
 5. Know what to read next: extensions, presets, and how larger projects
    layer phased delivery.
 
@@ -67,19 +66,10 @@ By the end you will be able to:
 | 0-8 | What Spec Kit is; the loop; why it exists | TL;DR above + diagram |
 | 8-18 | Setup ([01-setup.md](01-setup.md)) | Instructor + you follow |
 | 18-30 | Core concepts ([02-core-concepts.md](02-core-concepts.md)) | Explain |
-| 30-50 | Demo: full loop on pet catalog ([03-the-loop.md](03-the-loop.md)) | Instructor demo (pre-run, played back or narrated) |
-| 50-78 | Hands-on: order placement with the non-trivial invariant ([04-hands-on.md](04-hands-on.md)) | You build |
+| 30-50 | Loop: full loop on pet catalog ([03-the-loop.md](03-the-loop.md)) | Hands on |
+| 50-78 | Refinement: order placement with the non-trivial requirement ([04-the-refinement.md](04-the-refinement.md)) | Hands on |
 | 78-85 | Debrief: what the loop caught in the room | Group |
-| 85-90 | Extensions, phasing note, Q&A ([06-whats-next.md](06-whats-next.md)) | Instructor |
-
-## How to use these materials
-
-- **Self-paced**: work through [01](01-setup.md) through [04](04-hands-on.md)
-  in order. The demo ([03](03-the-loop.md)) reads as a walkthrough; follow
-  it in your own repo.
-- **Reference**: [05-reference.md](05-reference.md) is the cheat sheet -
-  commands, artifacts, glossary, common errors. Point students at it
-  during the hands-on phase.
+| 85-90 | Extensions, phasing note, Q&A ([05-whats-next.md](05-whats-next.md)) | Instructor |
 
 ## The project you will build: a pet store
 
@@ -89,12 +79,12 @@ description you will work from includes a deliberately sharp edge, stated
 as flat requirements: placing an order for a pet that is no longer
 available **must fail**, and an order **may not** drive a pet's stock
 below zero. There is a right way and a wrong way to implement that - the
-hands-on phase is about letting the loop tell you which is which.
+refinement phase is about letting the loop tell you which is which.
 
 ## After the workshop
 
-- `05-reference.md`: the cheat sheet for future sessions.
-- `06-whats-next.md`: extensions (bug-fixing, assess, community catalog),
+- `06-reference.md`: the cheat sheet for future sessions.
+- `05-whats-next.md`: extensions (bug-fixing, assess, community catalog),
   presets, bundles, and a generic note on phased delivery for larger
   projects, seeded in full by
   [`new-project-template/`](new-project-template/).
