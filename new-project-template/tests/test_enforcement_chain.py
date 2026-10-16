@@ -397,6 +397,7 @@ TASKS_CHECKLIST_RULES = (
     ("validator", "malformed"),
     ("one-to-N", "partial-failure"),
     ("semantic", "violation class"),
+    ("failure boundaries", "failure class"),
 )
 
 

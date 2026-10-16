@@ -30,7 +30,7 @@ provides:
       description: "Plan checklist (escape hatches need requirement authority, thresholds are operationalized, every MUST has a task, boundaries are specified: raise to catcher, fail-closed positive-path tests, wire-format fixtures, command-surface tests on their real invocation path, validator malformed-input cases); fires as the before_plan hook."
     - name: speckit.requirements.tasks-checklist
       file: commands/speckit.requirements.tasks-checklist.md
-      description: "Tasks checklist (enum grounding in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, and semantic checks enumerating every violation class); fires as the before_tasks, before_implement, and before_converge hooks."
+      description: "Tasks checklist (enum grounding in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, and semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes); fires as the before_tasks, before_implement, and before_converge hooks."
     - name: speckit.requirements.diff-review
       file: commands/speckit.requirements.diff-review.md
       description: "Independent diff review: commission a fresh-context reviewer with only the goal, the applicable checklists, and the implementation diff, fix every finding, and re-run until a clean pass; fires as the after_implement hook."
@@ -67,7 +67,7 @@ hooks:
       their real invocation path), positive-path fixtures for
       fail-closed behaviors, malformed inputs in validator matrices,
       one-to-N refactors carrying per-entity and partial-failure
-      tests, and semantic checks enumerating every violation class)
+      tests, and semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes)
       before task generation
     prompt: Execute the tasks checklist and apply it while generating
       tasks. Report PASS or the violations before tasks.md is considered done.
@@ -81,7 +81,7 @@ hooks:
       their real invocation path), positive-path fixtures for
       fail-closed behaviors, malformed inputs in validator matrices,
       one-to-N refactors carrying per-entity and partial-failure
-      tests, and semantic checks enumerating every violation class)
+      tests, and semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes)
       to the work being implemented
     prompt: Before implementing the batch of tasks, apply the tasks
       checklist to the changes and tests about to be written - not only to
@@ -138,7 +138,7 @@ hooks:
       path), positive-path fixtures for fail-closed behaviors,
       malformed inputs in validator matrices,
       one-to-N refactors carrying per-entity and partial-failure
-      tests, and semantic checks enumerating every violation class)
+      tests, and semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes)
     prompt: When appending convergence tasks, apply the tasks checklist -
       append at the bottom under a new phase, never renumber or retitle,
       ground any enum-extending task in source and existing checkers, and

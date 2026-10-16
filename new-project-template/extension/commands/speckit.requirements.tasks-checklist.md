@@ -1,5 +1,5 @@
 ---
-description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, and semantic checks enumerating every violation class."
+description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes."
 ---
 
 # Tasks checklist
@@ -54,9 +54,18 @@ in skills mode and as the `review-tasks` gate in workflow mode.
 8. **Semantic checks enumerate every violation class.** A cross-field or
    cross-collection check states its invariant as a closed relation before
    implementation - no undeclared or extra entries and no missing ones,
-   nothing invalid accepted and nothing valid rejected - and ships one
-   known-bad fixture per violation class. A single negative fixture proves
-   one direction of a relation, never the check.
+   nothing invalid accepted and nothing valid rejected - and derives the
+   classes from everything the invariant protects and every consumer that
+   depends on it (identity, ownership, evidence), not only the fields the
+   change names. One known-bad fixture per violation class; a single
+   negative fixture proves one direction of a relation, never the check.
+9. **Failure boundaries enumerate their wrapped calls' failure classes.** A
+   boundary that catches, rolls back, or retries (a try/except around a
+   sequence of calls, a cleanup handler, a rollback) lists every failure
+   class the wrapped calls can raise, derived from the callees and their
+   callees, not from the failure that was observed: a class left out is a
+   silent fail-open. Each handled class carries a known-bad fixture that
+   drives the boundary and asserts its effect.
 
 The command surfaces and coverage-critical artifact kinds specific to
 this project are recorded in `AGENTS.md`.
