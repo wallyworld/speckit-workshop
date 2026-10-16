@@ -382,6 +382,8 @@ REQ_MUST="$FIX/requirements-must.md"
 REQ_DUP="$FIX/requirements-dup.md"
 REQ_NOIDS="$FIX/requirements-noids.md"
 REQ_EMPTY="$FIX/requirements-empty.md"
+REQ_DUPEMPTY="$FIX/requirements-dup-empty.md"
+REQ_PIPE="$FIX/requirements-pipe.md"
 TMP_GEN=$(mktemp)
 
 # Positive: one non-empty entry per ID (an ID-only line has no phrase field
@@ -427,9 +429,13 @@ else
   bad "no-modal fallback missing"
 fi
 
-# Round-trip through the real consumer: the generated table must pass the
-# verifier's load-time verbatim validation. The spec itself need not be
-# satisfied here; only the phrase table is under test.
+# Round-trip through the real consumer: the generated table must clear the
+# verifier's load-time verbatim validation. The spec is not required to
+# verify clean - its curated phrases differ from the generated long-sentence
+# ones, so a DRIFT verdict (exit 1) is expected. What must not happen is a
+# phrase-validation death: the verifier reports that before its
+# "Requirement traceability" report header, so the header proves the table
+# loaded. An exit outside {0 clean, 1 findings} is an infrastructure failure.
 if bash "$EXTRACT" "$REQ_TRACE" -o "$TMP_GEN" >/dev/null 2>&1; then
   ok "extract-phrases succeeds on the traceability fixture requirements"
 else
@@ -439,10 +445,14 @@ OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
   SPECKIT_PHRASES_FILE="$TMP_GEN" \
   SPECKIT_SPECS_ROOT="$FIX" \
   bash "$VERIFY" "$FIX/spec-traceable.md" 2>&1); RC=$?
-case "$OUT" in
-  *"not verbatim wording"*) bad "generated phrases fail the verifier's verbatim validation" ;;
-  *) ok "generated phrases pass the verifier's verbatim load-time validation" ;;
-esac
+if [ "$RC" -ne 0 ] && [ "$RC" -ne 1 ]; then
+  bad "verifier exited $RC (unexpected); generated table or harness broken: $OUT"
+elif printf '%s' "$OUT" | grep -q "Requirement traceability" \
+     && ! printf '%s' "$OUT" | grep -q "not verbatim wording"; then
+  ok "generated phrases pass the verifier's verbatim load-time validation"
+else
+  bad "generated phrases failed the verifier's load-time validation: $OUT"
+fi
 
 # Negative paths: each failure must be actionable.
 OUT=$(bash "$EXTRACT" "$FIX/does-not-exist.md" 2>&1); RC=$?
@@ -452,6 +462,26 @@ assert_contains "extract-phrases missing-file message actionable" "requirements 
 OUT=$(bash "$EXTRACT" "$REQ_DUP" 2>&1); RC=$?
 assert_failure "extract-phrases rejects duplicate requirement IDs"
 assert_contains "extract-phrases duplicate-ID message actionable" "duplicate definition"
+
+OUT=$(bash "$EXTRACT" "$REQ_DUPEMPTY" 2>&1); RC=$?
+assert_failure "extract-phrases rejects a duplicate whose first definition is empty"
+assert_contains "extract-phrases empty-first duplicate message actionable" "duplicate definition"
+
+# A phrase carrying the table's field separator would corrupt the phrases
+# file: the fields are pipe-delimited, so a pipe inside a phrase is a hard
+# error, never a silent extra column.
+OUT=$(bash "$EXTRACT" "$REQ_PIPE" 2>&1); RC=$?
+assert_failure "extract-phrases rejects a phrase containing the table delimiter"
+assert_contains "extract-phrases pipe message actionable" "contains '|'"
+
+# An in-place run (-o the requirements source) would destroy REQUIREMENTS.md;
+# it must be refused. The copy keeps the fixture safe if the guard regresses.
+TMP_REQ=$(mktemp)
+cp "$REQ_OK" "$TMP_REQ"
+OUT=$(bash "$EXTRACT" "$TMP_REQ" -o "$TMP_REQ" 2>&1); RC=$?
+assert_failure "extract-phrases refuses to overwrite the requirements file"
+assert_contains "extract-phrases overwrite-guard message actionable" "refusing to overwrite"
+rm -f "$TMP_REQ"
 
 OUT=$(bash "$EXTRACT" "$REQ_NOIDS" 2>&1); RC=$?
 assert_failure "extract-phrases rejects a file with no requirement IDs"

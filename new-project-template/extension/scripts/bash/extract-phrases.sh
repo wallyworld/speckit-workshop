@@ -100,19 +100,27 @@ fi
 
 [ -f "$REQ_FILE" ] || die "requirements file not found: $REQ_FILE"
 
+# Refuse to overwrite the requirements source with generated phrases: an
+# in-place run (-o pointing at the same file) would destroy REQUIREMENTS.md.
+if [ -n "$OUTPUT_FILE" ] && [ -f "$OUTPUT_FILE" ] && [ "$OUTPUT_FILE" -ef "$REQ_FILE" ]; then
+  die "refusing to overwrite the requirements file with generated phrases: $OUTPUT_FILE"
+fi
+
 # ---------------------------------------------------------------------------
 # Parse REQUIREMENTS.md stable bullet IDs -> exact full text.
 # ---------------------------------------------------------------------------
 declare -A REQ_TEXT=()
+declare -A REQ_SEEN=()
 declare -a REQ_ORDER=()
 cur_id=""
 cur_buf=""
 
 flush_req() {
   [ -n "$cur_id" ] || return 0
-  if [ -n "${REQ_TEXT[$cur_id]:-}" ]; then
+  if [[ -n "${REQ_SEEN[$cur_id]:-}" ]]; then
     die "REQUIREMENTS has duplicate definition for requirement ID '$cur_id'"
   fi
+  REQ_SEEN[$cur_id]=1
   REQ_ORDER+=("$cur_id")
   REQ_TEXT[$cur_id]=$(trim "$cur_buf")
   cur_id=""
@@ -181,6 +189,9 @@ for id in "${REQ_ORDER[@]}"; do
   if [ -n "$phrase1" ]; then
     p1_lower=$(tr '[:upper:]' '[:lower:]' <<<"$phrase1")
     if [[ $text_lower == *"$p1_lower"* ]]; then
+      case "$phrase1" in
+        *"|"*) die "extracted phrase for requirement '$id' contains '|', which would corrupt the phrases table: $phrase1" ;;
+      esac
       line_out="$line_out|$phrase1"
     fi
   fi
@@ -189,6 +200,9 @@ for id in "${REQ_ORDER[@]}"; do
     p2_lower=$(tr '[:upper:]' '[:lower:]' <<<"$phrase2")
     wcount2=$(wc -w <<<"$phrase2")
     if [ "$wcount2" -ge 2 ] && [[ $text_lower == *"$p2_lower"* ]]; then
+      case "$phrase2" in
+        *"|"*) die "extracted phrase for requirement '$id' contains '|', which would corrupt the phrases table: $phrase2" ;;
+      esac
       line_out="$line_out|$phrase2"
     fi
   fi

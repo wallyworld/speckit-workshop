@@ -53,11 +53,12 @@ EXCLUDED_FILES = {
 # everything under specs/ and extensions/ is project-produced and scanned;
 # the extension-provided templates live in the tracked extension source and
 # are scanned with it. The integration-installed skill trees
-# (.github/skills, .claude/skills) are excluded because the project-created
-# skills in them are kept identical to the scanned extension commands by the
-# prose-sync test, while the upstream core skills may contain em dashes;
-# each integration installs to its own tool directory (.opencode/commands,
-# .claude/skills, .github/skills), so exclude the directory per tool.
+# (.github/skills, .claude/skills, .agents/skills) are excluded because the
+# project-created skills in them are kept identical to the scanned extension
+# commands by the prose-sync test, while the upstream core skills may contain
+# em dashes; each integration installs to its own tool directory
+# (.opencode/commands, .claude/skills, .github/skills, .agents/skills), so
+# exclude the directory per tool.
 EXCLUDED_PREFIXES = (
     ".specify/scripts/",
     ".specify/templates/",
@@ -68,6 +69,7 @@ EXCLUDED_PREFIXES = (
     ".specify/feature.json",
     ".specify/init-options.json",
     ".specify/integration.json",
+    ".agents/skills/",
     ".github/skills/",
     ".claude/skills/",
     ".opencode/commands/speckit.",
