@@ -27,7 +27,9 @@ in skills mode and as the `review-tasks` gate in workflow mode.
    function, configurable behaviour, validator, and query or report
    surface has a test, written before the implementation it covers,
    and every new or re-scoped checker or probe ships a known-good
-   fixture that must pass and a known-bad fixture that must fail.
+   fixture that must pass and a known-bad fixture that must fail. A
+   checker's known-bad fixture exercises the claim it actually makes -
+   its marker and docstring semantics - not only a neighbouring failure.
 4. **Boundary tests are first-class tasks.** Every task that adds a raise
    names the handler that catches it and carries a task driving the
    exception through that handler; every new command surface carries a
@@ -43,7 +45,15 @@ in skills mode and as the `review-tasks` gate in workflow mode.
 6. **Validator matrices include malformed inputs.** Every new validator's
    test matrix includes schema-valid-but-malformed inputs (wrong types,
    non-numeric strings, empty, duplicates), not only the happy and
-   rejected shapes.
+   rejected shapes. A semantic or cross-field validator that runs on
+   documents the schema may already have rejected carries a no-raise
+   matrix: malformed container shapes (a scalar where a list or mapping
+   belongs) must surface as validation errors, never as exceptions. A
+   pattern rule implemented on more than one surface (a schema pattern
+   and a runtime guard) carries a cross-surface matrix that injects every
+   character outside the rule's allowed class at the start, middle, and
+   end and asserts every surface rejects it, so anchoring and
+   line-terminator edge semantics are tested, not assumed.
 7. **One-to-N refactors carry per-entity and partial-failure tests.** When a
    change moves an operation from a single entity to many (one candidate to
    a list, one target to a set, one step to a sequence), the task carries a
@@ -57,8 +67,13 @@ in skills mode and as the `review-tasks` gate in workflow mode.
    nothing invalid accepted and nothing valid rejected - and derives the
    classes from everything the invariant protects and every consumer that
    depends on it (identity, ownership, evidence), not only the fields the
-   change names. One known-bad fixture per violation class; a single
-   negative fixture proves one direction of a relation, never the check.
+   change names. A field the schema leaves optional because some states do
+   not carry it is still required by the check for every state that does,
+   and external-response classification matches the raw response at its
+   boundary rather than searching formatted or wrapped text, where one
+   response can embed another. One known-bad fixture per violation class;
+   a single negative fixture proves one direction of a relation, never the
+   check.
 9. **Failure boundaries enumerate their wrapped calls' failure classes.** A
    boundary that catches, rolls back, or retries (a try/except around a
    sequence of calls, a cleanup handler, a rollback) lists every failure

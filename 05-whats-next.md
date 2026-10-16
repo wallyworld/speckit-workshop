@@ -90,8 +90,9 @@ To see what this looks like for the pet store you built during the workshop, see
   **retrofit** these files into your `~/petstore` project, reconcile your existing
   Phase 1 sub-specs, and build the Phase 2 Web UI (`R3`).
 
-The full tooling mechanics - requirements verifiers, moment-of-authoring hooks,
-and review gates - ship ready-made in
+The full tooling mechanics - requirements verifiers, moment-of-authoring hooks
+(including the independent diff review after implement), and review gates -
+ship ready-made in
 [`new-project-template/`](new-project-template/) in this repository: it
 seeds exactly this model - requirements source, roadmap map, requirement
 phrases and requirement digests - together with tooling that verifies

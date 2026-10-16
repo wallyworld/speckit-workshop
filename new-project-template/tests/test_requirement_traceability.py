@@ -94,6 +94,7 @@ _SKILL_COMMAND_PAIRS = {
     "speckit-requirements-plan-checklist": "speckit.requirements.plan-checklist.md",
     "speckit-requirements-tasks-checklist": "speckit.requirements.tasks-checklist.md",
     "speckit-requirements-remediation-loop": "speckit.requirements.remediation-loop.md",
+    "speckit-requirements-diff-review": "speckit.requirements.diff-review.md",
 }
 _PLUMBING_TOKENS = ("assemble-brief.sh", "verify-traceability.sh", "{SCRIPT}")
 

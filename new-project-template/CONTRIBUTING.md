@@ -136,27 +136,91 @@ roadmap's Sub-spec link after core Specify creates the feature directory.
 
 ## Reviews
 
-The enforcement hooks fire automatically around Spec Kit's core
-commands (see [AGENTS.md](AGENTS.md#where-enforcement-fires) for the
-full map) - `/speckit-requirements-plan-checklist` before plan,
-`/speckit-requirements-tasks-checklist` before tasks and converge,
-`/speckit-requirements-verify` before analyze and converge,
-`/speckit-requirements-remediation-loop` after analyze. The checklists
-name universal rules; this project's instances are recorded in
-[`AGENTS.md`](AGENTS.md) ("Project checklist instances").
+Feature specifications must align with their roadmap entry and state their
+scope boundary. Use `/speckit-analyze` after task generation to check
+consistency across the feature artifacts. Analysis findings are remediated
+through `/speckit-requirements-remediation-loop`, which fires automatically
+as the mandatory `after_analyze` hook: every hook is declared in the
+extension manifest (`extensions/requirements/extension.yml`) and registered
+into `.specify/extensions.yml` at install time, so a reinstall can never
+drop the enforcement checks; `make test` asserts the registrations.
 
-Review generated tasks before implementation. After implementation,
-review the complete working tree against the product requirements and
-the feature acceptance criteria. If you make corrections, review the
-corrected tree again.
+The enforcement hooks are carried by the extension's checklist commands:
 
-The workflow overlay
-(`.specify/workflows/overlays/speckit/review-gates.yml`) mirrors
-the same checks as review gates when you run the native workflow:
+- `/speckit-requirements-plan-checklist` (mandatory `before_plan` hook):
+  design opt-outs cite the requirement wording that authorizes them,
+  qualitative thresholds carry operational definitions, every MUST the
+  plan relies on has a task that builds it, and boundaries are specified:
+  every raise names the handler that catches it, every fail-closed
+  behavior its positive-path test, every parser delta its wire-format
+  fixture evidence, every new command surface a test on its real
+  invocation path, and every validator its malformed-input cases.
+- `/speckit-requirements-tasks-checklist` (mandatory `before_tasks`,
+  `before_implement`, and `before_converge` hooks): tasks that extend an
+  enum or register are grounded in current source values and existing
+  checkers, task IDs are sequential in execution order (renumber freely
+  before implementation; append-only after), and tests are written first
+  with known-bad fixtures; the boundary rules apply to every task: a raise
+  names the handler that catches it with a test driving the exception
+  through, every new command surface carries a test on its real invocation
+  path, fail-closed behaviors carry positive-path fixture tests, and
+  validator matrices include malformed inputs. At `before_implement` the
+  rules are applied to the changes and tests being written, not only the
+  task text.
+- `/speckit-requirements-diff-review` (mandatory `after_implement` hook):
+  commissions an independent fresh-context review of the implementation
+  diff before the work is reported done.
+- `/speckit-requirements-remediation-loop` (mandatory `after_analyze`
+  hook): the analysis remediation loop.
+- `/speckit-requirements-verify` (mandatory `before_analyze` and
+  `before_converge` hooks): requirement-phrase traceability of Completes
+  claims.
+
+The checklists name universal rules; this project's command
+surfaces and coverage-critical artifact kinds (the checklists' project
+instances) are recorded in [`AGENTS.md`](AGENTS.md) ("Project checklist
+instances"; fill them in, the unfilled-marker test enforces it).
+
+Style rules enforced by the test suite:
+
+- **No em dashes (U+2014) in project-produced artifacts.** Use a hyphen
+  instead. `tests/test_style.py` scans everything the project produces
+  (including `specs/` and the extension) and excludes only upstream Spec Kit
+  content and runtime output.
+
+Review generated tasks before implementation. After implementation, review the
+complete working tree against the product requirements and the feature
+acceptance criteria. If you make corrections, review the corrected tree again.
+
+The project overlays review gates onto the native workflow
+(`.specify/workflows/overlays/speckit/review-gates.yml`), mirroring the
+extension commands above:
+
+- `review-coverage` (after `specify`) mirrors
+  `/speckit-requirements-verify` before human sign-off.
+- `review-plan-checklist` (after `plan`) mirrors
+  `/speckit-requirements-plan-checklist`.
+- `review-tasks` (after `tasks`) mirrors
+  `/speckit-requirements-tasks-checklist`.
+- `review-implement-checklist` (after `tasks`, applied to the changes being
+  written) mirrors `/speckit-requirements-tasks-checklist`.
+- `review-diff` (after `implement`) commissions an independent
+  fresh-context review of the implementation diff via
+  `/speckit-requirements-diff-review` before the work is reported done.
+- `review-final-tree` (after `implement`) confirms each Completed RQ ID
+  has realizing implementation, that baseline-completed invariants still
+  hold, and that no Advances-only RQ is claimed complete; if findings are
+  fixed, rerun the gate against the corrected tree.
+
+The gates apply when you run the native workflow command:
 
 ```bash
 specify workflow run speckit -i "spec=<feature outcome>"
 ```
+
+Working skill by skill, the same rules arrive through the mandatory
+hooks: every `speckit-*` skill reads `.specify/extensions.yml` and executes
+its registered hooks at the matching lifecycle points.
 
 ## Running tests
 

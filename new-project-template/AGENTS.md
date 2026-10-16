@@ -41,19 +41,22 @@ which invocation is the single definition of done.
 
 - `make test` (and CI running the same): the traceability verifier over
   every committed spec, the extension bash suite, the style gate, the
-  enforcement-chain mirror tests (hook registrations, checklist rules surviving
-  into every mirror, domain neutrality of the seedable checklists, the
-  project checklist instances below), and the workshop-action sync test
+  enforcement-chain mirror tests (hook registrations with their full firing
+  shape, checklist rules surviving into every mirror, the manifest
+  descriptions' firing surfaces matching the hook registrations, domain
+  neutrality of the seedable checklists, the project checklist instances
+  below), and the workshop-action sync test
   (the `.workshop/` definition's actions name real Makefile targets;
   every public Makefile target is exposed as an action or allowlisted
   with a reason).
 - Skills mode: the hooks registered in `.specify/extensions.yml` inject
-  the checklists before plan, tasks, and converge, run the traceability
-  verifier before analyze and converge, and enforce the analysis
-  remediation loop after analyze.
+  the checklists before plan, tasks, implement, and converge, run the
+  traceability verifier before analyze and converge, commission an
+  independent fresh-context diff review after implement, and enforce the
+  analysis remediation loop after analyze.
 - Workflow mode (`specify workflow run speckit`): the coverage,
-  plan-checklist, tasks, and final-tree checks fire as review gates in the
-  workflow overlay. The bundled workflow has no analyze or converge step,
+  plan-checklist, tasks, implement-checklist, diff-review, and final-tree
+  checks fire as review gates in the workflow overlay. The bundled workflow has no analyze or converge step,
   so the `before_analyze`, `after_analyze`, and `before_converge` hooks have
   no gate counterpart and fire in skills mode only.
 - Acceptance: a human confirms every `Completes` claim (a roadmap row's

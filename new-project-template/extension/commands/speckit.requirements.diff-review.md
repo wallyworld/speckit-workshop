@@ -26,8 +26,14 @@ belief that the change is correct is not evidence.
    every constraint the change introduces (no undeclared or extra
    entries and no missing ones, nothing invalid accepted and nothing
    valid rejected), per-entity behaviour when an operation spans many
-   entities, and tests exercised on the real invocation path. Findings
-   cite the probe that shows them.
+   entities, tests exercised on the real invocation path, every
+   declarative claim in the changed text - docstrings, comments, marker
+   and suffix semantics, type assertions, error messages, documentation
+   sentences - checked against the implementation, because the author's
+   prose and code share one mental model, and every dereference applied
+   to data from an external response, transitively from the parse
+   boundary (a nested default is absence handling, not a shape check).
+   Findings cite the probe that shows them.
 3. **Fix and re-run until clean.** Correct each finding, then re-run
    the review on the updated diff with a fresh reviewer context. Do not
    rationalize a finding away; a disputed finding is re-derived, not

@@ -78,6 +78,17 @@ cp /project/examples/petstore/phrases.txt ~/petstore/extensions/requirements/dat
 items. To draft phrases instead of copying the curated file, see the note
 under "Verify Requirement Traceability" below.)
 
+Bootstrap also installs the **enforcement layer**, so the R3 build below
+runs under it: mandatory checklists fire around specify, plan, tasks,
+implement, analyze, and converge; the `after_implement` hook commissions
+an independent fresh-context review of the implementation diff
+(`/speckit-requirements-diff-review`) before the agent reports the work
+done; and in workflow mode the same checks appear as approve/reject
+review gates (`review-coverage`, `review-plan-checklist`, `review-tasks`,
+`review-implement-checklist`, `review-diff`, `review-final-tree`). The
+[template README](../../new-project-template/README.md) documents each
+check.
+
 If you skip this step, the Phase 2 build below still works; only the final
 verification step is unavailable.
 
@@ -140,7 +151,10 @@ Address any design questions (e.g. styling preferences or component layout).
 ```
 
 The agent writes the HTML/JS/CSS frontend, wires up the FastAPI static route or
-index handler, and verifies tests.
+index handler, and verifies tests. With the tooling bootstrapped, the
+`before_implement` checklist applies to the changes being written, and the
+`after_implement` hook then commissions an independent review of the diff
+before the work is reported done.
 
 ### 6. Converge
 
