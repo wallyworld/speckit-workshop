@@ -5,6 +5,10 @@ step. This walkthrough assumes you are inside your workshop container
 ([01](01-setup.md)), in the `~/petstore` project you created there, with
 the agent open and `/speckit` commands available.
 
+> **Command form.** As in [02](02-core-concepts.md), the commands below use
+> OpenCode's dot form; with agy or Copilot use the hyphenated form
+> (`/speckit-specify` in place of `/speckit.specify`).
+
 ## The feature description
 
 We ask the agent to build the *pet catalog* slice of the pet store:
@@ -30,6 +34,15 @@ whether stock is above zero. Placing an order for a pet is out of scope
 for this feature.
 ```
 
+> **Why inline text here?**
+> Spec Kit's core command accepts a description prompt directly
+> (`/speckit.specify <text>`). In this workshop, we pass the description
+> inline so you can see the agent turn raw intent into the first repository
+> artifact (`spec.md`) without extra file-management friction. In production
+> or multi-feature projects, this input is typically assembled from a
+> requirements document (`REQUIREMENTS.md`) and a roadmap - an architecture
+> we explore in [05 - What's Next](05-whats-next.md).
+
 What you should see happen (narrate as you go):
 
 - The agent generates a feature directory: `specs/001-<slug>/` - the slug
@@ -38,7 +51,8 @@ What you should see happen (narrate as you go):
 - Inside it, `spec.md` is created from the spec template.
 - The spec is filled in with: user stories, functional requirements,
   success criteria, edge cases, assumptions. (The run may also produce a
-  checklist and research notes alongside the spec).
+  requirements checklist alongside the spec; `research.md` comes later,
+  from `/speckit.plan`.)
 
 Open `spec.md` and read it: the user stories have priorities, the
 functional requirements are each testable, the agent derived the

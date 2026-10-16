@@ -37,6 +37,11 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 | 5 | `/speckit.implement` | Executes the tasks, writing code | code changes |
 | 6 | `/speckit.converge` | Re-reads spec/plan/tasks, diffs the code against them, and adds any missing work as new tasks | updated `tasks.md` (and the loop repeats) |
 
+> **Command form.** Command names are shown in OpenCode's dot form
+> (`/speckit.specify`). With the agy or Copilot integration the same commands
+> are hyphenated: `/speckit-specify`, `/speckit-clarify`, `/speckit-plan`,
+> `/speckit-tasks`, `/speckit-implement`, `/speckit-converge`.
+
 ## The artifacts
 
 - **`spec.md`** - *what* and *why*. User stories, functional requirements,

@@ -1,6 +1,7 @@
 name: workshop
 base: ubuntu@24.04
 sdks:
+  - name: agy
   - name: copilot
   - name: gh-cli
   - name: opencode
@@ -41,3 +42,7 @@ actions:
   copilot: |
     set -euo pipefail
     copilot "$@"
+
+  agy: |
+    set -euo pipefail
+    agy --mode accept-edits --dangerously-skip-permissions --model gemini-3.8-flash-high "$@"

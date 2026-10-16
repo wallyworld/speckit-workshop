@@ -189,7 +189,7 @@ done <"$ROADMAP_FILE"
 [ "$MATCH_COUNT" -ge 1 ] || die "no ROADMAP row found for ID '$ID'"
 
 # ---------------------------------------------------------------------------
-# Parse requirement-ID lists (comma separated; em dash / empty means none)
+# Parse requirement-ID lists (comma separated; "-" or empty means none)
 # ---------------------------------------------------------------------------
 # parse_id_list CELL LABEL -> populates the global PARSED_IDS array with
 # validated requirement IDs. Calls die (parent-exiting) on a malformed ID so a

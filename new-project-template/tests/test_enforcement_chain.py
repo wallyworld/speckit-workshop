@@ -61,16 +61,31 @@ EXPECTED_HOOKS = {
     ("before_converge", "speckit.requirements.tasks-checklist", False, True, None),
 }
 
-# The vendored core skills this project relies on to surface the hooks, and
-# the hook keys each must still check. If a future re-vendor drops or renames
-# a hook section, the enforcement checks stop being surfaced even though the
-# registrations are intact.
-EXPECTED_SKILL_HOOK_SECTIONS = {
-    "speckit-plan": ("hooks.before_plan",),
-    "speckit-tasks": ("hooks.before_tasks",),
-    "speckit-analyze": ("hooks.before_analyze", "hooks.after_analyze"),
-    "speckit-converge": ("hooks.before_converge",),
+# The hooks the core commands must still surface, by core-command base name.
+# The installer writes the command into whichever integration was chosen at
+# `specify init`, so the surface differs per tool (opencode installs
+# `.opencode/commands/speckit.<name>.md`; copilot, claude, and agy install
+# `<tool>/skills/speckit-<name>/SKILL.md`). If a future re-vendor drops or
+# renames a hook section, the enforcement checks stop being surfaced even
+# though the registrations are intact.
+EXPECTED_HOOK_SECTIONS = {
+    "plan": ("hooks.before_plan",),
+    "tasks": ("hooks.before_tasks",),
+    "analyze": ("hooks.before_analyze", "hooks.after_analyze"),
+    "converge": ("hooks.before_converge",),
 }
+
+
+def _command_surface_paths(name: str) -> list[Path]:
+    """Candidate installed command/skill files for a core command, one per
+    known integration layout. A present path is a surface the active
+    integration installed; the test accepts any of them."""
+    return [
+        ROOT / ".opencode" / "commands" / f"speckit.{name}.md",
+        ROOT / ".github" / "skills" / f"speckit-{name}" / "SKILL.md",
+        ROOT / ".claude" / "skills" / f"speckit-{name}" / "SKILL.md",
+        ROOT / ".agents" / "skills" / f"speckit-{name}" / "SKILL.md",
+    ]
 
 # The project sections the extension-provided templates must contribute when
 # resolved through the full stack (project-local overrides > presets >
@@ -169,27 +184,36 @@ def test_hook_registrations_present():
     )
 
 
-def test_vendored_skills_surface_hooks():
-    """Every vendored core skill this project's hooks ride on still carries
-    its hook-check sections.
+def test_installed_command_surface_surfaces_hooks():
+    """Every installed core command surface this project's hooks ride on still
+    carries its hook-check sections.
 
-    The registrations fire only if the skill instructions surface them: a
-    future re-vendor of the core skills could drop or rename the
+    The registrations fire only if the command instructions surface them: a
+    future re-vendor of the core commands could drop or rename the
     ``hooks.<event>`` keys and the enforcement checks would silently stop
-    being injected. Skips when the core skills are not vendored (a seeded
-    repository that has not adopted the dual-CLI layout)."""
-    if not (SKILLS_DIR / "speckit-plan").is_dir():
-        pytest.skip("core skills not vendored in this project")
+    being injected. Checks whichever integration layout is installed (opencode
+    commands, or copilot/claude/agy skills); skips only when no core command
+    surface is installed at all (a seeded repository before vendoring)."""
+    present = {
+        name: [p for p in _command_surface_paths(name) if p.is_file()]
+        for name in EXPECTED_HOOK_SECTIONS
+    }
+    if not any(present.values()):
+        pytest.skip("no core command surface installed in this project")
     missing: list[str] = []
-    for skill, hook_keys in EXPECTED_SKILL_HOOK_SECTIONS.items():
-        text = (SKILLS_DIR / skill / "SKILL.md").read_text(encoding="utf-8")
+    for name, hook_keys in EXPECTED_HOOK_SECTIONS.items():
+        paths = present[name]
+        if not paths:
+            missing.append(f"speckit-{name}: no installed command surface found")
+            continue
+        text = "\n".join(p.read_text(encoding="utf-8") for p in paths)
         for hook_key in hook_keys:
             if hook_key not in text:
-                missing.append(f"{skill}: missing {hook_key}")
+                missing.append(f"speckit-{name}: missing {hook_key}")
     assert not missing, (
-        "vendored skills no longer surface the hook registrations: "
+        "installed core commands no longer surface the hook registrations: "
         + "; ".join(missing)
-        + "; re-vendor the core skills from the current spec-kit scaffold"
+        + "; re-vendor the core commands from the current spec-kit scaffold"
     )
 
 

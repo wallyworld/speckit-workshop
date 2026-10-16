@@ -1,0 +1,19 @@
+# Curated requirement phrases for the Pet Store application.
+# Format: <ID>|<phrase1>|<phrase2>... (verbatim wording from REQUIREMENTS.md)
+
+CAT-1|adding a pet with a name|non-negative initial stock count
+CAT-2|derive each pet's availability status strictly from whether its stock count is greater than zero|availability status strictly from whether its stock count
+CAT-3|retrieve an individual pet by its unique identifier|return a 404 error if not found
+CAT-4|deleting a pet by its unique identifier
+
+ORD-1|order for an unavailable pet|stock count zero or less|fail with an error response
+ORD-2|successful order|decrease the pet's available stock count by exactly one
+ORD-3|not allow pet stock count to drop below zero|drop below zero under any sequential or concurrent condition
+ORD-4|canceling an open order|restore the pet's available stock count by exactly one
+
+UI-1|render the pet catalog showing name, current stock count|distinct visual badge for availability status
+UI-2|pet creation form with client-side validation|refresh the catalog display immediately upon success
+UI-3|order action for each catalog item|visually disabled whenever stock count is zero
+UI-4|display active orders and provide a cancel action|updates both the order list and the catalog stock count in place
+UI-5|served directly by the FastAPI backend|without requiring an external frontend build pipeline
+

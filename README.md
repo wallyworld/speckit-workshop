@@ -5,8 +5,8 @@ its use. There's also a new project template which can be used to seed
 a new Spec Kit project.
 
 - [The 90-minute workshop](index.md) - this is a hands-on introduction:
-  the `specify -> plan -> tasks -> implement -> converge loop`, demoed
-  on a pet store and practiced on an order-placement feature with a
+  the `specify -> clarify -> plan -> tasks -> implement -> converge loop`,
+  demoed on a pet store and practiced on an order-placement feature with a
   business rule which needs to be accounted for in the solution.
 - [`new-project-template/`](new-project-template/) - a seedable project
   template - a requirements source, a roadmap, and requirement-phrase

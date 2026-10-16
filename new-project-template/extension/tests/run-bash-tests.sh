@@ -375,5 +375,98 @@ else
 fi
 
 echo
+echo "Extractor tests"
+echo "==============="
+EXTRACT="$TESTS_DIR/../scripts/bash/extract-phrases.sh"
+REQ_MUST="$FIX/requirements-must.md"
+REQ_DUP="$FIX/requirements-dup.md"
+REQ_NOIDS="$FIX/requirements-noids.md"
+REQ_EMPTY="$FIX/requirements-empty.md"
+TMP_GEN=$(mktemp)
+
+# Positive: one non-empty entry per ID (an ID-only line has no phrase field
+# and is rejected by the verifier at load time).
+if bash "$EXTRACT" "$REQ_OK" -o "$TMP_GEN" >/dev/null 2>&1; then
+  ok "extract-phrases succeeds on valid requirements (exit 0)"
+else
+  bad "extract-phrases failed on valid requirements"
+fi
+for id in AAA-1 AAA-2 BBB-1 BBB-2 AAA-1a; do
+  if grep -q "^${id}|." "$TMP_GEN"; then
+    ok "extract-phrases emits a non-empty phrase for $id"
+  else
+    bad "extract-phrases missing or empty phrase for $id"
+  fi
+done
+
+# Branch coverage: MUST-clause splitting (comma and "and"), the MUST NOT form,
+# and the no-modal fallback, on a fixture that carries MUST wording.
+if bash "$EXTRACT" "$REQ_MUST" -o "$TMP_GEN" >/dev/null 2>&1; then
+  ok "extract-phrases succeeds on MUST-bearing requirements (exit 0)"
+else
+  bad "extract-phrases failed on MUST-bearing requirements"
+fi
+if grep -q '^M-1|.*record an event with a timestamp.*|.*a source' "$TMP_GEN"; then
+  ok "MUST ... and ... split into two phrases"
+else
+  bad "MUST ... and ... split missing"
+fi
+if grep -q '^M-2|reject duplicates|returning an error code' "$TMP_GEN"; then
+  ok "MUST ..., ... split into two phrases"
+else
+  bad "MUST ..., ... split missing"
+fi
+if grep -q '^M-3|lose acknowledgements under retry' "$TMP_GEN"; then
+  ok "MUST NOT clause emitted without the modal"
+else
+  bad "MUST NOT clause missing"
+fi
+if grep -q '^M-4|.*emit a summary line' "$TMP_GEN"; then
+  ok "no-modal requirement falls back to full text"
+else
+  bad "no-modal fallback missing"
+fi
+
+# Round-trip through the real consumer: the generated table must pass the
+# verifier's load-time verbatim validation. The spec itself need not be
+# satisfied here; only the phrase table is under test.
+if bash "$EXTRACT" "$REQ_TRACE" -o "$TMP_GEN" >/dev/null 2>&1; then
+  ok "extract-phrases succeeds on the traceability fixture requirements"
+else
+  bad "extract-phrases failed on the traceability fixture requirements"
+fi
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$REQ_TRACE" \
+  SPECKIT_PHRASES_FILE="$TMP_GEN" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-traceable.md" 2>&1); RC=$?
+case "$OUT" in
+  *"not verbatim wording"*) bad "generated phrases fail the verifier's verbatim validation" ;;
+  *) ok "generated phrases pass the verifier's verbatim load-time validation" ;;
+esac
+
+# Negative paths: each failure must be actionable.
+OUT=$(bash "$EXTRACT" "$FIX/does-not-exist.md" 2>&1); RC=$?
+assert_failure "extract-phrases rejects a missing requirements file"
+assert_contains "extract-phrases missing-file message actionable" "requirements file not found"
+
+OUT=$(bash "$EXTRACT" "$REQ_DUP" 2>&1); RC=$?
+assert_failure "extract-phrases rejects duplicate requirement IDs"
+assert_contains "extract-phrases duplicate-ID message actionable" "duplicate definition"
+
+OUT=$(bash "$EXTRACT" "$REQ_NOIDS" 2>&1); RC=$?
+assert_failure "extract-phrases rejects a file with no requirement IDs"
+assert_contains "extract-phrases no-IDs message actionable" "no requirements found"
+
+OUT=$(bash "$EXTRACT" "$REQ_EMPTY" 2>&1); RC=$?
+assert_failure "extract-phrases rejects a requirement with no extractable phrase"
+assert_contains "extract-phrases empty-text message actionable" "no candidate phrase"
+
+OUT=$(bash "$EXTRACT" "$REQ_OK" -o 2>&1); RC=$?
+assert_failure "extract-phrases rejects -o without an argument"
+assert_contains "extract-phrases -o message actionable" "missing argument"
+
+rm -f "$TMP_GEN"
+
+echo
 printf 'Summary: %d passed, %d failed\n' "$pass" "$fail"
 [ "$fail" -eq 0 ]

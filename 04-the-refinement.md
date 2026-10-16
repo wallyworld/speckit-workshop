@@ -3,8 +3,10 @@
 This is the refinement phase: you run the same loop on order placement in
 your own project, inside your workshop container ([01](01-setup.md)).
 The feature you will specify contains a verification deliverable for a
-non-trivial requirement. Checkpoints are inline and timed as minutes into
-the phase (target: 28 minutes for the full loop).
+non-trivial requirement.
+
+> **Command form.** Commands use OpenCode's dot form; with agy or Copilot use
+> the hyphenated form (`/speckit-specify` in place of `/speckit.specify`).
 
 ## The feature description you will run
 

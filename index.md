@@ -9,7 +9,8 @@ how to use it to build a small web application with an AI coding agent.
 - **Prerequisites**: a Linux host with git, snap, and the workshop CLI -
   the workshop runs in a container it builds and manages - plus a
   working agent setup on your host: OpenCode (your provider auth and
-  model carry into the container) or GitHub Copilot (log in inside the
+  model carry into the container), Antigravity agy (your Google credentials
+  in `~/.gemini` carry into the container), or GitHub Copilot (log in inside the
   container on first use; its host credential store does not carry).
   Everything else - uv, the `specify` CLI, a virtual environment, the
   pet store skeleton - is provisioned inside the container during setup.

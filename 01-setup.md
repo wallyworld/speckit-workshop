@@ -17,11 +17,12 @@ From a clone of this repository on your host:
 ```
 
 The first run builds the container (a few minutes) and installs the sdks:
-uv, OpenCode, Copilot, and gh. The script also mounts your existing agent
-configuration (`~/.config/opencode`, `~/.copilot`) into the container, so
-your logins carry over, and installs `yq` on your host via snap if it is
-missing (that step asks for sudo). Re-running the script is safe: it
-refreshes the container and only restarts it when a mount is stale.
+uv, OpenCode, Copilot, Antigravity (agy), and gh. The script also mounts
+your existing agent configuration (`~/.config/opencode`, `~/.copilot`,
+`~/.gemini`) into the container, so your logins carry over, and installs
+`yq` on your host via snap if it is missing (that step asks for sudo).
+Re-running the script is safe: it refreshes the container and only restarts
+it when a mount is stale.
 
 Then connect:
 
@@ -86,6 +87,16 @@ Notes:
 - Home rather than `/project`: `/project` is the workshop material,
   shared by every attendee; your project is yours, in `~`.
 
+**Using Antigravity (agy) instead of OpenCode**: run the init with
+`--integration agy`; the same commands install as skills under
+`.agents/skills/speckit-<command>/SKILL.md` (`/speckit-specify`,
+`/speckit-plan`, ...) and you run them inside `agy`. Because `~/.gemini`
+is mounted from your host, your Google authentication and configuration
+carry directly into the container. `agy` in this workshop is pre-configured
+to run with Gemini 3.8 Flash (`gemini-3.8-flash-high`) in autonomous build mode,
+auto-applying diffs and commands without prompt fatigue. You can press
+`Shift+Tab` inside `agy` at any time to toggle into read-only Plan Mode.
+
 **Using Copilot instead of OpenCode**: run the init with
 `--integration copilot`; the same commands install as skills under
 `.github/skills/` (`speckit-specify`, `speckit-plan`, ...) and you run
@@ -98,22 +109,27 @@ run `copilot`, then `/login`, and complete the GitHub device flow.
 Run this and confirm you see the Spec Kit command list:
 
 ```bash
+# For OpenCode:
 ls .opencode/commands/
+
+# Or for Antigravity (agy):
+ls .agents/skills/
+
+# Or for Copilot:
+ls .github/skills/
 ```
 
-You should see 10 files: `speckit.specify.md`, `speckit.plan.md`,
-`speckit.tasks.md`, `speckit.implement.md`, `speckit.converge.md`, and
-others. These are the slash commands your agent will run. (The OpenCode
-integration creates only `.opencode/commands/`;
-there is no plugin install step. specify's output suggests adding
-`.opencode/` to your `.gitignore` for credential hygiene - optional
-here, the project is throwaway and the credential comes from elsewhere.)
+You should see 10 files (or skill folders): `speckit.specify.md`,
+`speckit.plan.md`, `speckit.tasks.md`, `speckit.implement.md`,
+`speckit.converge.md`, and others. These are the slash commands your agent
+will run. (The OpenCode integration creates `.opencode/commands/`, agy
+creates `.agents/skills/`, and Copilot creates `.github/skills/`.)
 
-Open the project in OpenCode and confirm the `/speckit` command surface is
-available: from `~/petstore`, run `opencode`, then in the TUI type `/` and
+Open the project in your agent and confirm the `/speckit` command surface is
+available: from `~/petstore`, run `opencode` (or `agy` if using Antigravity,
+or `copilot` if using Copilot), then in the TUI type `/` and
 confirm the `speckit.*` commands appear. While you are there, confirm
-your model: the input line shows the active model and provider (the
-build indicator, e.g. `Build · <model> OpenRouter`). If it shows a
+your model: the input line shows the active model and provider. If it shows a
 model you cannot use - or a provider you have not authenticated - pick
 one that works for you before continuing.
 
@@ -158,8 +174,8 @@ without activating the venv itself.
 |---|---|
 | `./scripts/workshop.sh` + `workshop shell` | In-container byobu session as user `workshop` |
 | `specify --version` | A current 1.x CLI (1.0 or later) is present |
-| `ls .opencode/commands/` | 10 `speckit.*.md` command files |
-| OpenCode | `/speckit` commands resolvable |
+| `ls .opencode/commands/` (or `.agents/skills/`) | 10 `speckit.*` commands / skills |
+| OpenCode / agy / Copilot | `/speckit` commands resolvable |
 | No `REQUIREMENTS.md`/`ROADMAP.md` | Confirms you are on the vanilla core |
 | `.venv` with fastapi/uvicorn/pytest + HTTP test client | Ready for the build phase |
 

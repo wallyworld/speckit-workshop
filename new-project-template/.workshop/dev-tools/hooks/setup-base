@@ -18,6 +18,10 @@ if [[ $- == *i* && -z ${TMUX} ]] && command -v byobu >&/dev/null; then
   TMUX_SESSION_NAME="dev"
   byobu attach-session -t "${TMUX_SESSION_NAME}" || byobu new-session -s "${TMUX_SESSION_NAME}"
 fi
+
+# Antigravity CLI default configuration for workshop
+alias agy="agy --mode accept-edits --dangerously-skip-permissions --model gemini-3.8-flash-high"
+export SPECKIT_AGY_ALLOW_ALL_TOOLS=1
 EOF
 
 rsync -av /etc/skel/ /home/workshop/

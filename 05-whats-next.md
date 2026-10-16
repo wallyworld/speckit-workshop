@@ -72,8 +72,26 @@ below implements that convention and adds both.
 
 This is not more Spec Kit - it is the same loop, with an accounting layer
 in front of it. Each requirement that the roadmap declares "done" has to
-earn that status through a feature that went through the loop. The
-mechanics ship ready-made in
+earn that status through a feature that went through the loop.
+
+To see what this looks like for the pet store you built during the workshop, see
+[`examples/petstore/`](examples/petstore/):
+- [`REQUIREMENTS.md`](examples/petstore/REQUIREMENTS.md) groups the requirements
+  into the backend API slices (Phase 1, what you just completed) and a full web
+  user interface (Phase 2, for after the workshop).
+- [`ROADMAP.md`](examples/petstore/ROADMAP.md) maps those requirements to delivery
+  slices (`R1` catalog, `R2` orders, `R3` web UI).
+- [`phrases.txt`](examples/petstore/phrases.txt) defines curated requirement phrases
+  for deterministic traceability checking. In practice, you do not need to type
+  these manually: an agent can generate them directly from `REQUIREMENTS.md` (or
+  you can run the template's `extract-phrases.sh` script), and the verifier ensures
+  every phrase matches verbatim.
+- [`README.md`](examples/petstore/README.md) provides a step-by-step guide to
+  **retrofit** these files into your `~/petstore` project, reconcile your existing
+  Phase 1 sub-specs, and build the Phase 2 Web UI (`R3`).
+
+The full tooling mechanics - requirements verifiers, moment-of-authoring hooks,
+and review gates - ship ready-made in
 [`new-project-template/`](new-project-template/) in this repository: it
 seeds exactly this model - requirements source, roadmap map, requirement
 phrases and requirement digests - together with tooling that verifies

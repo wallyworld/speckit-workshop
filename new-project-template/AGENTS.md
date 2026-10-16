@@ -48,11 +48,14 @@ which invocation is the single definition of done.
   every public Makefile target is exposed as an action or allowlisted
   with a reason).
 - Skills mode: the hooks registered in `.specify/extensions.yml` inject
-  the checklists before plan and tasks, run the traceability
+  the checklists before plan, tasks, and converge, run the traceability
   verifier before analyze and converge, and enforce the analysis
   remediation loop after analyze.
-- Workflow mode (`specify workflow run speckit`): the same checks fire as
-  the review gates in the workflow overlay.
+- Workflow mode (`specify workflow run speckit`): the coverage,
+  plan-checklist, tasks, and final-tree checks fire as review gates in the
+  workflow overlay. The bundled workflow has no analyze or converge step,
+  so the `before_analyze`, `after_analyze`, and `before_converge` hooks have
+  no gate counterpart and fire in skills mode only.
 - Acceptance: a human confirms every `Completes` claim (a roadmap row's
   assertion that the feature fully delivers a requirement) has
   realizing implementation before the roadmap status flips to `done`.
@@ -70,6 +73,18 @@ which invocation is the single definition of done.
    `Completes` claim implies both spec content and a real code path;
    confirm the code path exists before transcribing or reviewing so a
    roadmap is never marked `done` while over-claiming unbuilt work.
+3. **Agentic requirement phrases generation.** When setting up or modifying
+   requirements in `REQUIREMENTS.md`, the phrases table
+   (`extensions/requirements/data/phrases.txt`) must be updated. Generate
+   verbatim candidates with
+   `extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o extensions/requirements/data/phrases.txt`
+   then review and tighten them before committing: the script guarantees
+   verbatim wording, not distinctiveness, and it overwrites the target file.
+   Prefer wording unique to each requirement (a generic phrase lets a spec
+   satisfy a claim without transcribing the requirement). Always run
+   `bash extensions/requirements/scripts/bash/verify-traceability.sh` (or `make test`)
+   to verify that every phrase is an exact verbatim match of the requirement text.
+
 
 ## Project checklist instances
 

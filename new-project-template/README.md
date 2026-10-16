@@ -181,7 +181,7 @@ A new project gets a [Workshop](https://ubuntu.com/workshop) definition:
 `.workshop/<name>.yaml`, named for the project by the bootstrap (the
 tool keys its image cache by workshop name, so no two projects on one
 machine share a name). It defines an `ubuntu@24.04` environment with the
-`uv`, `opencode`, `copilot`, `gh-cli`, and project `dev-tools` SDKs, the
+`uv`, `opencode`, `copilot`, `agy`, `gh-cli`, and project `dev-tools` SDKs, the
 `dev-tools` in-project SDK (its `setup-base` and `setup-project` hooks
 install the system packages and mirror-test dependencies inside the workshop),
 and `scripts/workshop.sh`, the host-side helper.
@@ -194,7 +194,7 @@ scripts/workshop.sh
 
 The script launches or refreshes the workshop and mounts this
 machine's agent configuration (`~/.copilot`, `~/.config/opencode`,
-`~/.local/share/opencode`) into it, so agents inside the workshop share
+`~/.local/share/opencode`, `~/.gemini`) into it, so agents inside the workshop share
 your credentials. Inside the workshop the project is mounted at
 `/project`, the setup hooks recreate the project's `.venv` on every
 launch (a venv built inside one container must not survive into the
@@ -215,6 +215,7 @@ workshop run -- install          # install the specify CLI, the project
 workshop run -- make <target>    # any Makefile target (generic passthrough)
 workshop run -- opencode ...     # shell out to OpenCode
 workshop run -- copilot ...      # shell out to Copilot
+workshop run -- agy ...          # shell out to Antigravity
 ```
 
 The named actions mirror the Makefile's public entry points: a new
@@ -261,10 +262,23 @@ requirement digest.
 **Requirement phrases** - one line per requirement ID in
 `extensions/requirements/data/phrases.txt`: `ID|phrase|phrase|...`,
 each phrase verbatim from that requirement's own REQUIREMENTS.md text.
-The verifier hard-fails on any phrase that is not verbatim (so a
-phrase can never satisfy a different requirement), fails closed when a
-spec claims an ID with no curated phrase, and the extension's Bash test
-suite asserts every REQUIREMENTS ID has an entry.
+Because hand-curating phrases across dozens of requirements is tedious, you
+can draft candidates and then tighten them:
+- Run `bash extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o extensions/requirements/data/phrases.txt`
+  to emit one or two verbatim candidates per requirement ID from its MUST
+  clause (it overwrites the target file).
+- Or prompt your agent: *"Generate `extensions/requirements/data/phrases.txt`
+  from `REQUIREMENTS.md`. For each bullet ID, extract 2-3 distinctive,
+  verbatim phrases."*
+Generated phrases are guaranteed verbatim (the script validates each one
+before writing), but not guaranteed *distinctive*: a generic phrase such as
+"list pets" verifies a claim without proving the requirement was transcribed.
+Review the draft and prefer wording unique to each requirement. The verifier
+hard-fails on any phrase that is not verbatim (so an agent cannot hallucinate
+or mis-file phrases without failing the build), fails closed when a spec
+claims an ID with no curated phrase, and the extension's Bash test suite
+asserts every REQUIREMENTS ID has an entry.
+
 
 **Requirement digests** - each spec's Requirements Coverage section
 records `<ID> sha256:<digest>` for every requirement it completes,

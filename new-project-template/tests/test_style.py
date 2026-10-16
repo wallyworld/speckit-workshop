@@ -80,10 +80,20 @@ EXCLUDED_INSTALLER_FILES = {
     ".specify/.gitignore",
 }
 
-# Project-produced files without a text suffix that the suffix filter would
-# otherwise skip. @FILL-IN@ name your project's extensionless entry points
-# (for example a `bin/` script with no extension).
-ALWAYS_SCAN: set[str] = set()
+# Project-produced files without a listed text suffix that the suffix filter
+# would otherwise skip. The seed's own extensionless artifacts are listed so
+# the gate scans them too (the shell hooks are explicitly meant to be edited);
+# @FILL-IN@ add your project's own extensionless entry points (for example a
+# `bin/` script with no extension).
+ALWAYS_SCAN: set[str] = {
+    ".gitignore",
+    ".opencode/.gitignore",
+    "Makefile",
+    ".workshop/dev-tools/hooks/setup-base",
+    ".workshop/dev-tools/hooks/setup-project",
+    "gitignore",
+    "phrases.txt.example",
+}
 
 EM_DASH = "\u2014"  # kept as an escape so this file passes its own rule
 

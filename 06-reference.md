@@ -21,6 +21,9 @@ is active).
 | `/speckit.checklist` | Generates a custom checklist for the feature | During planning/review |
 | `/speckit.constitution` | Creates/updates the project constitution (principles) | Project setup, or when rules change |
 
+Commands are shown in OpenCode's dot form; with agy or Copilot they are
+hyphenated (`/speckit-specify`, `/speckit-plan`, ...).
+
 Related CLI commands:
 
 ```bash
@@ -52,7 +55,7 @@ uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 |---|---|---|---|
 | Spec | `specs/NNN-feature/spec.md` | User scenarios, functional requirements (testable), success criteria, assumptions, edge cases | `/speckit.specify`, refined by clarify |
 | Plan | `specs/NNN-feature/plan.md` | Technical approach, files, data model, interface design | `/speckit.plan` |
-| Tasks | `specs/NNN-feature/tasks.md` | Ordered, checked-off task list, each naming a file | `/speckit.tasks`, appended by converge |
+| Tasks | `specs/NNN-feature/tasks.md` | Ordered task list, each naming a file (the checkboxes are the plan, not a progress tracker) | `/speckit.tasks`, appended by converge |
 | Constitution | `.specify/memory/constitution.md` | Project principles and governance the agent must honor | `/speckit.constitution` |
 | Feature pointer | `.specify/feature.json` | Which feature is active | `/speckit.specify` |
 
@@ -76,7 +79,7 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 |---|---|
 | Spec Kit | A spec-driven development (SDD) process toolkit for agentic coding |
 | `specify` | The CLI that installs the agent integration and commands |
-| `.opencode/commands/speckit.*.md` | The installed command definitions OpenCode loads |
+| `.opencode/commands/` / `.agents/skills/` / `.github/skills/` | The installed command definitions and skills OpenCode, agy, and Copilot load |
 | Feature directory | `specs/NNN-name/`; the folder holding spec.md, plan.md, tasks.md |
 | Converge | The step that compares code to spec/plan/tasks and restarts the loop if they disagree |
 | Testable requirement | A functional requirement that can be verified by a test (as opposed to a sentiment) |

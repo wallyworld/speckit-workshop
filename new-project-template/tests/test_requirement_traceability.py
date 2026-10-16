@@ -264,11 +264,11 @@ def _roadmap_rows():
             continue
         rid = cells[1]
         completes_cell = cells[7]
-        completes = [] if completes_cell in ("", "-", "\u2014") else [
+        completes = [] if completes_cell in ("", "-") else [
             tok.strip() for tok in completes_cell.split(",") if tok.strip()
         ]
         depends_cell = cells[5]
-        depends = [] if depends_cell in ("", "-", "\u2014") else [
+        depends = [] if depends_cell in ("", "-") else [
             tok.strip() for tok in depends_cell.split(",") if tok.strip()
         ]
         rows[rid] = {"completes": completes, "depends": depends, "status": cells[6]}
@@ -343,6 +343,27 @@ def _spec_completes_set(text: str) -> set[str]:
     raise AssertionError("no '**Completes**:' line found")
 
 
+_FR_COMPLETES_ROW_RE = re.compile(
+    r"^\|\s*FR-\d+\s*\|(.*)\|\s*Completes\s*\|[ \t]*$", re.M
+)
+
+
+def _spec_fr_table_completes_set(text: str) -> set[str]:
+    """The Completes set read from the spec's FR mapping table.
+
+    This is the surface ``verify-traceability.sh`` reads for its content and
+    digest checks; ``_spec_completes_set`` reads the prose bullet. They must
+    agree, or an RQ listed in the bullet but absent from the table is never
+    content- or digest-verified."""
+    ids: set[str] = set()
+    for match in _FR_COMPLETES_ROW_RE.finditer(text):
+        for token in match.group(1).split(","):
+            token = token.strip()
+            if token:
+                ids.add(token)
+    return ids
+
+
 def test_spec_completes_align_with_roadmap():
     """Each spec's Requirements Coverage Completes set equals its feature's
     ROADMAP row, and no RQ ID is Completed by more than one feature.
@@ -382,6 +403,13 @@ def test_spec_completes_align_with_roadmap():
         assert spec_completes == set(row["completes"]), (
             f"{spec_path.parent.name}: spec Completes {sorted(spec_completes)} "
             f"!= roadmap {rid} Completes {sorted(row['completes'])}"
+        )
+        fr_completes = _spec_fr_table_completes_set(text)
+        assert fr_completes == spec_completes, (
+            f"{spec_path.parent.name}: FR-table Completes {sorted(fr_completes)} "
+            f"!= prose bullet Completes {sorted(spec_completes)}; the verifier "
+            f"reads only the FR table, so a bullet-only RQ escapes content and "
+            f"digest checks"
         )
         for rq in spec_completes:
             previous = owners.get(rq)
