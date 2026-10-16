@@ -55,6 +55,8 @@ REINSTALL = "specify extension add --dev --force extensions/requirements"
 EXPECTED_HOOKS = {
     ("before_plan", "speckit.requirements.plan-checklist", False, True, None),
     ("before_tasks", "speckit.requirements.tasks-checklist", False, True, None),
+    ("before_implement", "speckit.requirements.tasks-checklist", False, True, None),
+    ("after_implement", "speckit.requirements.diff-review", False, True, None),
     ("before_analyze", "speckit.requirements.verify", False, True, None),
     ("after_analyze", "speckit.requirements.remediation-loop", False, True, None),
     ("before_converge", "speckit.requirements.verify", False, True, None),
@@ -71,6 +73,7 @@ EXPECTED_HOOKS = {
 EXPECTED_HOOK_SECTIONS = {
     "plan": ("hooks.before_plan",),
     "tasks": ("hooks.before_tasks",),
+    "implement": ("hooks.before_implement", "hooks.after_implement"),
     "analyze": ("hooks.before_analyze", "hooks.after_analyze"),
     "converge": ("hooks.before_converge",),
 }
@@ -112,6 +115,8 @@ EXPECTED_WORKFLOW_GATES = (
     "review-coverage",
     "review-plan-checklist",
     "review-tasks",
+    "review-implement-checklist",
+    "review-diff",
     "review-final-tree",
 )
 
@@ -149,7 +154,7 @@ def _assert_requirements_extension_surfaces() -> None:
 
 
 def test_hook_registrations_present():
-    """The extension's six mandatory hooks are registered in
+    """The extension's eight mandatory hooks are registered in
     .specify/extensions.yml with optional: false.
 
     The installer manages the hooks section: a reinstall purges and re-adds
@@ -306,6 +311,60 @@ def test_workflow_gates_compose():
     )
 
 
+# The firing-surface sentence in a manifest command description: the
+# events named after "fires as the" must match the command's hook
+# registrations exactly, so generated metadata can never under- or
+# over-claim where a command fires.
+FIRING_PHRASE = re.compile(r"fires as the (.*?) hooks?\.")
+
+
+def _firing_events(description: str) -> set[str]:
+    """Hook events a manifest description claims to fire on."""
+    match = FIRING_PHRASE.search(description)
+    if not match:
+        return set()
+    return set(re.findall(r"(?:before|after)_[a-z]+", match.group(1)))
+
+
+def test_manifest_descriptions_match_registered_hooks():
+    """Every command description names exactly the hook events the manifest
+    registers it for.
+
+    A description that says "before_tasks and before_converge" while a
+    before_implement hook also fires advertises an incomplete firing
+    surface, and a description naming an event with no registration makes
+    the metadata lie. Both directions fail here."""
+    _assert_requirements_extension_surfaces()
+    manifest = yaml.safe_load(MANIFEST.read_text(encoding="utf-8"))
+    registered: dict[str, set[str]] = {}
+    for event, entries in manifest["hooks"].items():
+        for entry in entries:
+            registered.setdefault(entry["command"], set()).add(event)
+    problems: list[str] = []
+    for entry in manifest["provides"]["commands"]:
+        named = _firing_events(entry["description"])
+        expected = registered.get(entry["name"], set())
+        if named != expected:
+            problems.append(
+                f"{entry['name']}: description names {sorted(named)}, "
+                f"registered for {sorted(expected)}"
+            )
+    assert not problems, (
+        "manifest command descriptions diverge from the hook registrations: "
+        + "; ".join(problems)
+    )
+
+
+def test_firing_surface_checker_reads_the_registration_list():
+    """Can-it-fail: a description that drops or invents a hook is visibly
+    different from one that names the registered set."""
+    assert _firing_events(
+        "Stub; fires as the before_tasks and before_converge hooks."
+    ) == {"before_tasks", "before_converge"}
+    assert _firing_events("Stub; fires as the before_plan hook.") == {"before_plan"}
+    assert _firing_events("Stub with no firing surface.") == set()
+
+
 # Each checklist rule is identified by a group of phrases that must
 # ALL appear in a surface (AND, case-insensitive substrings). A single
 # coarse word - "boundaries", "must", "malformed" - cannot evidence a rule
@@ -336,6 +395,8 @@ TASKS_CHECKLIST_RULES = (
     ("command", "invocation path"),
     ("fail-closed", "positive-path"),
     ("validator", "malformed"),
+    ("one-to-N", "partial-failure"),
+    ("semantic", "violation class"),
 )
 
 
@@ -469,16 +530,25 @@ def test_checklist_rules_survive_into_every_mirror():
         "manifest before_tasks hook description": manifest_hooks[
             ("before_tasks", "speckit.requirements.tasks-checklist")
         ],
+        "manifest before_implement hook description": manifest_hooks[
+            ("before_implement", "speckit.requirements.tasks-checklist")
+        ],
         "manifest before_converge hook description": manifest_hooks[
             ("before_converge", "speckit.requirements.tasks-checklist")
         ],
         "registered before_tasks hook description": installed_hooks[
             ("before_tasks", "speckit.requirements.tasks-checklist")
         ],
+        "registered before_implement hook description": installed_hooks[
+            ("before_implement", "speckit.requirements.tasks-checklist")
+        ],
         "registered before_converge hook description": installed_hooks[
             ("before_converge", "speckit.requirements.tasks-checklist")
         ],
         "review-tasks gate message": gates["review-tasks"],
+        "review-implement-checklist gate message": gates[
+            "review-implement-checklist"
+        ],
     }
     if has_skills:
         plan_summaries["plan-checklist skill frontmatter"] = (
@@ -495,7 +565,7 @@ def test_checklist_rules_survive_into_every_mirror():
         "plan mirror inventory changed; update this test"
     )
     assert (
-        len(tasks_summaries) == 6 + has_skills
+        len(tasks_summaries) == 9 + has_skills
     ), "tasks mirror inventory changed; update this test"
     for checklist, summaries, rules in (
         ("plan", plan_summaries, PLAN_CHECKLIST_RULES),
@@ -525,6 +595,7 @@ def test_checklist_rules_survive_into_every_mirror():
 DOMAIN_NEUTRAL_SURFACES = (
     EXTENSION_SOURCE / "commands" / "speckit.requirements.plan-checklist.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.tasks-checklist.md",
+    EXTENSION_SOURCE / "commands" / "speckit.requirements.diff-review.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.remediation-loop.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.prepare.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.verify.md",
@@ -534,6 +605,7 @@ DOMAIN_NEUTRAL_SURFACES = (
 DOMAIN_NEUTRAL_SKILL_SURFACES = (
     SKILLS_DIR / "speckit-requirements-plan-checklist" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-tasks-checklist" / "SKILL.md",
+    SKILLS_DIR / "speckit-requirements-diff-review" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-remediation-loop" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-prepare" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-verify" / "SKILL.md",
@@ -602,7 +674,7 @@ def test_seedable_checklist_surfaces_stay_domain_neutral():
     if has_skills:
         surfaces = surfaces + DOMAIN_NEUTRAL_SKILL_SURFACES
     assert len(surfaces) == (
-        7 + 5 * has_skills
+        8 + 6 * has_skills
     ), "scan inventory changed"
     required_terms = {"acme-storefront"}
     assert required_terms <= set(DOMAIN_TERM_DENY_LIST), (

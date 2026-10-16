@@ -1,13 +1,15 @@
 ---
-description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, and malformed inputs in validator matrices."
+description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, and semantic checks enumerating every violation class."
 ---
 
 # Tasks checklist
 
-Apply this checklist before and while generating tasks.md, and whenever
-appending convergence work to it. It fires as a mandatory `before_tasks`
-and `before_converge` hook in skills mode and as the `review-tasks` gate
-in workflow mode.
+Apply this checklist before and while generating tasks.md, whenever
+appending convergence work to it, and before implementing a batch of
+tasks: at implementation time every rule is checked against the changes
+and tests being written, not only against the task text. It fires as a
+mandatory `before_tasks`, `before_implement`, and `before_converge` hook
+in skills mode and as the `review-tasks` gate in workflow mode.
 
 1. **Ground enum-extending tasks in source and existing checkers.** Before
    writing a task that extends an enum, register, or valid-values set
@@ -24,13 +26,15 @@ in workflow mode.
 3. **Tests-first ordering, with known-bad fixtures.** Every new
    function, configurable behaviour, validator, and query or report
    surface has a test, written before the implementation it covers,
-   and every new checker ships a known-good fixture that must pass and
-   a known-bad fixture that must fail.
+   and every new or re-scoped checker or probe ships a known-good
+   fixture that must pass and a known-bad fixture that must fail.
 4. **Boundary tests are first-class tasks.** Every task that adds a raise
    names the handler that catches it and carries a task driving the
    exception through that handler; every new command surface carries a
    test on its real invocation path (the default or primary route), not
-   only a flagged or synthetic variant.
+   only a flagged or synthetic variant, and a change to an existing probe
+   or validator carries the same real-entry-point test, not only one on an
+   internal helper.
 5. **Fail-closed behaviors carry positive-path tests.** Every fail-closed
    parse or probe carries a fixture test with a realistic response for
    the success it must produce, alongside its failure-path tests; a
@@ -40,6 +44,19 @@ in workflow mode.
    test matrix includes schema-valid-but-malformed inputs (wrong types,
    non-numeric strings, empty, duplicates), not only the happy and
    rejected shapes.
+7. **One-to-N refactors carry per-entity and partial-failure tests.** When a
+   change moves an operation from a single entity to many (one candidate to
+   a list, one target to a set, one step to a sequence), the task carries a
+   per-entity test, a partial-failure test (entity N fails and entities
+   1..N-1 are shown rolled back, refused, or otherwise left in the correct
+   state), and an end-to-end test on the real invocation path, not only
+   per-entity unit behaviour.
+8. **Semantic checks enumerate every violation class.** A cross-field or
+   cross-collection check states its invariant as a closed relation before
+   implementation - no undeclared or extra entries and no missing ones,
+   nothing invalid accepted and nothing valid rejected - and ships one
+   known-bad fixture per violation class. A single negative fixture proves
+   one direction of a relation, never the check.
 
 The command surfaces and coverage-critical artifact kinds specific to
 this project are recorded in `AGENTS.md`.
