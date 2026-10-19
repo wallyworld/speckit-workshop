@@ -219,22 +219,28 @@ support the claim.
 
 ## Testing the Web UI
 
-Start the FastAPI application:
+Start the FastAPI application from `~/petstore`:
 
 ```bash
+cd ~/petstore
 uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 
 From your host browser, open the workshop address from `workshop info`
-(for example `http://speckit-ws.speckit-workshop.wp:8000/`).
+(for example `http://speckit-ws.speckit-workshop.wp:8000/`) at the route
+the implementation serves (often `/`; check `plan.md` and its contracts).
 
 You can:
 
-- view the catalog with availability badges (`UI-1`);
-- add pets and see the list refresh (`UI-2`);
-- place orders and watch stock decrement, with order buttons disabled at
-  zero (`UI-3`);
-- view open orders and cancel them to restore inventory (`UI-4`).
+- view the catalog with pet names, stock counts, and availability badges
+  that change with availability (`UI-1`);
+- add pets through the form, see client-side validation block invalid
+  input, and watch the catalog refresh immediately (`UI-2`);
+- place orders and watch stock decrement, with order buttons visually
+  disabled at zero (`UI-3`);
+- view open orders and cancel them to restore inventory in place (`UI-4`);
+- confirm the UI is a static single-page app served by FastAPI, with no
+  node runtime or external build (`UI-5`).
 
 ## If something fails
 

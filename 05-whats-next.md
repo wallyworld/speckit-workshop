@@ -12,9 +12,11 @@ You will do this against the petstore you built in `~/petstore`:
 1. copy the product artifacts into your project;
 2. install the phased-delivery tooling;
 3. retrofit the two specs you authored before the tooling existed;
-4. build the Phase 2 Web UI (`R3`) through the loop, with the extension
+4. inspect the retrofit;
+5. build the Phase 2 Web UI (`R3`) through the loop, with the extension
    commands and hooks firing at each stage;
-5. verify the completion claims and close the roadmap.
+6. run the Web UI and try it in your browser;
+7. verify the completion claims and close the roadmap.
 
 Command forms used below:
 
@@ -303,7 +305,57 @@ Spec Kit's stock gates. Each gate can approve or reject; rejection aborts
 the workflow. The bundled workflow has no analyze or converge step, so
 those hooks fire in skills mode only.
 
-## Step 6: Verify and close the loop
+## Step 6: See the Web UI live
+
+With the feature implemented (and converged, if you used the
+skill-by-skill path), start the app from `~/petstore` in a second byobu
+window (F2, or the tmux prefix Ctrl-b c) or a separate terminal inside
+the container:
+
+```bash
+cd ~/petstore
+uv run uvicorn petstore_app:app --reload --host 0.0.0.0
+```
+
+Leave it running while you try the UI. Stop it with Ctrl-C when done.
+
+Open a browser **on your host**. Your host cannot reach the container's
+`127.0.0.1`; run `workshop info` from your clone directory and use the
+`hostname:` line. For a clone named `speckit-workshop` that is:
+
+```
+http://speckit-ws.speckit-workshop.wp:8000/
+```
+
+The R3 feature is the web UI itself, so open the route the implementation
+serves. That is often the root path (`/`), but check `plan.md` and its
+contracts, or `petstore_app.py`, for the route the agent chose (for
+example `/ui`). If the implementation leaves `/docs` routed, it remains
+available for the JSON API.
+
+Try each requirement:
+
+- **Catalog (`UI-1`)**: the page lists each pet's name, current stock count,
+  and a distinct availability badge; the badge changes with availability.
+- **Create (`UI-2`)**: submit the form with invalid input and confirm
+  client-side validation blocks the request; on success the catalog updates
+  immediately. If your clarify step introduced login or roles, use the
+  appropriate account.
+- **Order (`UI-3`)**: a pet at zero stock has a visually disabled order
+  action. Place an order for an in-stock pet and watch stock decrement by
+  one.
+- **Orders (`UI-4`)**: the active orders list shows the order; cancel it
+  and watch both the order list and the catalog stock update in place.
+- **Serving (`UI-5`)**: the UI is a static single-page application served
+  directly by FastAPI, with no node runtime or external frontend build and
+  no full-page reload for in-app actions.
+
+If the page does not load, check that the server bound to `0.0.0.0`, that
+you used the `workshop info` hostname rather than `127.0.0.1`, and that the
+implementation serves the route named in its plan or contracts. If `/docs`
+is still routed, it confirms the API side independently.
+
+## Step 7: Verify and close the loop
 
 Confirm the `R3` spec verifies clean:
 
