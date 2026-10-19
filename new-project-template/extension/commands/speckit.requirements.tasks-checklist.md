@@ -1,5 +1,5 @@
 ---
-description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes."
+description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, an acceptance test through the real entry point for every user-facing requirement (not implementation-only, not a placeholder), boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes."
 ---
 
 # Tasks checklist
@@ -81,6 +81,19 @@ in skills mode and as the `review-tasks` gate in workflow mode.
    callees, not from the failure that was observed: a class left out is a
    silent fail-open. Each handled class carries a known-bad fixture that
    drives the boundary and asserts its effect.
+
+10. **Acceptance tests use the real entry point.** Every user-facing
+    requirement carries an executable acceptance test through the delivery
+    interface on the real runtime (the HTTP route, CLI command, UI screen,
+    device action, or produced file the user actually uses), not only unit
+    tests of internal functions, static text assertions, or injected
+    doubles. The test asserts the user-visible outcome and the known failure
+    mode, carries a known-bad fixture, and runs in the project's test gate.
+    A placeholder, empty/default implementation, or implementation-only
+    assertion fails this rule. After tasks.md exists, invoke
+    `/speckit-requirements-acceptance-test` (the dot form
+    `/speckit.requirements.acceptance-test` where installed) to derive the
+    test; this is a manual step after tasks, not a hook.
 
 The command surfaces and coverage-critical artifact kinds specific to
 this project are recorded in `AGENTS.md`.

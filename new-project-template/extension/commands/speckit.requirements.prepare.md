@@ -35,8 +35,9 @@ extra tokens, surrounding words, or a malformed ID - is rejected.
    Completes/Advances mapping that overlaps or cites an unknown requirement,
    duplicate IDs, or schema drift). On success it exits zero.
 3. **Print the script's stdout verbatim** to the human. Do not summarise,
-   re-order, or "resolve" it further, and do not run any core Spec Kit command
-   yourself.
+   re-order, or "resolve" it further. Do not run any core Spec Kit command
+   during this command's execution; the human authorizes the next step after
+   review.
 
 ## Output contract
 
@@ -54,7 +55,10 @@ After presenting the brief, remind the human that:
 
 - they must **review** the assembled brief against `ROADMAP.md` and
   `REQUIREMENTS.md`, and
-- they (not this command) run the emitted core `/speckit-specify` command.
+- they (not this command) run the emitted core `/speckit-specify` command,
+  unless they explicitly authorize you to run it after review because their
+  environment cannot copy the command. An example authorization is: "I
+  reviewed the brief; run the emitted core command."
 
 Core `/speckit-specify` does not resolve roadmap or requirement IDs. This
 project extension resolves the existing manual roadmap mapping into the brief;

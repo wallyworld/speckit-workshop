@@ -4,6 +4,10 @@ This directory is the reference implementation for the phased-delivery
 walkthrough in [05 - What's Next](../../05-whats-next.md). It holds the
 product artifacts and the retrofit script; 05 is the step-by-step lab.
 
+For a new multi-phase project, start with the template's
+[new-project guide](../../new-project-template/docs/start-a-project.md).
+This directory is the finished reference, not a starter.
+
 ## How this maps to the workshop
 
 - **Phase 1 (Backend API)**:
@@ -108,6 +112,20 @@ extension manifest at install time.
 
 ## Building Phase 2: slice `R3` (Web UI)
 
+### R3 delivery contract for this project
+
+| Item | Required for this project |
+| --- | --- |
+| Entry route | `/` |
+| Hash routes | `#/catalog`, `#/orders`, `#/create-pet` |
+| Authentication | none: no login, roles, passwords, sessions, or credentials |
+| Active orders | `GET /orders?status=open`; cancel with `DELETE /orders/{id}` |
+| Implementation | static HTML/CSS/JS served by FastAPI; no node runtime or build |
+| Placeholders | none; the orders page must use the real API |
+| Acceptance | the generated acceptance test is the gate; the manual host-browser pass verifies the visible outcomes |
+
+Note: a different product may expose a CLI, API, device, or generated file.
+
 Start a new agent session. The loop is unchanged; the extension adds
 context and enforcement at each stage.
 
@@ -127,6 +145,12 @@ The command emits a read-only brief with the roadmap intent, scope
 boundary, canonical text for `UI-1..UI-5`, per-requirement digests, and a
 ready-to-run specify command. Review it before running it.
 
+Note: if the container clipboard does not work, you do not need to copy the
+emitted command. After reviewing the brief, reply `run the emitted core
+command`; the agent has the brief in context. See
+[06 - Reference](../../06-reference.md#clipboard-inside-the-container)
+for terminal copy alternatives.
+
 ### 2. Specify
 
 Run the emitted command, for example:
@@ -134,7 +158,10 @@ Run the emitted command, for example:
 ```text
 /speckit.specify Implement slice R3 from ROADMAP.md: an interactive
 browser frontend served by FastAPI that renders the catalog, creates pets,
-places orders, and cancels orders.
+places orders, and cancels orders. Serve it at `/`. Do not add
+authentication, login, roles, sessions, or any capability not listed in
+REQUIREMENTS.md. Implement active orders against a real GET /orders
+endpoint, not placeholder data.
 ```
 
 The extension-provided spec template requires a Requirements Coverage
@@ -146,7 +173,10 @@ section. The agent drafts `specs/003-<slug>/spec.md` with `UI-1..UI-5`.
 /speckit.clarify
 ```
 
-Address design questions such as styling or component layout.
+Address design questions such as styling or component layout. If clarify
+asks who may create pets or how users log in, do not add auth: UI-1..UI-5
+do not require it. Answer "any user; authentication is out of scope," or
+remove the question from the spec.
 
 ### 4. Plan
 
@@ -166,9 +196,45 @@ backend is in `petstore_app.py`; the agent reads both.
 ```
 
 The `before_tasks` hook injects the tasks checklist, and the tasks
-template makes tests required.
+template makes tests required, including the acceptance-test task.
 
-### 6. Analyze
+### 6. Install the browser and write the acceptance test
+
+The acceptance test drives the real browser. The base container does not
+include Chrome because the earlier phases do not need it. Install it once
+from a host terminal in your clone:
+
+```bash
+workshop run --uid 0 -- install-browser
+```
+
+Back in the container, install the driver in the project environment:
+
+```bash
+cd ~/petstore
+uv pip install pytest-playwright
+```
+
+Do not run `playwright install`: the test uses the container Chrome with
+`channel="chrome"` (or `--browser-channel=chrome`) and the launch flags
+`--no-sandbox --disable-dev-shm-usage`.
+
+After tasks and before implementation, invoke the manual skill:
+
+```text
+/speckit-requirements-acceptance-test R3
+```
+
+It derives the executable test from the spec, plan, and real entry point,
+adds isolated state and a known-bad fixture, and wires it into `make test`.
+Review the generated test: it must load `/`, `#/catalog`, `#/create-pet`,
+and `#/orders` in the real browser, fail on console/page errors, assert every
+`UI-1..UI-5` outcome, include the fast contract checks (no auth/session
+surface, no placeholder implementation, real `GET /orders`, stock restore),
+and run under `make test`. Run it before implementation and confirm it
+fails for the expected reason. It is the automated acceptance gate.
+
+### 7. Analyze
 
 ```text
 /speckit.analyze
@@ -177,7 +243,7 @@ template makes tests required.
 `before_analyze` runs the requirement verifier; `after_analyze` runs the
 remediation loop if findings exist.
 
-### 7. Implement
+### 8. Implement
 
 ```text
 /speckit.implement
@@ -187,7 +253,7 @@ remediation loop if findings exist.
 written. `after_implement` commissions an independent, fresh-context
 review of the diff; fix findings and re-run until clean.
 
-### 8. Converge
+### 9. Converge
 
 ```text
 /speckit.converge
@@ -200,26 +266,40 @@ requirement is missing, stale, or unimplemented.
 If converge appends tasks, review them, re-run implement, then converge
 again.
 
-### 9. Close the roadmap
+### 10. Close the roadmap
 
-Update `ROADMAP.md` row `R3`:
-
-- change `Status` from `planned` to `done`;
-- set `Sub-spec` to your generated `specs/003-...` directory.
-
-Then verify and run the gate:
+Run the acceptance gate first:
 
 ```bash
 bash extensions/requirements/scripts/bash/verify-traceability.sh specs/003-*/spec.md
 make test
 ```
 
+After the generated test and the manual
+host-browser pass succeed, update `ROADMAP.md` row `R3`:
+
+- change `Status` from `planned` to `done`;
+- set `Sub-spec` to your generated `specs/003-...` directory.
+
 Only mark the row done when the spec content, fresh digest, and code all
 support the claim.
 
 ## Testing the Web UI
 
-Start the FastAPI application from `~/petstore`:
+From `~/petstore`, first run the generated acceptance test through the
+project gate:
+
+```bash
+cd ~/petstore
+make test
+```
+
+Prove it can fail by breaking one UI behavior, running `make test`, and
+restoring the code. The browser install and `pytest-playwright` dependency
+from [section 6](#6-install-the-browser-and-write-the-acceptance-test) are
+prerequisites.
+
+Then start the FastAPI application:
 
 ```bash
 cd ~/petstore
@@ -227,8 +307,8 @@ uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 
 From your host browser, open the workshop address from `workshop info`
-(for example `http://speckit-ws.speckit-workshop.wp:8000/`) at the route
-the implementation serves (often `/`; check `plan.md` and its contracts).
+(for example `http://speckit-ws.speckit-workshop.wp:8000/`) at `/`, the R3
+contract's entry route.
 
 You can:
 
@@ -242,9 +322,20 @@ You can:
 - confirm the UI is a static single-page app served by FastAPI, with no
   node runtime or external build (`UI-5`).
 
+Open DevTools Console and confirm it is free of red errors on `/`,
+`#/catalog`, `#/create-pet`, and `#/orders`.
+
 ## If something fails
 
 - `No module named pytest` or `yaml`: run `make install`.
+- `No module named playwright`: install the driver in the project venv:
+  `uv pip install pytest-playwright`.
+- `google-chrome: command not found`: run
+  `workshop run --uid 0 -- install-browser` from a host terminal in your
+  clone.
+- Playwright `Executable doesn't exist` or tries to download a browser:
+  use the container Chrome with `channel="chrome"` (or
+  `--browser-channel=chrome`); do not run `playwright install`.
 - `test_hook_registrations_present` fails: run
   `specify extension add --dev --force extensions/requirements`.
 - No `| FR-### | RQ... | Completes |` rows: the spec predates the

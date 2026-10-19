@@ -93,6 +93,7 @@ _SKILL_COMMAND_PAIRS = {
     "speckit-requirements-verify": "speckit.requirements.verify.md",
     "speckit-requirements-plan-checklist": "speckit.requirements.plan-checklist.md",
     "speckit-requirements-tasks-checklist": "speckit.requirements.tasks-checklist.md",
+    "speckit-requirements-acceptance-test": "speckit.requirements.acceptance-test.md",
     "speckit-requirements-remediation-loop": "speckit.requirements.remediation-loop.md",
     "speckit-requirements-diff-review": "speckit.requirements.diff-review.md",
 }
@@ -363,6 +364,94 @@ def _spec_fr_table_completes_set(text: str) -> set[str]:
             if token:
                 ids.add(token)
     return ids
+
+
+_FR_BULLET_RE = re.compile(
+    r"^[-*]\s+\*\*(FR-\d+[a-z]?)\*\*:", re.M
+)
+_FR_TABLE_ROW_RE = re.compile(
+    r"^\|\s*(FR-\d+[a-z]?)\s*\|\s*([^|]*?)\s*\|", re.M
+)
+_RQ_ID_RE = re.compile(r"^[A-Z]+-[0-9]+[a-z]?$")
+_COVERAGE_HEADING_RE = re.compile(r"^##\s+Requirements Coverage.*$", re.M)
+
+
+def _coverage_section(text: str) -> str:
+    match = _COVERAGE_HEADING_RE.search(text)
+    if match is None:
+        return ""
+    rest = text[match.end():]
+    next_heading = re.search(r"^##\s+", rest, re.M)
+    return rest[: next_heading.start()] if next_heading else rest
+
+
+def _fr_coverage_failures(text: str) -> list[str]:
+    bullets = set(_FR_BULLET_RE.findall(text))
+    rows = {}
+    for fr, cell in _FR_TABLE_ROW_RE.findall(_coverage_section(text)):
+        tokens = {
+            token.strip()
+            for token in cell.split(",")
+            if token.strip() and token.strip() not in {"-", "(none)", "none"}
+        }
+        rows[fr] = tokens
+    failures = []
+    if not bullets:
+        failures.append("no FR bullets found")
+    missing = sorted(bullets - set(rows))
+    if missing:
+        failures.append(f"FRs missing from Requirements Coverage: {missing}")
+    unmapped = sorted(fr for fr, tokens in rows.items() if not tokens)
+    if unmapped:
+        failures.append(f"coverage rows with no RQ ID: {unmapped}")
+    malformed = {
+        fr: sorted(token for token in tokens if not _RQ_ID_RE.match(token))
+        for fr, tokens in rows.items()
+    }
+    malformed = {fr: tokens for fr, tokens in malformed.items() if tokens}
+    if malformed:
+        failures.append(f"coverage rows cite malformed RQ IDs: {malformed}")
+    extra = sorted(set(rows) - bullets)
+    if extra:
+        failures.append(f"coverage rows for FRs absent from the spec: {extra}")
+    return failures
+
+
+def test_fr_coverage_check_rejects_a_row_outside_the_coverage_table():
+    """Known-bad fixture: a row outside Requirements Coverage is ignored."""
+    text = """## Functional Requirements
+
+- **FR-001**: The system MUST do the thing.
+
+## Requirements Coverage
+
+| FR | Realizes RQ | Relationship |
+| --- | --- | --- |
+| FR-002 | APP-1 | Completes |
+
+## Success Criteria
+
+| FR-001 | APP-1 | Completes |
+"""
+    failures = _fr_coverage_failures(text)
+    assert any("FR-001" in failure for failure in failures), failures
+
+
+def test_every_fr_is_in_the_coverage_table():
+    """Every FR bullet appears in the coverage table and cites an RQ.
+
+    The coverage rules say every FR maps to at least one RQ, but nothing
+    enforced it: a spec could define FR-011 and omit it from the table, so
+    the verifier never read its claim. This check is deliberately separate
+    from the content verifier. It cannot decide whether an RQ mapping is
+    semantically authorized; that remains the plan/human scope review."""
+    specs = sorted((ROOT / "specs").glob("*/spec.md"))
+    if not specs:
+        pytest.skip("no committed feature specs yet")
+    for spec_path in specs:
+        text = spec_path.read_text(encoding="utf-8")
+        failures = _fr_coverage_failures(text)
+        assert not failures, f"{spec_path.parent.name}: " + "; ".join(failures)
 
 
 def test_spec_completes_align_with_roadmap():

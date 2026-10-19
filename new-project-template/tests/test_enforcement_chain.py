@@ -377,6 +377,8 @@ def test_firing_surface_checker_reads_the_registration_list():
 # its phrases everywhere at once.
 PLAN_CHECKLIST_RULES = (
     ("escape hatch", "requirement authority"),
+    ("requirement-less scope", "product requirement"),
+    ("real entry point", "acceptance test"),
     ("threshold", "operational"),
     ("must", "has a task"),
     ("boundaries", "specified"),
@@ -388,6 +390,8 @@ PLAN_CHECKLIST_RULES = (
 )
 TASKS_CHECKLIST_RULES = (
     ("enum", "checker"),
+    ("acceptance test", "real entry point"),
+    ("placeholder", "user-facing"),
     ("sequential", "IDs"),
     ("tests-first", "known-good"),
     ("tests-first", "known-bad"),
@@ -441,7 +445,9 @@ def _requirements_skills_vendored() -> bool:
         for skill in (
             "speckit-requirements-plan-checklist",
             "speckit-requirements-tasks-checklist",
+            "speckit-requirements-acceptance-test",
             "speckit-requirements-remediation-loop",
+            "speckit-requirements-diff-review",
             "speckit-requirements-prepare",
             "speckit-requirements-verify",
         )
@@ -596,6 +602,7 @@ def test_checklist_rules_survive_into_every_mirror():
 DOMAIN_NEUTRAL_SURFACES = (
     EXTENSION_SOURCE / "commands" / "speckit.requirements.plan-checklist.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.tasks-checklist.md",
+    EXTENSION_SOURCE / "commands" / "speckit.requirements.acceptance-test.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.diff-review.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.remediation-loop.md",
     EXTENSION_SOURCE / "commands" / "speckit.requirements.prepare.md",
@@ -606,6 +613,7 @@ DOMAIN_NEUTRAL_SURFACES = (
 DOMAIN_NEUTRAL_SKILL_SURFACES = (
     SKILLS_DIR / "speckit-requirements-plan-checklist" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-tasks-checklist" / "SKILL.md",
+    SKILLS_DIR / "speckit-requirements-acceptance-test" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-diff-review" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-remediation-loop" / "SKILL.md",
     SKILLS_DIR / "speckit-requirements-prepare" / "SKILL.md",
@@ -690,7 +698,7 @@ def test_seedable_checklist_surfaces_stay_domain_neutral():
     if has_skills:
         surfaces = surfaces + DOMAIN_NEUTRAL_SKILL_SURFACES
     assert len(surfaces) == (
-        8 + 6 * has_skills
+        9 + 7 * has_skills
     ), "scan inventory changed"
     required_terms = {"acme-storefront"}
     assert required_terms <= set(DOMAIN_TERM_DENY_LIST), (
@@ -764,7 +772,7 @@ def test_extension_surface_is_documented():
         "README lost the vanilla comparison section"
     )
     flat = " ".join(text.split())
-    for count in ("six commands", "eight mandatory hook registrations",
+    for count in ("seven commands", "eight mandatory hook registrations",
                   "two template overrides", "six extension workflow gates"):
         assert count in flat, f"README lost the count phrase {count!r}"
 

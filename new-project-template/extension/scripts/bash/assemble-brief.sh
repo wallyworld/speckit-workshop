@@ -423,6 +423,6 @@ cat <<EOF
 NOTE: This brief was assembled deterministically from ROADMAP.md and
 REQUIREMENTS.md. It did NOT create a branch, spec, checklist, or any file, and
 resolved the existing manual ROADMAP.md mapping. The mapping remains manual and
-authoritative. A human must REVIEW this brief and then run the core
+authoritative. A human must REVIEW this brief and approve the core
 /speckit-specify command above; only that core command creates the feature.
 EOF

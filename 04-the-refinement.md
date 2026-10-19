@@ -11,6 +11,13 @@ a new session in your coding harness prior to running the next loop.
 > **Command form.** Commands use OpenCode's dot form; with agy or Copilot use
 > the hyphenated form (`/speckit-specify` in place of `/speckit.specify`).
 
+> **No container clipboard?** You never have to copy a command from the
+> agent's output. Reply with the next step in words (`run the next step`,
+> `run the emitted command`) and the agent will act on the artifacts in
+> the session or on disk. See
+> [06 - Reference](06-reference.md#clipboard-inside-the-container) for
+> terminal copy alternatives.
+
 ## The feature description you will run
 
 > You are building a pet store. Users can place an order for a pet. Placing an
@@ -42,6 +49,7 @@ for TestClient is fine). Include pytest tests covering every functional
 requirement. Reuse the
 pet catalog schema and endpoints already present.
 /speckit.tasks
+/speckit.analyze
 /speckit.implement
 /speckit.converge
 ```
@@ -55,6 +63,12 @@ continuing.
 If the spec does not state the "must not go below zero" requirement
 explicitly, that is the spec being loose - a loose requirement cannot be
 verified at converge time.
+
+## Analyze the artifacts
+
+`/speckit.analyze` cross-checks the spec, plan, and tasks before
+implementation. Review its findings and correct any inconsistency in the
+artifacts; the command is read-only and does not change the code.
 
 ## Implementation and its tests exist
 
@@ -113,7 +127,8 @@ the same thing, and the loop keeps them consistent with each other**:
 - The spec is the *requirement* (stock must not go below zero).
 - The tests are the *assertions* (the invariant is checked).
 - The implementation is the *behavior*.
-- Converge is the step that verifies all three agree.
+- Analyze checks that the written artifacts agree with each other before
+  code exists; converge checks that the code agrees with them afterward.
 
 A naive implementation - "place an order, decrement stock, done" - passes
 tests that only check the happy path, but violates the spec. The loop

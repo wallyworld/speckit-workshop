@@ -3,12 +3,12 @@ schema_version: "1.0"
 extension:
   id: requirements
   name: "Requirements Context Preparation"
-  version: "1.3.0"
-  description: "Resolve one roadmap entry's manual mapping into a self-contained feature brief, verify requirement-content traceability, and carry the phase checklists that fire as mandatory hooks. Read-only: never creates a branch, spec, or file."
+  version: "1.4.0"
+  description: "Resolve one roadmap entry's manual mapping into a self-contained feature brief, verify requirement-content traceability, carry the phase checklists that fire as mandatory hooks, and derive acceptance tests from the plan's real entry point. The prepare and verify commands are read-only; the manual acceptance-test command writes test files."
   author: TODO-your-name-or-org
   repository: "TODO-your-repo-url"
   license: Apache-2.0
-  effect: read-only
+  effect: read-write
 
 requires:
   speckit_version: ">=1.0.0"
@@ -27,13 +27,16 @@ provides:
       description: "Verify that every requirement a feature spec claims to complete is materially present in that spec (requirement-phrase traceability from REQUIREMENTS.md) and recorded against the requirement's current wording (SHA-256 digest freshness); fires as the before_analyze and before_converge hooks."
     - name: speckit.requirements.plan-checklist
       file: commands/speckit.requirements.plan-checklist.md
-      description: "Plan checklist (escape hatches need requirement authority, thresholds are operationalized, every MUST has a task, boundaries are specified: raise to catcher, fail-closed positive-path tests, wire-format fixtures, command-surface tests on their real invocation path, validator malformed-input cases); fires as the before_plan hook."
+      description: "Plan checklist (escape hatches need requirement authority, no requirement-less scope: every FR traces to a product requirement, the real entry point and its acceptance test are named, thresholds are operationalized, every MUST has a task, boundaries are specified: raise to catcher, fail-closed positive-path tests, wire-format fixtures, command-surface tests on their real invocation path, validator malformed-input cases); fires as the before_plan hook."
     - name: speckit.requirements.tasks-checklist
       file: commands/speckit.requirements.tasks-checklist.md
-      description: "Tasks checklist (enum grounding in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, and semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes); fires as the before_tasks, before_implement, and before_converge hooks."
+      description: "Tasks checklist (enum grounding in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, an acceptance test through the real entry point for every user-facing requirement, not implementation-only or a placeholder, boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, and semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes); fires as the before_tasks, before_implement, and before_converge hooks."
+    - name: speckit.requirements.acceptance-test
+      file: commands/speckit.requirements.acceptance-test.md
+      description: "Derive and add an executable acceptance test for every user-facing requirement through the real delivery entry point (HTTP route, CLI command, UI route, device action, or produced file), on the real runtime, with isolated state, a known-bad fixture, and wiring into the project test gate; invoked manually after tasks and before implementation."
     - name: speckit.requirements.diff-review
       file: commands/speckit.requirements.diff-review.md
-      description: "Independent diff review: commission a fresh-context reviewer with only the goal, the applicable checklists, and the implementation diff, fix every finding, and re-run until a clean pass; fires as the after_implement hook."
+      description: "Independent diff review: commission a fresh-context reviewer with only the goal, the applicable checklists, the implementation diff, and the real entry point or acceptance test result, fix every finding, and re-run until a clean pass; fires as the after_implement hook."
     - name: speckit.requirements.remediation-loop
       file: commands/speckit.requirements.remediation-loop.md
       description: "Analysis remediation loop (complete corrections, class checks, clean re-verification); fires as the after_analyze hook."
@@ -50,8 +53,10 @@ hooks:
   - command: speckit.requirements.plan-checklist
     priority: 10
     description: Inject the plan checklist (escape hatches need requirement
-      authority, operational thresholds, every MUST has a task, boundaries
-      are specified (raise to catcher, fail-closed positive-path tests,
+      authority, no requirement-less scope (every FR traces to a product
+      requirement), the real entry point and its acceptance test are named,
+      operational thresholds, every MUST has a task, boundaries are
+      specified (raise to catcher, fail-closed positive-path tests,
       wire-format fixtures, command-surface tests on their real
       invocation path, validator malformed-input cases)) before plan
       generation
@@ -63,7 +68,9 @@ hooks:
     priority: 10
     description: Inject the tasks checklist (enum grounding in source and
       existing checkers, sequential IDs, tests-first with known-good and known-bad
-      fixtures, boundary tests (raise to catcher, command-surface tests on
+      fixtures, an acceptance test through the real entry point for every
+      user-facing requirement (not implementation-only or a placeholder),
+      boundary tests (raise to catcher, command-surface tests on
       their real invocation path), positive-path fixtures for
       fail-closed behaviors, malformed inputs in validator matrices,
       one-to-N refactors carrying per-entity and partial-failure
@@ -77,7 +84,9 @@ hooks:
     priority: 10
     description: Apply the tasks checklist (enum grounding in source and
       existing checkers, sequential IDs, tests-first with known-good and known-bad
-      fixtures, boundary tests (raise to catcher, command-surface tests on
+      fixtures, an acceptance test through the real entry point for every
+      user-facing requirement (not implementation-only or a placeholder),
+      boundary tests (raise to catcher, command-surface tests on
       their real invocation path), positive-path fixtures for
       fail-closed behaviors, malformed inputs in validator matrices,
       one-to-N refactors carrying per-entity and partial-failure
@@ -92,13 +101,15 @@ hooks:
   - command: speckit.requirements.diff-review
     priority: 10
     description: Commission an independent fresh-context review of the
-      implementation diff - goal, applicable checklists, and diff only -
-      fix every finding, and re-run until a clean pass before claiming
-      the work done
+      implementation diff - goal, applicable checklists, diff, and the
+      result of running the real entry point or acceptance test - fix
+      every finding, and re-run until a clean pass before claiming the
+      work done
     prompt: Before reporting the implementation complete, run
-      /speckit-requirements-diff-review - collect the diff and the goal
-      artifacts, delegate the review to a fresh context with no author
-      reasoning, fix every finding, and re-run until a clean pass.
+      /speckit-requirements-diff-review - collect the diff, the goal
+      artifacts, and the result of running the real entry point or
+      acceptance test, delegate the review to a fresh context with no
+      author reasoning, fix every finding, and re-run until a clean pass.
     optional: false
   before_analyze:
   - command: speckit.requirements.verify
@@ -133,7 +144,9 @@ hooks:
     priority: 10
     description: Keep convergence appends compliant (append-only,
       sequential IDs never renumbered, enum grounding in existing
-      checkers, tests-first with known-good and known-bad fixtures, boundary tests
+      checkers, tests-first with known-good and known-bad fixtures, an
+      acceptance test through the real entry point for every user-facing
+      requirement (not implementation-only or a placeholder), boundary tests
       (raise to catcher, command-surface tests on their real invocation
       path), positive-path fixtures for fail-closed behaviors,
       malformed inputs in validator matrices,

@@ -21,3 +21,7 @@ actions:
   agy: |
     set -euo pipefail
     agy --mode accept-edits --dangerously-skip-permissions --model gemini-3.8-flash-high "$@"
+
+  install-browser: |
+    set -euo pipefail
+    /project/scripts/install-browser.sh

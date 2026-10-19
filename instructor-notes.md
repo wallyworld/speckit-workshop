@@ -7,8 +7,9 @@ materials are [index.md](index.md) through [06-reference.md](06-reference.md).
 
 The agent's plan and implement steps each take minutes of generating.
 NB: I validated with `openrouter/z-ai/glm-4.6`, when I ran it, it took
-~20 minutes of agent work end to end (specify 1 min, clarify with 3
-questions, plan 2, tasks 1, implement 10, two converge cycles 3).
+~21 minutes of agent work end to end (specify 1 min, clarify with 3
+questions, plan 2, tasks 1, analyze 1, implement 10, two converge cycles
+3).
 
 One failure mode from my dry run: if the agent starts the dev server in
 the foreground during implement, the turn hangs on it. Escape does not
@@ -32,6 +33,12 @@ Note: OpenCode and Antigravity (agy) mount credentials directly from
 the host (`~/.config/opencode` and `~/.gemini`), while Copilot users
 need to run `copilot` then `/login` inside the container first (GitHub
 device flow; their host credential store does not carry).
+
+Clipboard note: the container does not share the host clipboard, and
+OpenCode's copy action can report success while the text never reaches
+the terminal. Tell students they can reply `run the emitted command`
+instead of pasting, or use the byobu/tmux copy buffer. The workarounds
+are in [06 - Reference](06-reference.md#clipboard-inside-the-container).
 
 The script mounts `<clone>/petstore` on the host at `~/petstore` in the
 container, so students can open it in their IDE. To reset a student's
@@ -76,17 +83,21 @@ Target 10-15 minutes with questions.
     tests-required and minimal-stack principles.
   - after Step 4: walk through a few tasks. Point out that tasks are
     small and each names the file it touches.
-  - during Step 5: this is where the agent's own
+  - after Step 5: point out that analyze is a read-only cross-check of
+    the three artifacts before code exists, and that 05 makes the same
+    step mandatory through the extension hooks.
+  - during Step 6: this is where the agent's own
     verification loop (run tests, read failures, fix, re-run) becomes
     visible.
-  - after Step 7: the API surface (hopefully)
+  - after Step 8: the API surface (hopefully)
     matches the spec's functional requirements.
 
 ## Refinement (04-the-refinement.md)
 
 The two possible failure modes: (a) a student whose spec lost the requirement
 (Checkpoint 1) and (b) a student whose tests pass but never assert the
-requirement (Checkpoint 2). After converge, ask whether it cited the
+requirement (Checkpoint 2). After analyze, point out that it only checks
+the written artifacts. After converge, ask whether it cited the
 constitution. If it did not, use that to explain the difference between a
 written principle and an enforced gate.
 
@@ -111,4 +122,18 @@ the enforcement details can read the template README's per-command
 section. Do not copy the template constitution by itself: run the full
 bootstrap, and note that it keeps the constitution the student already
 generated.
+
+The base container deliberately has no browser. At Step 5.4, students
+install Chrome on demand from a host terminal:
+`workshop run --uid 0 -- install-browser` (script:
+`scripts/install-browser.sh`). Do not move this into the dev-tools SDK
+`setup-base` hook: that makes every student pay the image cost for an
+optional phase. The Python driver goes in the project venv with
+`uv pip install pytest-playwright`; the test uses the container Chrome with
+`channel="chrome"` and `--no-sandbox --disable-dev-shm-usage`.
+
+There is no supplied acceptance checker. The generated acceptance test is
+the only automated gate, plus the manual host-browser pass. If a student's
+test is API-only or never fails under the mutation, send them back to the
+acceptance-test skill's review list.
 

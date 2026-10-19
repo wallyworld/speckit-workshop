@@ -121,6 +121,11 @@ Roadmap entry: `ROADMAP.md` -> **R#**
 Rules:
 
 - Every FR maps to at least one RQ ID.
+- No FR may introduce a capability absent from `REQUIREMENTS.md` and
+  `ROADMAP.md`; if it does, correct the spec or add the product requirement
+  and roadmap entry first. Clarify answers do not authorize scope.
+- Every user-facing requirement names its real delivery entry point and
+  its executable acceptance test in the plan.
 - A row's Relationship MUST equal this feature's roadmap classification for
   that RQ (an Advances RQ can only appear as `Advances` here).
 - Do not restate RQ text; cite IDs only. No separate register is created.

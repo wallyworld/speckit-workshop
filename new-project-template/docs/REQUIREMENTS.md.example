@@ -1,0 +1,17 @@
+# @FILL-IN@ Requirements
+
+Authoritative product requirements for @FILL-IN@.
+
+Group requirements by phase or domain. Every requirement is one identifiable,
+testable behaviour. IDs are stable and are never renumbered or reused.
+
+## Requirements
+
+### Phase 1: @FILL-IN@
+
+- **AREA-1**: The system MUST @FILL-IN@.
+- **AREA-2**: The system MUST @FILL-IN@.
+
+### Phase 2: @FILL-IN@
+
+- **NEXT-1**: The system MUST @FILL-IN@.

@@ -13,7 +13,8 @@ for* independently of what the agent decided to build.
 Spec Kit's answer is to make the specification a **first-class artifact in
 your repository**. This is a file (`spec.md`) that states what the feature must
 do, in a form the agent re-reads at every phase. Each command in the loop
-reads the artifacts written by the previous command, and writes its own.
+reads the artifacts written by earlier commands; most write a new
+artifact, and analyze reports on the set without changing them.
 The result is a chain: `spec -> plan -> tasks -> code`. When the chain is
 complete, you have an audit trail from "what the user asked for" to "the
 code that implements it."
@@ -47,9 +48,9 @@ The loop below is per feature. The constitution above it applies to every
 feature.
 
 ```
-specify -> clarify -> plan -> tasks -> implement -> converge
-  ^                                                       |
-  +-------------------------------------------------------+
+specify -> clarify -> plan -> tasks -> analyze -> implement -> converge
+  ^                                                                  |
+  +------------------------------------------------------------------+
                 (converge may add remaining tasks;
                  iterate implement/converge until clean)
 ```
@@ -60,14 +61,15 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 | 2 | `/speckit.clarify` (optional) | Asks up to 5 targeted questions when parts are underspecified | updates to `spec.md` |
 | 3 | `/speckit.plan` | Designs the technical approach, files, and architecture | `specs/NNN-feature/plan.md` |
 | 4 | `/speckit.tasks` | Breaks the plan into an ordered, actionable task list | `specs/NNN-feature/tasks.md` |
-| 5 | `/speckit.implement` | Executes the tasks, writing code | code changes |
-| 6 | `/speckit.converge` | Re-reads spec/plan/tasks, diffs the code against them, and adds any missing work as new tasks | updated `tasks.md` (and the loop repeats) |
+| 5 | `/speckit.analyze` | Cross-checks spec, plan, and tasks for inconsistencies before implementation (read-only) | analysis report |
+| 6 | `/speckit.implement` | Executes the tasks, writing code | code changes |
+| 7 | `/speckit.converge` | Re-reads spec/plan/tasks, diffs the code against them, and adds any missing work as new tasks | updated `tasks.md` (and the loop repeats) |
 
 > **Command form.** Command names are shown in OpenCode's dot form
 > (`/speckit.specify`). With the agy or Copilot integration the same commands
 > are hyphenated: `/speckit-constitution`, `/speckit-specify`,
 > `/speckit-clarify`, `/speckit-plan`, `/speckit-tasks`,
-> `/speckit-implement`, `/speckit-converge`.
+> `/speckit-analyze`, `/speckit-implement`, `/speckit-converge`.
 
 ## The artifacts
 
@@ -98,6 +100,7 @@ This is the key concept to internalize.
 | Testable requirements | Spec author (you and the agent) | spec time |
 | Plan covers the spec | `/speckit.plan` reads spec.md | plan time |
 | Tasks cover the plan | `/speckit.tasks` reads plan.md | tasks time |
+| Spec, plan, and tasks agree | `/speckit.analyze` cross-checks the three artifacts | analyze time |
 | Code passes its tests | test runner in `/speckit.implement` | implement time |
 | Code matches spec and tasks | `/speckit.converge` re-reads spec/plan/tasks and diffs | converge time |
 
@@ -143,7 +146,8 @@ things make it practical:
 
 - The constitution is project-level governance, not a loop step; plan,
   analyze, implement, and converge read it.
-- The feature loop is: `specify -> plan -> tasks -> implement -> converge`.
+- The feature loop is:
+  `specify -> clarify -> plan -> tasks -> analyze -> implement -> converge`.
 - The artifacts form a chain of written intent: spec, plan, tasks.
 - Validation is incremental gates, not an end-of-project review.
 - The spec is the contract the whole loop must adhere to.

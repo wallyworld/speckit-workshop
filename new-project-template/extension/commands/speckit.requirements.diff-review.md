@@ -1,5 +1,5 @@
 ---
-description: "Independent diff review: commission a fresh-context reviewer with only the goal, the applicable checklists, and the implementation diff, fix every finding, and re-run until a clean pass; fires as the after_implement hook."
+description: "Independent diff review: commission a fresh-context reviewer with only the goal, the applicable checklists, the implementation diff, and the real entry point or acceptance test result, fix every finding, and re-run until a clean pass; fires as the after_implement hook."
 ---
 
 # Independent diff review
@@ -17,10 +17,15 @@ belief that the change is correct is not evidence.
    example the tasks checklist). Do not include chat history, plan
    rationale, or any explanation of what the change is "supposed" to do
    beyond those artifacts.
-2. **Commission the review in a fresh context.** Delegate to a subagent
-   or a new session whose prompt contains only the goal, the
-   checklists, and the diff. Instruct the reviewer to treat every
-   changed surface as an untrusted claim and to derive its own
+2. **Run the real entry point.** For a change that affects a delivery
+   interface, run its entry point or acceptance test before or alongside
+   the review. The review input includes the command and its result. A
+   user-facing change with no executable acceptance path is a finding, not
+   an accepted gap.
+3. **Commission the review in a fresh context.** Delegate to a subagent
+   or a new session whose prompt contains only the goal, the checklists,
+   the diff, and the entry-point run command and result. Instruct the
+   reviewer to treat every changed surface as an untrusted claim and to derive its own
    falsification probes from the goal and the checklist rules: failure
    and partial-failure paths, boundary conditions, both directions of
    every constraint the change introduces (no undeclared or extra
@@ -34,11 +39,11 @@ belief that the change is correct is not evidence.
    to data from an external response, transitively from the parse
    boundary (a nested default is absence handling, not a shape check).
    Findings cite the probe that shows them.
-3. **Fix and re-run until clean.** Correct each finding, then re-run
+4. **Fix and re-run until clean.** Correct each finding, then re-run
    the review on the updated diff with a fresh reviewer context. Do not
    rationalize a finding away; a disputed finding is re-derived, not
    overruled.
-4. **Report.** Report PASS only when a reviewer pass over the final
+5. **Report.** Report PASS only when a reviewer pass over the final
    diff found no violations; otherwise report the open findings and do
    not mark the task done. Record which probes fired, not only the
    verdict: a pass with no probes is not a pass.

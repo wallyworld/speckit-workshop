@@ -9,6 +9,13 @@ the agent open and `/speckit` commands available.
 > OpenCode's dot form; with agy or Copilot use the hyphenated form
 > (`/speckit-specify` in place of `/speckit.specify`).
 
+> **No container clipboard?** You never have to copy a command from the
+> agent's output. Reply with the next step in words (`run the next step`,
+> `run the emitted command`) and the agent will act on the artifacts in
+> the session or on disk. See
+> [06 - Reference](06-reference.md#clipboard-inside-the-container) for
+> terminal copy alternatives.
+
 The constitution was ratified in
 [01](01-setup.md#14-ratify-the-project-constitution). If
 `.specify/memory/constitution.md` is still the unfilled template, go back
@@ -116,7 +123,20 @@ What you should see:
   checkboxes are the plan, not a progress tracker - implementations do
   not always tick them off, so read the list, not the marks.
 
-## Step 5: `/speckit.implement`
+## Step 5: `/speckit.analyze`
+
+```
+/speckit.analyze
+```
+
+What you should see:
+
+- The agent cross-checks `spec.md`, `plan.md`, and `tasks.md` and reports
+  inconsistencies, ambiguities, and constitution conflicts.
+- The check is read-only. If it reports findings, correct the artifacts
+  before implementing; it does not change the code.
+
+## Step 6: `/speckit.implement`
 
 ```
 /speckit.implement
@@ -130,7 +150,7 @@ What you should see:
 - It reads the constitution as a governance constraint (for example, the
   tests-required and minimal-stack principles).
 
-## Step 6: `/speckit.converge`
+## Step 7: `/speckit.converge`
 
 ```
 /speckit.converge
@@ -157,7 +177,7 @@ against the stated intent. If the agent planned a `status` field but
 implemented it as a column when the plan said "derived," converge flags
 the discrepancy and re-enters the loop.
 
-## Step 7: See it live
+## Step 8: See it live
 
 ```
 uv run uvicorn petstore_app:app --reload --host 0.0.0.0
@@ -194,6 +214,7 @@ is now clickable. Try it like a real pet store:
   artifact chain: spec, plan, tasks.
 - The plan's Constitution Check and converge's constitution check ran
   against the principles you ratified in 01.
+- Analyze cross-checked the three artifacts before any code was written.
 - The agent implemented the tasks and ran its own tests as it went.
 - Converge checked the final code against the spec/plan/tasks and
   reconciled any gaps.

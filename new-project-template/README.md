@@ -9,13 +9,13 @@ installs everything; a short fill-in pass makes it project specific.
 
 Spec Kit is a spec-driven development toolkit: an agent runs slash
 commands that turn a feature description into a written spec, plan, and
-task list, implements them, and converges the code back against the
-spec. That command sequence is the loop:
+task list, analyzes them for consistency, implements them, and converges
+the code back against the spec. That command sequence is the loop:
 
 ```
-specify -> clarify -> plan -> tasks -> implement -> converge
-  ^                                                       |
-  +-------------------------------------------------------+
+specify -> clarify -> plan -> tasks -> analyze -> implement -> converge
+  ^                                                                  |
+  +------------------------------------------------------------------+
 ```
 
 Spec Kit's model is one feature at a time: each feature goes through the
@@ -99,12 +99,15 @@ exact formats). On top of that convention, the seed installs:
 
 - a **two-part constitution** (universal delivery principles + your domain
   principles),
+- an **authoring guide** (`docs/start-a-project.md`) and starter
+  `docs/REQUIREMENTS.md.example` and `docs/ROADMAP.md.example` files for a
+  new multi-phase project,
 - a **requirements extension** that turns a roadmap row into a
   self-contained brief and verifies every requirement a spec claims to
   complete is materially present in that spec and recorded against the
   requirement's current wording,
 - **enforcement hooks** that fire automatically around Spec Kit's
-  own commands (plan, tasks, implement, analyze, converge),
+  own commands (plan, tasks, analyze, implement, converge),
 - **review gates** mirroring the same checks as approve/reject steps in
   Spec Kit's bundled workflow,
 - **extension-provided templates** (the spec template gains a
@@ -121,7 +124,7 @@ exact formats). On top of that convention, the seed installs:
 ## The requirements extension, piece by piece
 
 The seed installs **one** extension package, `requirements`. It is not a
-collection of extensions. The package declares six commands, two template
+collection of extensions. The package declares seven commands, two template
 overrides, and eight mandatory hook registrations. The workflow gates and
 mirror tests are separate enforcement layers around it.
 
@@ -137,15 +140,16 @@ mirror tests are separate enforcement layers around it.
 - **Mirror test**: a pytest check that re-verifies the same claim without
   needing the agent tooling to be installed.
 
-**The six commands**
+**The seven commands**
 
 | Command | Fires at | What it does | Why a vanilla Spec Kit project lacks it |
 | --- | --- | --- | --- |
 | `speckit.requirements.prepare` | Manually, before specify | Validates the roadmap row and its predecessors, then emits a read-only brief with the roadmap intent, scope boundary, canonical requirement text, per-requirement SHA-256 digests, and a ready-to-run core specify command. | Core specify accepts free-form text. There is no roadmap row concept and no guarantee the requirement wording reaches the spec. |
 | `speckit.requirements.verify` | `before_analyze`, `before_converge`, and `make test` | For every Completes claim, requires at least one curated requirement phrase in the spec body and a recorded digest matching the requirement's current wording. Fails closed on drift, staleness, missing digests, and malformed claims. | Converge checks code against the spec. Nothing checks the spec against the product requirements; an ID in a table can claim content that was never written, and a claim can outlive the wording it was recorded against. |
-| `speckit.requirements.plan-checklist` | `before_plan` | Injects the plan checklist: design opt-outs must cite the requirement wording that authorizes them, threshold-shaped terms need operational definitions, every in-scope MUST needs a task, and boundaries must be specified (raise-to-catcher, fail-closed positive-path test, wire-format fixtures, real invocation-path tests, malformed-input cases). | The plan is free-form. It can silently design around a MUST, leave a qualitative threshold undefined, or omit the task that builds a requirement. |
-| `speckit.requirements.tasks-checklist` | `before_tasks`, `before_implement`, `before_converge` | Injects the tasks checklist: tests-first with known-good and known-bad fixtures, sequential IDs, enum grounding in current source, boundary rules applied to the code and tests being written, and append-only compliant convergence tasks. | Stock Spec Kit treats test tasks as optional. A tasks list can omit failure-path tests, and a constitution principle alone is prose the agent can ignore. |
-| `speckit.requirements.diff-review` | `after_implement` | Commissions a fresh-context reviewer with only the goal, the applicable checklists, and the implementation diff; fix every finding and re-run until a clean pass before reporting done. | No independent review exists. The authoring agent reviews its own diff with its own context and reasoning. |
+| `speckit.requirements.plan-checklist` | `before_plan` | Injects the plan checklist: no requirement-less scope (every FR traces to a product requirement), design opt-outs must cite the requirement wording that authorizes them, every user-facing requirement names its real entry point and acceptance test, threshold-shaped terms need operational definitions, every in-scope MUST needs a task, and boundaries must be specified (raise-to-catcher, fail-closed positive-path test, wire-format fixtures, real invocation-path tests, malformed-input cases). | The plan is free-form. It can invent a capability the product requirements do not authorize, silently design around a MUST, leave a qualitative threshold undefined, omit the task that builds a requirement, or leave a user-facing requirement with no executable acceptance path. |
+| `speckit.requirements.tasks-checklist` | `before_tasks`, `before_implement`, `before_converge` | Injects the tasks checklist: tests-first with known-good and known-bad fixtures, an acceptance test through the real entry point for every user-facing requirement, sequential IDs, enum grounding in current source, boundary rules applied to the code and tests being written, and append-only compliant convergence tasks. | Stock Spec Kit treats test tasks as optional. A tasks list can omit failure-path tests, ship a placeholder, test only internal functions while the delivered interface is broken, and a constitution principle alone is prose the agent can ignore. |
+| `speckit.requirements.acceptance-test` | Manually, after tasks and before implementation | Derives and adds an executable acceptance test for every user-facing requirement through the real delivery entry point: runtime launch, isolated state, user-visible assertions, a known-bad fixture, and wiring into the project test gate. It is a procedure skill, not a hook. | Vanilla Spec Kit has no step that derives an end-to-end test from the plan's entry point. Unit and static tests can stay green while the delivered interface is broken. |
+| `speckit.requirements.diff-review` | `after_implement` | Commissions a fresh-context reviewer with the goal, the applicable checklists, the implementation diff, and the real entry-point or acceptance-test result; fix every finding and re-run until a clean pass before reporting done. | No independent review exists. The authoring agent reviews its own diff with its own context and reasoning, and a review that never runs the delivery interface can pass a broken product. |
 | `speckit.requirements.remediation-loop` | `after_analyze` | Requires every analysis finding to be corrected, checks the other instances of the same defect class, and re-verifies on a fresh pass until clean. | Analyze reports findings but does not enforce remediation. One occurrence can be fixed while the class survives. |
 
 **The two templates**
@@ -153,8 +157,11 @@ mirror tests are separate enforcement layers around it.
 - `spec-template`: adds the Requirements Coverage section (roadmap entry,
   Completes/Advances, FR-to-RQ table). Without it, a spec has no structured
   completion claim for the verifier to read.
-- `tasks-template`: makes tests required per task. Without it, upstream
-  treats test tasks as optional even when the constitution says otherwise.
+- `tasks-template`: makes tests required per task and adds the
+  acceptance-test shape for user-facing requirements (the real entry
+  point, the user-visible outcome, a known-bad fixture). Without it,
+  upstream treats test tasks as optional and leaves the delivered
+  interface unexercised.
 
 **The eight hook registrations**
 
@@ -227,12 +234,45 @@ this template promises.
 | Enforcement is prose in agent instructions. | Hooks, workflow gates, and mirror tests enforce it. |
 
 If you remove the extension, `/speckit.specify`, `/speckit.plan`,
-`/speckit.tasks`, `/speckit.implement`, and `/speckit.converge` still run.
+`/speckit.tasks`, `/speckit.analyze`, `/speckit.implement`, and
+`/speckit.converge` still run.
 What disappears is the accounting layer: requirement IDs and a roadmap
 remain prose, a spec can claim completion without transcribing the
 requirement, stale claims stay green, test omissions survive, and nothing
 commissions an independent review. The core loop is unchanged; the
 guarantees are not free.
+
+The verifier checks that claimed requirements are present; it does not
+check that the spec contains only authorized scope. An FR with no product
+requirement behind it is scope drift, not extra credit. The plan
+checklist prompts the review to require authority for design opt-outs,
+but the scope check itself is a human review step: confirm every FR
+traces to a product requirement, and treat a capability absent from
+`REQUIREMENTS.md` as a requirements change. Clarify answers do not
+authorize new scope.
+
+## User-facing requirements and the real entry point
+
+A user-facing requirement is observed through the delivery interface the
+product actually exposes. That interface may be an HTTP route, a CLI
+command, a UI screen, a device action, a generated file, or something
+else. The template does not assume a particular technology.
+
+- The plan names the real entry point for every user-facing requirement.
+- After tasks exist, invoke `/speckit-requirements-acceptance-test` (or the
+  dot form) to derive the executable acceptance tests. The skill carries the
+  procedure: real runtime, isolated state, user-visible assertions, a
+  known-bad fixture, and wiring into the test gate. It is a manual step, not
+  a hook.
+- The tasks include an executable acceptance test that drives that entry
+  point on the real runtime and asserts the user-visible outcome and its
+  known failure mode, with a known-bad fixture that proves the test fails.
+- Unit tests of internal functions, static text assertions, and injected
+  test doubles do not satisfy a user-facing requirement.
+- A placeholder or empty/default implementation is a failure, even when
+  the endpoint or command responds.
+- If the entry point cannot be automated, the plan names the manual check
+  and the acceptance record.
 
 ## Prerequisites
 
@@ -270,11 +310,17 @@ generated skills are machinery and are refreshed on every run. It calls
 the extension's `generate-skills.sh`, which produces the agent-facing
 skill copies of the extension's commands.
 
+After seeding, read `docs/start-a-project.md` for the authoring
+walkthrough. It takes you from the product idea to the first roadmap row
+and shows how to add later phases.
+
 The bootstrap prints a fill-in checklist with the exact steps and
 commands. In full:
 
-1. `REQUIREMENTS.md` - your product scope.
-2. `ROADMAP.md` - the feature table.
+1. `REQUIREMENTS.md` - your product scope. Start from
+   `docs/REQUIREMENTS.md.example` and replace the placeholders.
+2. `ROADMAP.md` - the feature table. Start from `docs/ROADMAP.md.example`;
+   every requirement needs exactly one `Completes` owner.
 3. `requirement-phrases.txt` - requirement phrases (verbatim wording from
    your REQUIREMENTS.md). It is a project artifact beside REQUIREMENTS.md,
    so editing it needs no extension reinstall.
@@ -290,6 +336,19 @@ commands. In full:
    Keep the shipped `acme-storefront` placeholder and append your own,
    one per line. The file is a project artifact, so a bootstrap re-run
    keeps it; the scan guards your vocabulary once your terms are in.
+
+### Author the first phase
+
+After the bootstrap, read `docs/start-a-project.md`. In short:
+
+1. copy `docs/REQUIREMENTS.md.example` to `REQUIREMENTS.md` and replace the
+   placeholders with observable MUST requirements;
+2. copy `docs/ROADMAP.md.example` to `ROADMAP.md`; give every requirement
+   exactly one `Completes` owner and order the rows by dependency;
+3. generate and review `requirement-phrases.txt`;
+4. run `make test` and `/speckit-requirements-prepare R1`.
+
+The full sequence, including adding later phases, is in the guide.
 
 `examples/` holds a minimal worked sample (requirements, roadmap, spec,
 requirement phrases). Pass `--with-examples` to the bootstrap command to
@@ -358,7 +417,8 @@ mirror-test dependencies.
 ## Conventions the tooling expects
 
 These are the artifacts a new project expects. They are
-domain-neutral: any product can be expressed in them.
+domain-neutral: any product can be expressed in them. For a worked
+authoring sequence, see `docs/start-a-project.md`.
 
 **REQUIREMENTS.md** - bullet requirements, each with a stable,
 section-scoped ID (`- **GREET-1**: ...`). IDs are never renumbered or

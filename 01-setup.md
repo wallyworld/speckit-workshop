@@ -140,10 +140,10 @@ ls .github/skills/
 You should see 10 files (or skill folders), including
 `speckit.constitution.md` (or the `speckit-constitution/` skill folder),
 `speckit.specify.md`, `speckit.plan.md`, `speckit.tasks.md`,
-`speckit.implement.md`, and `speckit.converge.md`. These are the slash
-commands your agent will run. (The OpenCode integration creates
-`.opencode/commands/`, agy creates `.agents/skills/`, and Copilot creates
-`.github/skills/`.)
+`speckit.analyze.md`, `speckit.implement.md`, and `speckit.converge.md`.
+These are the slash commands your agent will run. (The OpenCode
+integration creates `.opencode/commands/`, agy creates `.agents/skills/`,
+and Copilot creates `.github/skills/`.)
 
 Open the project in your agent and confirm the `/speckit` command surface is
 available: from `~/petstore`, run `opencode` (or `agy` if using Antigravity,
@@ -175,7 +175,7 @@ Ratify it now, before the first feature. In the agent, run (dot form):
 1. Tests gate completion: `uv run pytest` must pass before work is called done.
 2. Every new behaviour, including failure paths and domain invariants, has an automated test.
 3. The feature spec is the source of truth: code and tests trace back to it, and the implementation does not silently expand scope.
-4. Keep the stack minimal and supported: FastAPI, uvicorn, pytest, SQLite; no auth, pagination, or extra application libraries.
+4. Keep the runtime stack minimal and supported: FastAPI, uvicorn, pytest, SQLite; no auth, pagination, or extra runtime application libraries. Test-only dependencies used by the acceptance test are allowed.
 5. Surface exact errors and protect credentials and sensitive data.
 Amendments are explicit, justified, versioned, and recorded through this command. Keep it concise.
 ```
@@ -217,6 +217,9 @@ uv pip install fastapi "uvicorn[standard]" pytest httpx
 
 (`httpx` is the HTTP client library used by FastAPI's `TestClient` - you
 will use it in the tests.)
+
+The browser used by the Phase 2 Web UI acceptance test is installed on
+demand in [05](05-whats-next.md); it is not needed for phases 01-04.
 
 Confirm the venv works before moving on:
 

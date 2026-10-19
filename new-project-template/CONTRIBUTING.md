@@ -41,9 +41,10 @@ boundary, exact canonical requirement text, and a coverage seed with
 per-requirement digests. Review
 the brief against [`ROADMAP.md`](ROADMAP.md) and
 [`REQUIREMENTS.md`](REQUIREMENTS.md), then run the emitted core
-`/speckit-specify` command. The extension is read-only: it never creates
-a branch, feature directory, or spec, and it never changes roadmap
-status.
+`/speckit-specify` command. The prepare and verify commands are read-only:
+they never create a branch, feature directory, or spec, and they never
+change roadmap status. The manual acceptance-test command is the exception:
+it writes test files into the project.
 
 If the extension is unavailable, assemble the same brief manually by
 reading the roadmap row, the full text of its Completes/Advances IDs, the
@@ -118,6 +119,7 @@ For a new feature:
 /speckit-plan
 /speckit-checklist
 /speckit-tasks
+/speckit-requirements-acceptance-test
 /speckit-analyze
 /speckit-implement
 /speckit-converge
@@ -149,10 +151,17 @@ The full per-command explanation - what each command does and what a
 vanilla Spec Kit project lacks without it - is in the README's
 "The requirements extension, piece by piece" section.
 
+After tasks exist, invoke `/speckit-requirements-acceptance-test` manually.
+It derives the executable acceptance test for every user-facing requirement
+through the real entry point, adds a known-bad fixture, and wires it into
+the project test gate. It is a procedure skill, not a hook.
+
 The enforcement hooks are carried by the extension's checklist commands:
 
 - `/speckit-requirements-plan-checklist` (mandatory `before_plan` hook):
-  design opt-outs cite the requirement wording that authorizes them,
+  no requirement-less scope (every FR traces to a product requirement),
+  every user-facing requirement names its real entry point and acceptance
+  test, design opt-outs cite the requirement wording that authorizes them,
   qualitative thresholds carry operational definitions, every MUST the
   plan relies on has a task that builds it, and boundaries are specified:
   every raise names the handler that catches it, every fail-closed
@@ -160,11 +169,13 @@ The enforcement hooks are carried by the extension's checklist commands:
   fixture evidence, every new command surface a test on its real
   invocation path, and every validator its malformed-input cases.
 - `/speckit-requirements-tasks-checklist` (mandatory `before_tasks`,
-  `before_implement`, and `before_converge` hooks): tasks that extend an
-  enum or register are grounded in current source values and existing
-  checkers, task IDs are sequential in execution order (renumber freely
-  before implementation; append-only after), and tests are written first
-  with known-bad fixtures; the boundary rules apply to every task: a raise
+  `before_implement`, and `before_converge` hooks): every user-facing
+  requirement carries an acceptance test through the real entry point on
+  the real runtime, not only an implementation or static test; tasks that
+  extend an enum or register are grounded in current source values and
+  existing checkers, task IDs are sequential in execution order (renumber
+  freely before implementation; append-only after), and tests are written
+  first with known-bad fixtures; the boundary rules apply to every task: a raise
   names the handler that catches it with a test driving the exception
   through, every new command surface carries a test on its real invocation
   path, fail-closed behaviors carry positive-path fixture tests, and
@@ -173,7 +184,8 @@ The enforcement hooks are carried by the extension's checklist commands:
   task text.
 - `/speckit-requirements-diff-review` (mandatory `after_implement` hook):
   commissions an independent fresh-context review of the implementation
-  diff before the work is reported done.
+  diff and the real entry-point or acceptance-test result before the work
+  is reported done.
 - `/speckit-requirements-remediation-loop` (mandatory `after_analyze`
   hook): the analysis remediation loop.
 - `/speckit-requirements-verify` (mandatory `before_analyze` and
@@ -275,9 +287,11 @@ or let a project-domain term back into a seedable checklist surface.
 Commit provider-neutral `.specify/`, `specs/`, requirements, and
 roadmap files; keep generated agent adapters and local caches ignored.
 
-**Maintaining the extension-provided templates**: each provided file
-must stay a complete copy of the core template plus the project
-section (the resolver returns it in its entirety). After an upgrade,
-diff the refreshed core template against `extensions/requirements/templates/`
-and port upstream changes by hand, keeping the project section intact,
-then reinstall the extension. The core templates remain unmodified.
+**Maintaining the extension-provided templates**: each provided file is
+the core template plus the project additions (the Requirements Coverage
+section and the acceptance-test/scope guidance). The stock sample
+authentication task is intentionally replaced so the template does not
+steer every project toward auth. After an upgrade, diff the refreshed
+core template against `extensions/requirements/templates/` and port
+upstream changes by hand, keeping these additions intact, then reinstall
+the extension. The core templates remain unmodified.

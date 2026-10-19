@@ -17,6 +17,7 @@
 #     tests/test_enforcement_chain.py, tests/test_workshop_actions.py,
 #     tests/test_bootstrap_manifest.py)
 #   - the AGENTS.md and CONTRIBUTING.md skeletons and the mechanics stub
+#   - the start-a-project guide and the starter requirements/roadmap examples
 #   - .github/copilot-instructions.md (where Copilot discovers it)
 #   - the mirror dependencies (requirements.txt) and a seed .gitignore
 #   - the Workshop development environment (.workshop/<name>.yaml,
@@ -29,8 +30,9 @@
 # content. The extension tree, tests, Makefile, requirements.txt, workflow
 # overlay, helper scripts, and generated skills are machinery and refresh.
 # Skeleton files (AGENTS.md, CONTRIBUTING.md, agent-instructions.md,
-# .github/copilot-instructions.md, docs/implementation-mechanics.md, the
-# constitution) are only copied when absent, when still byte-identical to
+# .github/copilot-instructions.md, docs/implementation-mechanics.md,
+# docs/start-a-project.md, the docs/ starter examples, the constitution)
+# are only copied when absent, when still byte-identical to
 # this template's skeleton (a pristine copy, refreshed), or when still the
 # stock file a bare `specify init` seeds (the previous content is kept in
 # a .bootstrap-backup beside it); a customized file is never overwritten.
@@ -243,6 +245,9 @@ mkdir -p "$TARGET/.opencode"
 copy "$HERE/.opencode/opencode.json" "$TARGET/.opencode/opencode.json"
 mkdir -p "$TARGET/docs"
 copy_skeleton "$HERE/implementation-mechanics.md" "$TARGET/docs/implementation-mechanics.md"
+copy_skeleton "$HERE/docs/start-a-project.md" "$TARGET/docs/start-a-project.md"
+copy_skeleton "$HERE/docs/REQUIREMENTS.md.example" "$TARGET/docs/REQUIREMENTS.md.example"
+copy_skeleton "$HERE/docs/ROADMAP.md.example" "$TARGET/docs/ROADMAP.md.example"
 
 echo "Generating agent skills from the extension commands"
 "$TARGET/extensions/requirements/scripts/bash/generate-skills.sh" "$TARGET" "$AUTHOR"
@@ -257,13 +262,15 @@ fi
 cat <<'CHECKLIST'
 
 Seeded. Run `make install` to create the project virtual environment
-and install the mirror-test dependencies. Then fill in the @FILL-IN@ markers,
-in this order:
+and install the mirror-test dependencies. Read docs/start-a-project.md for
+the authoring sequence, then fill in the @FILL-IN@ markers, in this order:
 
   1. REQUIREMENTS.md: your product scope with stable, section-scoped
-     requirement IDs (see the README's conventions section).
+     requirement IDs. Start from docs/REQUIREMENTS.md.example (see the
+     README's conventions section and docs/start-a-project.md).
   2. ROADMAP.md: the 9-column feature table mapping each ID to the feature
-     that Completes it.
+     that Completes it. Start from docs/ROADMAP.md.example; every
+     requirement needs exactly one Completes owner.
   3. requirement-phrases.txt: one line per requirement ID with verbatim
      phrases from your REQUIREMENTS.md (the bash suite validates and
      enforces coverage). It is a project artifact beside REQUIREMENTS.md,
@@ -284,6 +291,7 @@ in this order:
 The no-unfilled-markers test in tests/test_style.py fails until every
 @FILL-IN@ marker is resolved; run `make test` to see the remaining ones.
 
-The full guide is in the template repository's README.md (the seed
-checkout you ran this from).
+The full template guide is in the template repository's README.md (the
+seed checkout you ran this from). The authoring walkthrough is
+docs/start-a-project.md in the seeded project.
 CHECKLIST

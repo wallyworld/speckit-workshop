@@ -196,7 +196,13 @@ def fill_markers(target: Path) -> None:
         "@FILL-IN@ The commands that define done (for example make targets), the\n"
         "canonical environment they must run in, and any tooling gotchas. State\n"
         "which invocation is the single definition of done.",
-        "A successful `make test` means everything is good.",
+        "A successful `make test` means the automated checks are good. The R3 "
+        "browser acceptance test uses the container's Google Chrome through "
+        "Playwright: launch with `channel=\"chrome\"` and args "
+        "`[\"--no-sandbox\", \"--disable-dev-shm-usage\"]` (or pass "
+        "`--browser-channel=chrome`), and do not run `playwright install`. "
+        "For browser UI changes, the manual host-browser pass in 05 is also "
+        "part of done.",
         "Verification",
     )
     replace_block(
@@ -249,7 +255,8 @@ def fill_markers(target: Path) -> None:
         "- @FILL-IN@ The commands that define done for your project, and the\n"
         "  canonical environment they must run in (for example a make target that\n"
         "  runs the full suite in one invocation).",
-        "- A clean run of `make test` defines done.",
+        "- A clean run of `make test` defines done for automated checks; "
+        "browser UI changes also need the manual host-browser pass in 05.",
         "definition of done",
     )
 
@@ -1076,21 +1083,37 @@ def add_app_test_gate(target: Path) -> None:
             lines[test_start:test_end] = [" ".join(unique)]
             changed = True
 
-    if not any(line.startswith("test-app:") for line in lines):
+    app_command = [
+        "\tuv run pytest tests/ \\",
+        "\t\t--ignore=tests/test_style.py \\",
+        "\t\t--ignore=tests/test_requirement_traceability.py \\",
+        "\t\t--ignore=tests/test_enforcement_chain.py \\",
+        "\t\t--ignore=tests/test_workshop_actions.py \\",
+        "\t\t--ignore=tests/test_bootstrap_manifest.py -v",
+    ]
+    app_start = next(
+        (index for index, line in enumerate(lines) if line.startswith("test-app:")),
+        None,
+    )
+    if app_start is None:
         insert_at = next(
             (index for index, line in enumerate(lines) if line.startswith("test-extension:")),
             len(lines),
         )
-        lines[insert_at:insert_at] = [
-            "test-app:",
-            "\tuv run pytest tests/test_petstore.py -v",
-            "",
-        ]
+        lines[insert_at:insert_at] = ["test-app:", *app_command, ""]
         changed = True
+    else:
+        app_end = app_start + 1
+        while app_end < len(lines) and lines[app_end].startswith("\t"):
+            app_end += 1
+        block = "\n".join(lines[app_start:app_end])
+        if "--ignore=tests/test_style.py" not in block:
+            lines[app_start + 1 : app_end] = app_command
+            changed = True
 
     if changed:
         write(makefile, "\n".join(lines) + "\n")
-        log("Makefile: added test-app and included it in test")
+        log("Makefile: test-app runs all application tests and is included in test")
 
     allow = target / "tests" / "test_workshop_actions.py"
     if allow.is_file():

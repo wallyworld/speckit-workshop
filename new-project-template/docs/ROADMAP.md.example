@@ -1,0 +1,10 @@
+# @FILL-IN@ Delivery Roadmap
+
+Map every requirement in `REQUIREMENTS.md` to the one feature that completes
+it. Use `Advances (RQ)` only for groundwork that a later feature completes.
+Keep each row on one line and keep the nine columns in the order shown.
+
+| ID | Sub-feature | Intent | Scope boundary | Depends on | Status | Completes (RQ) | Advances (RQ) | Sub-spec |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| R1 | @FILL-IN@ | @FILL-IN@ | @FILL-IN@ | - | planned | AREA-1, AREA-2 | - | - |
+| R2 | @FILL-IN@ | @FILL-IN@ | @FILL-IN@ | R1 | planned | NEXT-1 | - | - |

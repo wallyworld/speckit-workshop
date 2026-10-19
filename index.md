@@ -21,10 +21,12 @@ how to use it to build a small web application with an AI coding agent.
 
 Spec Kit is a process toolkit, not a framework. It changes how you work
 with an AI coding agent from "describe a feature and hope" to "write a
-spec, plan, break into tasks, implement, and verify the result against
-what you specified." The loop is: **specify what to build, plan how to
-build it, break it into tasks, implement, converge (check the code against
-the spec and tasks, filling any gaps)**. Each step is a command your agent
+spec, plan, break into tasks, analyze the artifacts for consistency,
+implement, and verify the result against what you specified." The loop
+is: **specify what to build, clarify ambiguity, plan how to build it,
+break it into tasks, analyze the artifacts, implement, converge (check
+the code against the spec and tasks, filling any gaps)**. Each step is a
+command your agent
 runs; the output of each becomes the input of the next. The payoff is a
 closed loop: nothing is "done" until the code matches the spec and every
 task is built, so the agent cannot quietly skip requirements you stated.
@@ -35,9 +37,9 @@ converge all read it, so the loop has governance above the feature
 artifacts.
 
 ```
-specify -> clarify -> plan -> tasks -> implement -> converge
-  ^                                                       |
-  +-------------------------------------------------------+
+specify -> clarify -> plan -> tasks -> analyze -> implement -> converge
+  ^                                                                  |
+  +------------------------------------------------------------------+
 ```
 
 ## Workshop outline
@@ -56,11 +58,13 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 
 By the end you will be able to:
 
-1. Run the full Spec Kit loop: specify, plan, tasks, implement, converge.
+1. Run the full Spec Kit loop: specify, clarify, plan, tasks, analyze,
+   implement, converge.
 2. Read and reason about the artifacts the loop produces (spec, plan,
    tasks).
-3. Explain where and how "validation" actually fires (converge's
-   check-the-code-against-the-spec step).
+3. Explain where and how "validation" actually fires (analyze's
+   cross-artifact check and converge's check-the-code-against-the-spec
+   step).
 4. Establish a project constitution with `/speckit.constitution` and
    explain how plan, analyze, implement, and converge use it.
 5. Identify why requirements-first beats vibe-implement-and-hope, using
@@ -100,4 +104,7 @@ host, so you can follow along in your IDE.
   specs, build R3 with the hooks), plus extensions, presets, and bundles.
   The reference companion is [`examples/petstore/`](examples/petstore/),
   and the full enforcement template is
-  [`new-project-template/`](new-project-template/).
+  [`new-project-template/`](new-project-template/). For a new project,
+  start with the template's
+  [`docs/start-a-project.md`](new-project-template/docs/start-a-project.md)
+  authoring guide and its starter requirement and roadmap files.
