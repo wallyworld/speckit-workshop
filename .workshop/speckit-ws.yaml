@@ -6,6 +6,7 @@ sdks:
   - name: gh-cli
   - name: opencode
   - name: project-dev-tools
+  - name: project-workdir
   - name: uv
 
 actions:

@@ -1,0 +1,11 @@
+name: workdir
+version: "0.1"
+summary: Host-visible workshop working directory
+description: |
+  Mounts the repository's petstore/ directory at /home/workshop/petstore so
+  the generated project is visible in the host IDE and survives workshop
+  restarts.
+plugs:
+  petstore:
+    interface: mount
+    workshop-target: /home/workshop/petstore

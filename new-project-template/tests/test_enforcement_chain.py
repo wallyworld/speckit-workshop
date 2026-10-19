@@ -615,12 +615,27 @@ DOMAIN_NEUTRAL_SKILL_SURFACES = (
 # Terms naming a specific product, system, or domain. Universal rules
 # must not bake them in: a checklist that says "every new acme-storefront
 # checkout carries a test" ships advice about a system most projects do
-# not have. The shipped entry is a demonstrative placeholder; the scan
-# becomes a real guard when the adopting project adds its own domain's
-# terms here (fill-in checklist step 9), and the instances themselves
-# belong in the project's AGENTS.md, which the checklists name.
-DOMAIN_TERM_DENY_LIST = (
-    "acme-storefront",
+# not have. The shipped entry is a demonstrative placeholder and always
+# applies; the adopting project appends its own terms to domain-terms.txt
+# (fill-in checklist step 9). That file is project data, outside the
+# machinery the bootstrap refreshes, so a re-run does not drop the terms.
+BASELINE_DOMAIN_TERMS = ("acme-storefront",)
+DOMAIN_TERMS_FILE = ROOT / "domain-terms.txt"
+
+
+def _project_domain_terms() -> tuple[str, ...]:
+    if not DOMAIN_TERMS_FILE.is_file():
+        return ()
+    terms = []
+    for line in DOMAIN_TERMS_FILE.read_text(encoding="utf-8").splitlines():
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#"):
+            terms.append(stripped)
+    return tuple(terms)
+
+
+DOMAIN_TERM_DENY_LIST = tuple(
+    dict.fromkeys(BASELINE_DOMAIN_TERMS + _project_domain_terms())
 )
 
 
@@ -724,6 +739,90 @@ def test_attribution_lines_never_trip_the_domain_scan():
     assert _domain_term_hits(prose_leak) == [
         "acme-storefront",
     ]
+
+
+def test_extension_surface_is_documented():
+    """Every command, template, hook pair, and gate is named in the README.
+
+    The per-command explanation is the template's answer to "why is this
+    extension here and why not vanilla Spec Kit?". A command added to the
+    manifest without a README row is an undocumented surface; a row removed
+    from the README while the manifest keeps the command is a stale claim.
+    The check is tree-gated on bootstrap.sh: a seeded project carries its
+    own README and has no bootstrap.sh, so only the template tree asserts
+    this documentation contract.
+    """
+    if not (ROOT / "bootstrap.sh").is_file():
+        pytest.skip("seeded project: the per-command README lives in the template tree")
+    readme = ROOT / "README.md"
+    assert readme.is_file(), "template README.md is missing"
+    text = readme.read_text(encoding="utf-8")
+    assert "The requirements extension, piece by piece" in text, (
+        "README lost the per-command section heading"
+    )
+    assert "Why not a generic Spec Kit project?" in text, (
+        "README lost the vanilla comparison section"
+    )
+    flat = " ".join(text.split())
+    for count in ("six commands", "eight mandatory hook registrations",
+                  "two template overrides", "six extension workflow gates"):
+        assert count in flat, f"README lost the count phrase {count!r}"
+
+    manifest = yaml.safe_load(
+        (ROOT / "extension" / "extension.yml").read_text(encoding="utf-8")
+    )
+    surfaces = manifest["provides"]
+    documented_commands = set(
+        re.findall(r"^\| `(speckit\.requirements\.[^`]+)` \|", text, re.M)
+    )
+    expected_commands = {command["name"] for command in surfaces["commands"]}
+    assert documented_commands == expected_commands, (
+        f"README command table mismatch: "
+        f"missing {sorted(expected_commands - documented_commands)}, "
+        f"stale {sorted(documented_commands - expected_commands)}"
+    )
+    documented_templates = set(
+        re.findall(r"^- `(spec-template|tasks-template)`", text, re.M)
+    )
+    expected_templates = {template["name"] for template in surfaces["templates"]}
+    assert documented_templates == expected_templates, (
+        f"README template list mismatch: "
+        f"missing {sorted(expected_templates - documented_templates)}, "
+        f"stale {sorted(documented_templates - expected_templates)}"
+    )
+    documented_hooks = set(
+        re.findall(
+            r"^\| `(before_[a-z_]+|after_[a-z_]+)` \| "
+            r"`(speckit\.requirements\.[^`]+)` \|",
+            text,
+            re.M,
+        )
+    )
+    expected_hooks = {
+        (event, hook["command"])
+        for event, hooks in manifest["hooks"].items()
+        for hook in hooks
+    }
+    assert documented_hooks == expected_hooks, (
+        f"README hook table mismatch: "
+        f"missing {sorted(expected_hooks - documented_hooks)}, "
+        f"stale {sorted(documented_hooks - expected_hooks)}"
+    )
+
+    gates = yaml.safe_load((ROOT / "review-gates.yml").read_text(encoding="utf-8"))
+    documented_gates = set(
+        re.findall(r"^\| `(review-[a-z-]+)` \|", text, re.M)
+    )
+    expected_gates = {
+        edit["step"]["id"]
+        for edit in gates["edits"]
+        if edit.get("step", {}).get("id")
+    }
+    assert documented_gates == expected_gates, (
+        f"README gate table mismatch: "
+        f"missing {sorted(expected_gates - documented_gates)}, "
+        f"stale {sorted(documented_gates - expected_gates)}"
+    )
 
 
 # The checklist-instances section the seedable checklists point at, and the pointer

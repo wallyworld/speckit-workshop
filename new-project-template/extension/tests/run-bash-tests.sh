@@ -133,6 +133,12 @@ for id in ART-1 ART-6 PLATFORM-5 TEL-1; do
   assert_contains "traceable covers $id" "$id"
 done
 
+# 8b. A letter-suffixed FR row is a real claim row, not formatting.
+run_verify spec-traceable-suffix.md
+assert_success "suffixed FR row verifies clean"
+assert_contains "suffixed FR row covers PLATFORM-5" "PLATFORM-5"
+assert_contains "suffixed FR row confirms OK" "OK"
+
 # 9. Drifted spec (ART-6 claimed but content absent) fails and names ART-6.
 run_verify spec-drifted.md
 assert_failure "drifted spec fails (non-zero exit $RC)"
@@ -323,7 +329,8 @@ assert_contains "heading fixture confirms OK" "OK"
 # before phrases or specs exist; test 17 enforces phrases coverage as soon
 # as REQUIREMENTS.md declares IDs.
 ROOT_REQUIREMENTS="$TESTS_DIR/../../../REQUIREMENTS.md"
-PROJECT_PHRASES="$TESTS_DIR/../data/phrases.txt"
+PROJECT_PHRASES="$TESTS_DIR/../../../requirement-phrases.txt"
+[ -f "$PROJECT_PHRASES" ] || PROJECT_PHRASES="$TESTS_DIR/../data/phrases.txt"
 if [ -n "$(grep -vE '^#|^$' "$PROJECT_PHRASES" 2>/dev/null || true)" ] \
    && compgen -G "$TESTS_DIR/../../../specs/*/spec.md" > /dev/null; then
   OUT=$(SPECKIT_REQUIREMENTS_FILE="$ROOT_REQUIREMENTS" bash "$VERIFY" 2>&1); RC=$?
@@ -338,7 +345,7 @@ fi
 # (a claim with no curated phrase fails closed as a maintainer action).
 # Absent sources are a stated skip, never a vacuous pass: an error here
 # must never read as "coverage ok".
-PHRASES_FILE="$TESTS_DIR/../data/phrases.txt"
+PHRASES_FILE="$PROJECT_PHRASES"
 if [ ! -f "$ROOT_REQUIREMENTS" ]; then
   ok "no REQUIREMENTS.md yet (fresh seed); coverage activates with it"
 elif [ ! -f "$PHRASES_FILE" ]; then

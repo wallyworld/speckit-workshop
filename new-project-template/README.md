@@ -104,7 +104,7 @@ exact formats). On top of that convention, the seed installs:
   complete is materially present in that spec and recorded against the
   requirement's current wording,
 - **enforcement hooks** that fire automatically around Spec Kit's
-  own commands (plan, tasks, analyze, converge),
+  own commands (plan, tasks, implement, analyze, converge),
 - **review gates** mirroring the same checks as approve/reject steps in
   Spec Kit's bundled workflow,
 - **extension-provided templates** (the spec template gains a
@@ -112,20 +112,140 @@ exact formats). On top of that convention, the seed installs:
 - **mirror tests** - plain pytest modules re-checking the same claims:
   style gate, traceability verifier, spec-to-roadmap alignment,
   enforcement-chain integrity,
+- a **project domain-term list** (`domain-terms.txt`) seeded with the
+  placeholder and read by the domain-neutrality scan,
 - **a tool-agnostic wiring chain** so every coding agent reaches the
   same guidance (`agent-instructions.md`, `.github/copilot-instructions.md`,
   `.opencode/opencode.json`).
+
+## The requirements extension, piece by piece
+
+The seed installs **one** extension package, `requirements`. It is not a
+collection of extensions. The package declares six commands, two template
+overrides, and eight mandatory hook registrations. The workflow gates and
+mirror tests are separate enforcement layers around it.
+
+**Terminology**
+
+- **Extension**: an installable package declaring commands, templates, and
+  hooks (`extensions/requirements/extension.yml`).
+- **Command**: an agent-facing instruction file.
+- **Skill**: the generated agent-facing copy of a command.
+- **Hook**: a registration that fires a command at a lifecycle event,
+  recorded in `.specify/extensions.yml`.
+- **Gate**: an approve/reject step in workflow mode.
+- **Mirror test**: a pytest check that re-verifies the same claim without
+  needing the agent tooling to be installed.
+
+**The six commands**
+
+| Command | Fires at | What it does | Why a vanilla Spec Kit project lacks it |
+| --- | --- | --- | --- |
+| `speckit.requirements.prepare` | Manually, before specify | Validates the roadmap row and its predecessors, then emits a read-only brief with the roadmap intent, scope boundary, canonical requirement text, per-requirement SHA-256 digests, and a ready-to-run core specify command. | Core specify accepts free-form text. There is no roadmap row concept and no guarantee the requirement wording reaches the spec. |
+| `speckit.requirements.verify` | `before_analyze`, `before_converge`, and `make test` | For every Completes claim, requires at least one curated requirement phrase in the spec body and a recorded digest matching the requirement's current wording. Fails closed on drift, staleness, missing digests, and malformed claims. | Converge checks code against the spec. Nothing checks the spec against the product requirements; an ID in a table can claim content that was never written, and a claim can outlive the wording it was recorded against. |
+| `speckit.requirements.plan-checklist` | `before_plan` | Injects the plan checklist: design opt-outs must cite the requirement wording that authorizes them, threshold-shaped terms need operational definitions, every in-scope MUST needs a task, and boundaries must be specified (raise-to-catcher, fail-closed positive-path test, wire-format fixtures, real invocation-path tests, malformed-input cases). | The plan is free-form. It can silently design around a MUST, leave a qualitative threshold undefined, or omit the task that builds a requirement. |
+| `speckit.requirements.tasks-checklist` | `before_tasks`, `before_implement`, `before_converge` | Injects the tasks checklist: tests-first with known-good and known-bad fixtures, sequential IDs, enum grounding in current source, boundary rules applied to the code and tests being written, and append-only compliant convergence tasks. | Stock Spec Kit treats test tasks as optional. A tasks list can omit failure-path tests, and a constitution principle alone is prose the agent can ignore. |
+| `speckit.requirements.diff-review` | `after_implement` | Commissions a fresh-context reviewer with only the goal, the applicable checklists, and the implementation diff; fix every finding and re-run until a clean pass before reporting done. | No independent review exists. The authoring agent reviews its own diff with its own context and reasoning. |
+| `speckit.requirements.remediation-loop` | `after_analyze` | Requires every analysis finding to be corrected, checks the other instances of the same defect class, and re-verifies on a fresh pass until clean. | Analyze reports findings but does not enforce remediation. One occurrence can be fixed while the class survives. |
+
+**The two templates**
+
+- `spec-template`: adds the Requirements Coverage section (roadmap entry,
+  Completes/Advances, FR-to-RQ table). Without it, a spec has no structured
+  completion claim for the verifier to read.
+- `tasks-template`: makes tests required per task. Without it, upstream
+  treats test tasks as optional even when the constitution says otherwise.
+
+**The eight hook registrations**
+
+`bootstrap.sh` installs the extension, and the installer writes these
+registrations into `.specify/extensions.yml` from the manifest. The
+commands exist without the registrations, but they do not fire
+automatically:
+
+| Lifecycle event | Command |
+| --- | --- |
+| `before_plan` | `speckit.requirements.plan-checklist` |
+| `before_tasks` | `speckit.requirements.tasks-checklist` |
+| `before_implement` | `speckit.requirements.tasks-checklist` |
+| `after_implement` | `speckit.requirements.diff-review` |
+| `before_analyze` | `speckit.requirements.verify` |
+| `after_analyze` | `speckit.requirements.remediation-loop` |
+| `before_converge` | `speckit.requirements.verify` |
+| `before_converge` | `speckit.requirements.tasks-checklist` |
+
+All eight are registered with `optional: false`. A registration with
+`enabled: false` or a non-empty condition is a silent no-fire, so
+`make test` asserts the full firing-relevant shape. The installer rebuilds
+the hooks section from the manifest on reinstall; a manifest that loses its
+hooks section silently wipes every registration. `make test` catches that
+too.
+
+**The six extension workflow gates**
+
+When you run the bundled workflow (`specify workflow run speckit`) instead
+of working skill by skill, the same checks appear as approve/reject gates:
+
+| Gate | Runs after | Mirrors |
+| --- | --- | --- |
+| `review-coverage` | specify | `speckit.requirements.verify` before human sign-off |
+| `review-plan-checklist` | plan | `speckit.requirements.plan-checklist` |
+| `review-tasks` | tasks | `speckit.requirements.tasks-checklist` |
+| `review-implement-checklist` | tasks, applied to implementation ahead | `speckit.requirements.tasks-checklist` |
+| `review-diff` | implement | `speckit.requirements.diff-review` |
+| `review-final-tree` | implement | Final tree against constitution, requirements, and acceptance criteria |
+
+The bundled workflow has no analyze or converge step, so the
+`before_analyze`, `after_analyze`, and `before_converge` hooks have no gate
+counterpart and fire in skills mode only.
+
+**What is not the extension**
+
+- The **constitution** is installed by the bootstrap, not declared by the
+  extension manifest.
+- The **workflow gates** live in `.specify/workflows/overlays/speckit/`.
+- The **mirror tests** are plain pytest files under `tests/`.
+- The **core loop** is upstream Spec Kit. The extension adds context and
+  enforcement around it; it does not replace specify, plan, tasks,
+  implement, or converge.
+
+## Why not a generic Spec Kit project?
+
+The core loop works without this template. The extension is not required
+for Spec Kit to function; it is required for the phased-delivery guarantees
+this template promises.
+
+| Generic Spec Kit | This template |
+| --- | --- |
+| Description prompts are the only feature input. | `REQUIREMENTS.md` is the product source above every feature. |
+| Each feature is tracked alone. | `ROADMAP.md` maps every requirement to one Completes feature and any Advances. |
+| The spec is the only truth. | Every Completes claim is checked for requirement content in the spec. |
+| No claim freshness. | SHA-256 digests flag claims written against older requirement wording. |
+| Test tasks are optional. | The tasks template and checklist require tests, including failure paths. |
+| No independent implementation review. | A fresh-context diff review runs after implement. |
+| Analyze findings are reported. | The remediation loop forces complete, class-wide corrections. |
+| Enforcement is prose in agent instructions. | Hooks, workflow gates, and mirror tests enforce it. |
+
+If you remove the extension, `/speckit.specify`, `/speckit.plan`,
+`/speckit.tasks`, `/speckit.implement`, and `/speckit.converge` still run.
+What disappears is the accounting layer: requirement IDs and a roadmap
+remain prose, a spec can claim completion without transcribing the
+requirement, stale claims stay green, test omissions survive, and nothing
+commissions an independent review. The core loop is unchanged; the
+guarantees are not free.
 
 ## Prerequisites
 
 - the `specify` CLI (spec-kit 1.0.0 or later) and your coding agent
   installed,
-- LXD 6.8 or later and the Workshop CLI
-  (`sudo snap install --classic workshop`),
 - the uv Python package manager
   (`make install` creates the project virtual environment and installs
   the mirror-test dependencies),
 - Bash 4+ for the extension scripts.
+
+The Workshop sandbox is optional. If you use the Workshop development
+environment described below, you also need LXD 6.8 or later and the
+Workshop CLI (`sudo snap install --classic workshop`).
 
 ## Seed a project
 
@@ -143,18 +263,21 @@ installed at init; additional harness integrations can be added later
 with `specify integration install`.
 
 `bootstrap.sh` is this template's installer - it copies the extension,
-gates, mirrors, and skeletons into the target, never overwriting
-content you have customized - and it calls the extension's
-`generate-skills.sh`, which produces the agent-facing skill copies of
-the extension's commands.
+gates, mirrors, and skeletons into the target. Skeleton files you have
+customized are preserved; the extension tree, tests, Makefile,
+requirements.txt, workflow overlay, helper scripts, opencode config, and
+generated skills are machinery and are refreshed on every run. It calls
+the extension's `generate-skills.sh`, which produces the agent-facing
+skill copies of the extension's commands.
 
 The bootstrap prints a fill-in checklist with the exact steps and
 commands. In full:
 
 1. `REQUIREMENTS.md` - your product scope.
 2. `ROADMAP.md` - the feature table.
-3. `extensions/requirements/data/phrases.txt` - requirement phrases (verbatim
-   wording from your REQUIREMENTS.md), then reinstall the extension.
+3. `requirement-phrases.txt` - requirement phrases (verbatim wording from
+   your REQUIREMENTS.md). It is a project artifact beside REQUIREMENTS.md,
+   so editing it needs no extension reinstall.
 4. The `@FILL-IN@` markers in `AGENTS.md` and `CONTRIBUTING.md`,
    including AGENTS.md's **Project checklist instances** (the
    project-specific instances the checklists point at).
@@ -163,17 +286,18 @@ commands. In full:
    systems.
 7. `.specify/memory/constitution.md` - Part 2 (your domain principles).
 8. `extensions/requirements/extension.yml` - the repository URL.
-9. Extend the domain-term deny list in `tests/test_enforcement_chain.py`
-   with your domain's terms; the shipped entry is a demonstrative
-   placeholder, and the scan guards your vocabulary once your terms are
-   in.
+9. `domain-terms.txt` - extend the deny list with your domain's terms.
+   Keep the shipped `acme-storefront` placeholder and append your own,
+   one per line. The file is a project artifact, so a bootstrap re-run
+   keeps it; the scan guards your vocabulary once your terms are in.
 
 `examples/` holds a minimal worked sample (requirements, roadmap, spec,
-phrases). Pass `--with-examples` to the bootstrap command to install it.
-The traceability tooling then verifies green immediately; the
-no-unfilled-markers gate (a test that fails while any `@FILL-IN@` marker
-remains) stays red until you fill the skeletons, which is the expected
-state of a freshly seeded project.
+requirement phrases). Pass `--with-examples` to the bootstrap command to
+install it.
+The traceability tooling then verifies green immediately. The style and
+enforcement gates stay red until you fill the skeletons and the AGENTS.md
+checklist instances, which is the expected state of a freshly seeded
+project.
 
 ## Workshop development environment
 
@@ -260,15 +384,17 @@ mapping table (FR = the spec's functional-requirement ID); every
 requirement digest.
 
 **Requirement phrases** - one line per requirement ID in
-`extensions/requirements/data/phrases.txt`: `ID|phrase|phrase|...`,
+`requirement-phrases.txt` at the project root: `ID|phrase|phrase|...`,
 each phrase verbatim from that requirement's own REQUIREMENTS.md text.
+It is a project artifact, deliberately outside the extension source tree,
+so it survives extension reinstall and needs no reinstall after edits.
 Because hand-curating phrases across dozens of requirements is tedious, you
 can draft candidates and then tighten them:
-- Run `bash extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o extensions/requirements/data/phrases.txt`
+- Run `bash extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`
   to emit one or two verbatim candidates per requirement ID from its MUST
   clause (it overwrites the target file).
-- Or prompt your agent: *"Generate `extensions/requirements/data/phrases.txt`
-  from `REQUIREMENTS.md`. For each bullet ID, extract 2-3 distinctive,
+- Or prompt your agent: *"Generate `requirement-phrases.txt` from
+  `REQUIREMENTS.md`. For each bullet ID, extract 2-3 distinctive,
   verbatim phrases."*
 Generated phrases are guaranteed verbatim (the script validates each one
 before writing), but not guaranteed *distinctive*: a generic phrase such as
@@ -293,15 +419,15 @@ claim with no recorded digest fails as UNDIGESTED.
 | Mode | What runs |
 | --- | --- |
 | `make test` (and CI) | Traceability verifier over every committed spec; the extension's Bash test suite; the style gate (the em-dash and marker rules); the installed extension matching the tracked source; the enforcement-chain mirror tests (hook registrations, checklist rules surviving into every mirror, domain neutrality of the seedable checklists, the AGENTS.md checklist-instances section - see below); the workshop-action sync test (the `.workshop/` definition's actions name real Makefile targets; every public target is exposed or allowlisted); the bootstrap-manifest coverage test (every Python file under `tests/` ships in the seed's copy manifest). The mirror tests gate on adoption: a project without the extension skips them; an adopting project missing an integral file fails. The manifest test is tree-gated: it fires here and skips in a seeded project. |
-| Skills mode (`/speckit-*` commands) | The hooks registered in `.specify/extensions.yml` inject the checklists before plan, tasks, and converge, run the traceability verifier before analyze and converge, and enforce the analysis remediation loop after analyze. |
-| Workflow mode (`specify workflow run speckit`) | The same checks fire as approve/reject gates in the bundled workflow. |
+| Skills mode (`/speckit-*` commands) | The hooks registered in `.specify/extensions.yml` inject the checklists before plan, tasks, implement, and converge; run the traceability verifier before analyze and converge; commission the independent diff review after implement; and enforce the analysis remediation loop after analyze. |
+| Workflow mode (`specify workflow run speckit`) | The checks with gate counterparts fire as approve/reject gates in the bundled workflow; the analyze and converge hooks fire in skills mode only. |
 | Acceptance | A human confirms every `Completes` claim (the roadmap's assertion that the feature fully delivers those requirements) has realizing implementation before the roadmap status flips to `done`. |
 
 The project's `AGENTS.md` carries this map plus the
-**Project checklist instances** section the checklists point at.
-When you fill that section in, update the matching markers in
-`tests/test_enforcement_chain.py` together with it - the test fails
-until both the section and the checklists' pointers to it exist.
+**Project checklist instances** section the checklists point at. Fill in
+both records; the enforcement-chain test reads them directly and fails
+while either record is empty. Only renaming the heading or the record
+labels requires touching the test constants.
 
 ### The mirror tests (tests/)
 
@@ -322,8 +448,9 @@ that adopted it with a broken chain.
 - `tests/test_enforcement_chain.py` - re-checks the enforcement chain
   itself: the hook registrations (with their enabled/optional shape),
   the skills surfacing them, template resolution, gate composition,
-  checklist-rule incorporation into every mirror, and domain neutrality of
-  the seedable surfaces.
+  checklist-rule incorporation into every mirror, domain neutrality of
+  the seedable surfaces, and (in this template tree) that every manifest
+  command, template, hook, and gate is documented in this README.
 - `tests/test_workshop_actions.py` - re-checks the Workshop definition
   against the Makefile: every named action's make target exists, and
   every public Makefile target is exposed as an action or allowlisted
@@ -339,10 +466,18 @@ that adopted it with a broken chain.
 Part 1 (delivery principles) is universal and travels with the
 tooling. Part 2 (project principles) is yours. Add one principle per
 domain concern through `/speckit-constitution`, which versions and
-records the amendment in the constitution. Part 1 stays
-domain-neutral (it names no product, technology, or domain), so it
-travels unchanged; reviewing your own artifacts against it keeps that
-boundary in practice.
+records the amendment in the constitution. After running it, check that
+the two-part structure survived; the command resolves the stock
+constitution template underneath. Part 1 stays domain-neutral (it names
+no product, technology, or domain), so it travels unchanged; reviewing
+your own artifacts against it keeps that boundary in practice.
+
+This constitution is part of the seeded process, not a drop-in for a
+vanilla `specify init` project: Part 1's principles reference the
+requirements source, roadmap, and implementation mechanics, and the
+enforcement comes from the extension and hooks the bootstrap installs.
+For a vanilla project, use the core `/speckit-constitution` command; for
+this template, run the bootstrap.
 
 ## What is optional
 

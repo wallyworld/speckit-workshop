@@ -1,4 +1,4 @@
-# 03 - The Loop, Demoed: Pet Catalog
+# 03 - The Loop - Build a pet store
 
 Run each command and let the agent work - watch what happens at each
 step. This walkthrough assumes you are inside your workshop container
@@ -8,6 +8,12 @@ the agent open and `/speckit` commands available.
 > **Command form.** As in [02](02-core-concepts.md), the commands below use
 > OpenCode's dot form; with agy or Copilot use the hyphenated form
 > (`/speckit-specify` in place of `/speckit.specify`).
+
+The constitution was ratified in
+[01](01-setup.md#14-ratify-the-project-constitution). If
+`.specify/memory/constitution.md` is still the unfilled template, go back
+and run that step first; the plan's Constitution Check has nothing to
+check otherwise.
 
 ## The feature description
 
@@ -92,6 +98,10 @@ What you should see:
 
 - `specs/001-<slug>/plan.md` is created: the technical approach, the
   files to create, the data model, the API endpoints, the edge cases.
+- A **Constitution Check** section: the plan is evaluated against
+  `.specify/memory/constitution.md`; a conflict must be justified in
+  Complexity Tracking or the design changed. This is where the principles
+  you ratified in 01 constrain the feature.
 
 ## Step 4: `/speckit.tasks`
 
@@ -117,6 +127,8 @@ What you should see:
 - The agent executes the tasks in order: creates the FastAPI app, the
   SQLite storage layer, the endpoints, and the tests.
 - It runs the test suite and fixes failures until it passes.
+- It reads the constitution as a governance constraint (for example, the
+  tests-required and minimal-stack principles).
 
 ## Step 6: `/speckit.converge`
 
@@ -133,6 +145,10 @@ What you should see:
   edge case you specified but the agent did not implement). Review what
   it appends before re-running implement - appended findings can name
   work the code already contains.
+- It treats a constitution MUST violation as CRITICAL. If the metrics line
+  reports that the constitution principles were skipped, the constitution
+  is still unfilled; return to
+  [01](01-setup.md#14-ratify-the-project-constitution) Section 1.4.
 - The loop repeats: re-run `/speckit.implement`, then `/speckit.converge`
   again, until it reports **converged**.
 
@@ -176,6 +192,8 @@ is now clickable. Try it like a real pet store:
 
 - You wrote a feature description, and the agent turned it into a written
   artifact chain: spec, plan, tasks.
+- The plan's Constitution Check and converge's constitution check ran
+  against the principles you ratified in 01.
 - The agent implemented the tasks and ran its own tests as it went.
 - Converge checked the final code against the spec/plan/tasks and
   reconciled any gaps.

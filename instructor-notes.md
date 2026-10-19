@@ -33,6 +33,23 @@ the host (`~/.config/opencode` and `~/.gemini`), while Copilot users
 need to run `copilot` then `/login` inside the container first (GitHub
 device flow; their host credential store does not carry).
 
+The script mounts `<clone>/petstore` on the host at `~/petstore` in the
+container, so students can open it in their IDE. To reset a student's
+project, delete the contents of `<clone>/petstore` on the host and re-run
+`./scripts/workshop.sh`; keep the directory itself. Do not delete the
+mountpoint inside the container. Containers created before this mount
+existed may already have a real `~/petstore` directory; the mount shadows
+it, so move or copy that directory aside before re-running.
+
+### Constitution (01 §1.4)
+
+Start `/speckit.constitution` with the prompt in 01. While it runs, have
+students open a second byobu window and do §1.5 (venv and dependencies).
+It can take 2-4 minutes. The pass condition is that the placeholder check
+in 01 returns nothing; if the agent leaves TODOs, resolve them. Do not skip
+an unfilled constitution: plan and analyze have no concrete principles to
+check, and converge skips it explicitly.
+
 ## Core concepts (02-core-concepts.md)
 
 Target 10-15 minutes with questions.
@@ -54,7 +71,9 @@ Target 10-15 minutes with questions.
     the "stock-derived availability" rule from the description.
   - after Step 3: point out that the plan names the concrete files and
     the data model. Note the fact that the plan is written
-    *before* any code, and that it is the agent's own work product.
+    *before* any code, and that it is the agent's own work product. Open
+    the Constitution Check and ask whether the plan honors the
+    tests-required and minimal-stack principles.
   - after Step 4: walk through a few tasks. Point out that tasks are
     small and each names the file it touches.
   - during Step 5: this is where the agent's own
@@ -67,7 +86,9 @@ Target 10-15 minutes with questions.
 
 The two possible failure modes: (a) a student whose spec lost the requirement
 (Checkpoint 1) and (b) a student whose tests pass but never assert the
-requirement (Checkpoint 2).
+requirement (Checkpoint 2). After converge, ask whether it cited the
+constitution. If it did not, use that to explain the difference between a
+written principle and an enforced gate.
 
 ## Why this project
 
@@ -79,10 +100,15 @@ implementation will violate while still passing happy-path tests.
 ## What's Next / Phase 2 (05-whats-next.md)
 
 Those who finish early or want to explore multi-phase delivery after the
-workshop can build **Phase 2 (Web UI)**. Point them to `examples/petstore/README.md`:
-it walks through retrofitting `REQUIREMENTS.md` and `ROADMAP.md` into their
-existing `~/petstore` project, reconciling their Phase 1 sub-specs, and driving
-slice `R3` through the loop. Those interested in automated governance can also
-bootstrap the full enforcement tooling from `new-project-template/` and use the
-pre-curated `phrases.txt`.
+workshop can build **Phase 2 (Web UI)**. Point them to `05-whats-next.md`:
+it is now the step-by-step walkthrough that copies `REQUIREMENTS.md`,
+`ROADMAP.md`, and `requirement-phrases.txt` into their existing
+`~/petstore` project, bootstraps the requirements extension, runs the
+retrofit script for the Phase 1 specs, and drives slice `R3` through the
+loop with the hooks firing. `examples/petstore/README.md` is the reference
+companion with the file formats and troubleshooting. Those interested in
+the enforcement details can read the template README's per-command
+section. Do not copy the template constitution by itself: run the full
+bootstrap, and note that it keeps the constitution the student already
+generated.
 

@@ -2,6 +2,12 @@
 
 set -e -u -o pipefail
 
+PROJECT_ROOT=$(cd -- "$(dirname -- "$0")/.." && pwd)
+
+# The petstore working tree is host-backed so students can open it in
+# their IDE. Create it before the workshop refreshes its mount.
+mkdir --parents "${PROJECT_ROOT}/petstore"
+
 # NB: the workshop name is the definition file's name (.workshop/<name>.yaml);
 # it keys the tool's image cache, so it is per-project. Derived from the
 # single definition present; set WORKSHOP_NAME to override (for example,
@@ -28,6 +34,7 @@ declare -A MOUNTS=(
     [copilot:copilot-config]='~/.copilot'
     [opencode:opencode-config]='~/.config/opencode'
     [opencode:opencode-data]='~/.local/share/opencode'
+    [workdir:petstore]="${PROJECT_ROOT}/petstore"
 )
 
 expand_home() {
@@ -35,11 +42,11 @@ expand_home() {
 }
 
 # Succeed when the mount already points at the wanted host directory,
-# whether workshop reports it with a literal ~ or an expanded path.
+# whether workshop reports either side with a literal ~ or an expanded path.
 mount_is_current() {
     local sdk=${1%%:*} mount=${1#*:} wanted=$2 current
     current=$(yq ".sdks.\"${sdk}\".mounts.\"${mount}\".\"host-source\"" <<<"${INFO}")
-    [[ ${current} == "${wanted}" || ${current} == "$(expand_home "${wanted}")" ]]
+    [[ "$(expand_home "${current}")" == "$(expand_home "${wanted}")" ]]
 }
 
 if ! workshop info "${WORKSHOP_NAME}" >&/dev/null; then
@@ -65,7 +72,7 @@ done
 
 # The slow stop/start cycle happens once, and only if something is stale.
 if ((${#stale[@]} > 0)); then
-    echo "Mounting host configuration directories"
+    echo "Mounting host directories"
     workshop stop "${WORKSHOP_NAME}"
     for key in "${stale[@]}"; do
         echo "Mounting ${key} from host"
@@ -77,3 +84,4 @@ if ((${#stale[@]} > 0)); then
 fi
 
 echo "Workshop ready (connect with 'workshop shell')"
+echo "~/petstore is mounted from ${PROJECT_ROOT}/petstore"

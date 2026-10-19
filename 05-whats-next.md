@@ -1,110 +1,379 @@
-# 05 - What's Next: Extensions, Presets, Phasing
+# 05 - What's Next: Phased Delivery, Step by Step
 
-## Extensions
+You have run the core loop twice: the pet catalog in
+[03](03-the-loop.md) and order placement in [04](04-the-refinement.md).
+That is the right way to learn Spec Kit. This page adds the **phased
+delivery** layer on top of the same loop: a product-level requirements
+source, a roadmap, per-feature completion claims, and tooling that checks
+those claims instead of trusting them.
 
-Extensions add behaviors to Spec Kit on top of the vanilla loop you just
-learned. They are optional; the core loop works without any.
+You will do this against the petstore you built in `~/petstore`:
 
-- **How they load**: extensions are installed into the project with
-  `specify extension add` and registered via `.specify/extensions.yml`
-  (with a version/shape manifest). The CLI resolves them at runtime.
-- **Upstream bundled**: the spec-kit upstream ships opt-in extensions.
-  Two well-known examples are:
-  - **bug** - a workflow for fixing bugs (assess, fix, test), rather
-    than treating a bug as a feature.
-  - **assess** - a workflow for gathering evidence about an idea before
-    committing to a spec - it works even in a project with no source
-    code yet.
-  - Enable them by asking `specify` to add them (the official README has
-    the exact command) - the mechanism is the same `extensions.yml`
-    registration.
-- **Community catalog**: a catalog of community-contributed extensions
-  exists (for example TDD scaffolding, BDD scenario conversion,
-  architecture governance checks). Browse it for shapes you can adopt or
-  adapt.
-- **Writing your own**: an extension is a directory with an
-  `extension.yml` manifest declaring what it provides - commands
-  (agent-facing markdown docs), templates (overriding the core spec and
-  tasks templates), and hooks (mandatory checks injected around the core
-  commands, registered into `.specify/extensions.yml` at install time) -
-  plus any scripts the commands invoke. The requirements extension in
-  [`new-project-template/`](new-project-template/) in this repository is
-  the reference for the shape.
+1. copy the product artifacts into your project;
+2. install the phased-delivery tooling;
+3. retrofit the two specs you authored before the tooling existed;
+4. build the Phase 2 Web UI (`R3`) through the loop, with the extension
+   commands and hooks firing at each stage;
+5. verify the completion claims and close the roadmap.
 
-## Presets and bundles
+Command forms used below:
 
-At `specify init` you can select a **preset** - a packaged override of
-the command, template, and script files, no new tooling. **Bundles** go
-further: versioned stacks of extensions, presets, and workflows,
-installed later with `specify bundle install` when a team wants one line
-to standardize its spec template and guardrails across many repos. The
-vanilla project you created during the workshop is the bare default.
+- **Core commands** use OpenCode's dot form: `/speckit.specify`.
+- **Extension commands** are skills, so they use the hyphenated form:
+  `/speckit-requirements-prepare`. The dot form
+  (`/speckit.requirements.prepare`) is also installed by the extension.
+- With agy or Copilot, use the hyphenated form for core commands too:
+  `/speckit-specify`.
 
-## Phased delivery for larger projects
+## The four-part model
 
-The workshop was deliberately **one feature, the full loop**. That is the
-core model and it is the right way to learn Spec Kit.
-
-Real-world products do not always map to "one feature done at a time."
-Larger projects - a product with multiple related features, a release
-train, a multi-team roadmap - commonly need to describe the *frontier* of
-delivery: what the product is. The generic shape such projects add
-on top of the vanilla core is:
-
-1. **A requirements source.** A single document that states every
-   requirement of the product, each with a stable ID, independently of
-   any feature. ("The system must X.")
-2. **A delivery roadmap.** A table mapping each requirement to a delivery
-   phase and to a feature that realizes it, with a status per row.
+1. **A requirements source.** `REQUIREMENTS.md` states every product
+   requirement once, with a stable ID (`CAT-1`, `ORD-3`, `UI-5`),
+   independently of any feature.
+2. **A delivery roadmap.** `ROADMAP.md` maps every requirement to the one
+   feature that **Completes** it (or an earlier feature that **Advances**
+   it), with a status per row.
 3. **Per-feature claims.** Each feature spec declares which requirements
-   it completes (and which it merely advances), referencing requirement
-   IDs from the source.
-4. **A verification step.** The roadmap row is only marked "done" when
-   (a) the requirement's content is actually present in the spec, (b)
-   the claim is fresh - not recorded against wording that has since
-   changed - and (c) the code realizes it.
+   it completes and which it only advances.
+4. **A verification step.** A requirement is only `done` when its wording
+   is present in the spec, its recorded digest still matches the current
+   wording, and the code realizes it.
 
-Upstream now documents a manual version of this layer - a roadmap
-convention for oversized work, the [spec of
-specs](https://github.github.io/spec-kit/concepts/spec-of-specs.html) -
-with no tooling and no product-requirement semantics. The template
-below implements that convention and adds both.
+The core loop is unchanged. The extension puts an accounting layer in
+front of it.
 
-This is not more Spec Kit - it is the same loop, with an accounting layer
-in front of it. Each requirement that the roadmap declares "done" has to
-earn that status through a feature that went through the loop.
+## What the requirements extension adds
 
-To see what this looks like for the pet store you built during the workshop, see
-[`examples/petstore/`](examples/petstore/):
-- [`REQUIREMENTS.md`](examples/petstore/REQUIREMENTS.md) groups the requirements
-  into the backend API slices (Phase 1, what you just completed) and a full web
-  user interface (Phase 2, for after the workshop).
-- [`ROADMAP.md`](examples/petstore/ROADMAP.md) maps those requirements to delivery
-  slices (`R1` catalog, `R2` orders, `R3` web UI).
-- [`phrases.txt`](examples/petstore/phrases.txt) defines curated requirement phrases
-  for deterministic traceability checking. In practice, you do not need to type
-  these manually: an agent can generate them directly from `REQUIREMENTS.md` (or
-  you can run the template's `extract-phrases.sh` script), and the verifier ensures
-  every phrase matches verbatim.
-- [`README.md`](examples/petstore/README.md) provides a step-by-step guide to
-  **retrofit** these files into your `~/petstore` project, reconcile your existing
-  Phase 1 sub-specs, and build the Phase 2 Web UI (`R3`).
+The phased delivery template ships **one** extension package, `requirements`. It contains
+six commands, two template overrides, and eight mandatory hooks. The full
+per-command explanation, including what each command prevents versus a
+vanilla Spec Kit project, is in the template README section
+[The requirements extension, piece by piece](new-project-template/README.md#the-requirements-extension-piece-by-piece).
 
-The full tooling mechanics - requirements verifiers, moment-of-authoring hooks
-(including the independent diff review after implement), and review gates -
-ship ready-made in
-[`new-project-template/`](new-project-template/) in this repository: it
-seeds exactly this model - requirements source, roadmap map, requirement
-phrases and requirement digests - together with tooling that verifies
-each completion claim, and its README documents the formats and the
-fill-in workflow.
+| Loop stage | What fires |
+| --- | --- |
+| before specify | `/speckit-requirements-prepare R#` builds a reviewed brief with canonical requirement text and digests |
+| plan | `before_plan`: plan checklist |
+| tasks | `before_tasks`: tasks checklist, tests required |
+| analyze | `before_analyze`: requirement verifier; `after_analyze`: remediation loop |
+| implement | `before_implement`: tasks checklist applied to code being written; `after_implement`: independent diff review |
+| converge | `before_converge`: requirement verifier and tasks checklist |
 
-## Reading list (all upstream)
+The extension is optional for Spec Kit itself. It is necessary for the
+guarantees we are describing: without it, `REQUIREMENTS.md` and `ROADMAP.md` are
+prose, a spec can claim an ID without containing its content, tests can be
+omitted, and no independent review runs.
+
+## Step 1: Copy the product artifacts
+
+Inside the workshop container:
+
+```bash
+cd ~/petstore
+cp /project/examples/petstore/REQUIREMENTS.md .
+cp /project/examples/petstore/ROADMAP.md .
+cp /project/examples/petstore/requirement-phrases.txt .
+```
+
+What you copied:
+
+- `REQUIREMENTS.md` groups Phase 1 (catalog `CAT-1..CAT-4`, orders
+  `ORD-1..ORD-4`) and Phase 2 (web UI `UI-1..UI-5`).
+- `ROADMAP.md` maps those requirements to `R1` (catalog), `R2` (orders),
+  and `R3` (web UI). `R1` and `R2` are `done`; `R3` is `planned`.
+- `requirement-phrases.txt` holds distinctive, verbatim phrases from each
+  requirement. It is a **project artifact** beside `REQUIREMENTS.md`, not
+  part of the extension.
+
+Read the two Markdown files before continuing. The roadmap row for `R3`
+is the work you will do.
+
+## Step 2: Bootstrap the tooling
+
+```bash
+/project/new-project-template/bootstrap.sh ~/petstore
+```
+
+The bootstrap installs the requirements extension and its hooks, the spec
+and tasks templates, the workflow review gates, the constitution skeleton,
+the mirror tests, the `AGENTS.md` and `CONTRIBUTING.md` skeletons, and the
+`Makefile`. It then runs `specify extension add --dev --force
+extensions/requirements`, which writes the hook registrations into
+`.specify/extensions.yml`.
+
+Two things to check:
+
+```bash
+ls .specify/extensions.yml
+grep -n "requirements" .specify/extensions.yml
+```
+
+If the bootstrap could not run `specify` (CLI not found), it still copies
+the extension source. Register it yourself:
+
+```bash
+cd ~/petstore
+specify extension add --dev --force extensions/requirements
+```
+
+**Constitution caveat.** Your `~/petstore` has the workshop constitution
+you ratified in [01](01-setup.md#14-ratify-the-project-constitution).
+`bootstrap.sh` never overwrites a customized constitution, so it keeps
+yours. The template's two-part constitution is therefore not installed.
+That is fine for this exercise. If you want the two-part version, move
+`.specify/memory/constitution.md` aside before the bootstrap and re-run;
+if you want to combine them, merge only the workshop principles not
+already covered by the template's Part 1 into its Part 2.
+
+## Step 3: Retrofit the pre-bootstrap specs
+
+Your `001-*` and `002-*` specs were authored before the extension existed.
+They have no Requirements Coverage section and do not contain the curated
+requirement phrases, so the traceability verifier would fail closed. The
+retrofit script fixes that and fills the skeleton markers:
+
+```bash
+python3 /project/examples/petstore/retrofit-petstore.py ~/petstore
+```
+
+The script is idempotent and reports every change. In order, it:
+
+- registers the extension if `.specify/extensions.yml` is missing;
+- seeds or migrates `requirement-phrases.txt`;
+- installs the mirror-test dependencies if `pytest` or `yaml` is missing;
+- fills every `@FILL-IN@` marker with petstore values;
+- appends `petstore` and `pet-catalog` to `domain-terms.txt` while keeping
+  the shipped placeholder;
+- reconciles the `ROADMAP.md` Sub-spec links with the real `specs/`
+  directories;
+- adds Requirements Coverage to every spec that needs it, using the
+  extension's `assemble-brief.sh` for the roadmap entry, Completes/Advances
+  IDs, and requirement digests, and transcribes the canonical requirement
+  wording into the matching FR;
+- adds a `test-app` target so `make test` runs the application tests as
+  well as the mirror suite;
+- replaces em dashes in project-produced files;
+- runs the traceability verifier and `make test`, and reports the result.
+
+Review the report and the coverage tables. Every FR-to-RQ row is chosen by
+keyword overlap, so confirm the mapping; a `REVIEW` line marks a zero-score
+provisional assignment. The verifier is the gate; the mapping is a
+human-review aid.
+
+Then run the gate yourself:
+
+```bash
+make test
+```
+
+A clean run means the style gate, traceability verifier, extension Bash
+suite, enforcement-chain mirrors, workshop-action sync, and application
+tests all pass.
+
+## Step 4: Inspect the retrofit
+
+Open `specs/001-<slug>/spec.md` and `specs/002-<slug>/spec.md`. Each now has
+a **Requirements Coverage** section with:
+
+- the roadmap entry (`R1` or `R2`);
+- the Completes/Advances IDs from the roadmap row;
+- the requirement digests;
+- the FR-to-RQ mapping table.
+
+Run the verifier directly to see the per-requirement verdicts:
+
+```bash
+bash extensions/requirements/scripts/bash/verify-traceability.sh
+```
+
+You should see `OK - every claimed-complete requirement has distinctive
+content in its spec.`
+
+Open `.specify/extensions.yml`: the eight mandatory hooks are registered
+with `optional: false`. The commands exist without these registrations,
+but they do not fire automatically. This file is what makes the hooks run.
+
+## Step 5: Build Phase 2 (`R3`) through the phased loop
+
+The Web UI slice is `R3` in `ROADMAP.md`. Start a new agent session so the
+Phase 1 context does not crowd the new feature.
+
+### 5.1 Prepare the brief
+
+```text
+/speckit-requirements-prepare R3
+```
+
+The command validates that `R3` exists, that its predecessors are `done`,
+and that its Completes/Advances IDs exist in `REQUIREMENTS.md`. It prints
+a read-only brief with the roadmap intent, scope boundary, canonical
+requirement text for `UI-1..UI-5`, per-requirement digests, and a
+ready-to-run core specify command. Review it before running it.
+
+### 5.2 Specify
+
+Run the emitted command, for example:
+
+```text
+/speckit.specify Implement slice R3 from ROADMAP.md: an interactive
+browser frontend served by FastAPI that renders the catalog, creates pets,
+places orders, and cancels orders.
+```
+
+The agent reads `ROADMAP.md` and `REQUIREMENTS.md` and drafts
+`specs/003-<slug>/spec.md`. The extension-provided spec template requires
+a Requirements Coverage section; the spec must contain `UI-1..UI-5` and
+map its FRs to them.
+
+**Pass condition**: the spec states the `UI-1..UI-5` requirements, and its
+coverage table claims `R3` with the correct Completes set.
+
+### 5.3 Clarify, plan, tasks
+
+```text
+/speckit.clarify
+/speckit.plan
+/speckit.tasks
+```
+
+At `plan`, the `before_plan` hook injects the plan checklist: design
+opt-outs must cite requirement wording, thresholds need operational
+definitions, every MUST needs a task, and boundaries must be specified.
+At `tasks`, the `before_tasks` hook injects the tasks checklist: tests come
+first, IDs are sequential, and failure paths are covered. The tasks
+template makes tests required.
+
+**Pass condition**: `plan.md` and `tasks.md` exist, the plan's Constitution
+Check ran, and the tasks include tests for the UI behavior.
+
+### 5.4 Analyze
+
+```text
+/speckit.analyze
+```
+
+`before_analyze` runs the requirement verifier, so any drift or stale
+digest appears in the analysis report. If analysis reports findings,
+`after_analyze` runs the remediation loop: correct every instance of the
+same claim or defect class, then re-verify on a fresh pass.
+
+### 5.5 Implement
+
+```text
+/speckit.implement
+```
+
+`before_implement` applies the tasks checklist to the code and tests being
+written, not only the task text. The agent writes the HTML/JS/CSS, wires
+the FastAPI static route or index handler, and runs the tests.
+
+`after_implement` commissions an independent, fresh-context review of the
+implementation diff. The reviewer gets only the goal, the applicable
+checklists, and the diff. Fix every finding and re-run until clean before
+reporting the work done.
+
+### 5.6 Converge
+
+```text
+/speckit.converge
+```
+
+`before_converge` runs the requirement verifier and the tasks checklist
+again. Converge re-reads the spec and compares the code to it. It refuses
+to call the feature converged while a claimed requirement is missing from
+the spec, stale, or unimplemented.
+
+If converge appends missing work to `tasks.md`, review the appended task,
+re-run implement, then converge again.
+
+### Workflow mode (optional)
+
+Instead of working skill by skill, you can run the bundled workflow and
+see the same checks as approve/reject gates:
+
+```bash
+specify workflow run speckit -i "spec=an interactive pet store web UI served by FastAPI"
+```
+
+The extension adds six gates: `review-coverage` (after specify),
+`review-plan-checklist` (after plan), `review-tasks` and
+`review-implement-checklist` (after tasks), `review-diff` and
+`review-final-tree` (after implement). The composed workflow also keeps
+Spec Kit's stock gates. Each gate can approve or reject; rejection aborts
+the workflow. The bundled workflow has no analyze or converge step, so
+those hooks fire in skills mode only.
+
+## Step 6: Verify and close the loop
+
+Confirm the `R3` spec verifies clean:
+
+```bash
+bash extensions/requirements/scripts/bash/verify-traceability.sh ~/petstore/specs/003-*/spec.md
+```
+
+Then update `ROADMAP.md` row `R3`:
+
+- change `Status` from `planned` to `done`;
+- set the `Sub-spec` link to your generated `specs/003-...` directory.
+
+Finally run the full gate and review the working tree:
+
+```bash
+make test
+git diff
+```
+
+The roadmap row is a claim. Only mark it `done` when the spec content, the
+fresh digest, and the code all support it.
+
+## Troubleshooting
+
+- **`make test` says `No module named pytest` or `yaml`**: run
+  `make install`. The fixed install target always installs the
+  requirements, even if a venv already exists.
+- **`test_hook_registrations_present` fails**: `.specify/extensions.yml`
+  is missing or was wiped. Run
+  `specify extension add --dev --force extensions/requirements`.
+- **`no '| FR-### | RQ... | Completes |' rows found`**: the spec predates
+  the extension. Run the retrofit script.
+- **`phrases file not found`**: copy `requirement-phrases.txt` to the
+  project root, or run the retrofit script to seed it.
+- **`stale phrase` or `DRIFTED`**: the requirement wording changed after
+  the phrase or digest was recorded. Regenerate candidates with
+  `extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`,
+  review them, and update the spec text and digests through the brief.
+- **Em dash style failure**: use a hyphen. The retrofit script replaces em
+  dashes in project-produced files, but not in upstream or runtime
+  surfaces. If an em dash was in `REQUIREMENTS.md`, the curated phrase may
+  no longer be verbatim; review or regenerate `requirement-phrases.txt`
+  and re-run the verifier.
+- **Constitution looks different after bootstrap**: the bootstrap keeps a
+  customized constitution. If you want the template's two-part version,
+  move the file aside and re-run.
+
+## Extensions, presets, and bundles
+
+- **Extensions** add commands, templates, and hooks; they are installed
+  with `specify extension add` and registered in `.specify/extensions.yml`.
+  Upstream ships opt-in extensions (`bug`, `assess`), and a community
+  catalog exists. The requirements extension is this template's reference
+  example.
+- **Presets** are packaged file overrides selected at `specify init`; they
+  add no commands or hooks.
+- **Bundles** are versioned stacks of extensions, presets, and workflows,
+  installed with `specify bundle install`.
+
+The vanilla project from the workshop is the bare default. This page added
+one extension and its enforcement layer; it did not change the loop.
+
+## Reading list
 
 - The [spec-kit README](https://github.com/github/spec-kit) (install
   instructions, preset/bundle reference, extension API).
-- The spec-kit `/speckit.constitution` output as a model of writing
-  project principles.
-- The [community extension
-  catalog](https://github.github.io/spec-kit/community/extensions.html)
-  for workflow shapes.
+- The template README's
+  [requirements extension section](new-project-template/README.md#the-requirements-extension-piece-by-piece)
+  and the [template conventions](new-project-template/README.md#conventions-the-tooling-expects).
+- The core `/speckit.constitution` command and the
+  [`new-project-template/constitution.md`](new-project-template/constitution.md)
+  two-part model.
+- The [community extension catalog](https://github.github.io/spec-kit/community/extensions.html).

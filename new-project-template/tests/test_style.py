@@ -94,7 +94,7 @@ ALWAYS_SCAN: set[str] = {
     ".workshop/dev-tools/hooks/setup-base",
     ".workshop/dev-tools/hooks/setup-project",
     "gitignore",
-    "phrases.txt.example",
+    "requirement-phrases.txt.example",
 }
 
 EM_DASH = "\u2014"  # kept as an escape so this file passes its own rule

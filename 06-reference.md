@@ -4,9 +4,9 @@ The cheat sheet for working with Spec Kit after the workshop.
 
 ## Commands
 
-All commands are slash commands run in your agent. They operate on the
-current feature directory (`.specify/feature.json` records which feature
-is active).
+All commands are slash commands run in your agent. The loop commands
+operate on the current feature directory (`.specify/feature.json` records
+which feature is active); `/speckit.constitution` operates on the project.
 
 | Command | What it does | When to run |
 |---|---|---|
@@ -19,7 +19,7 @@ is active).
 | `/speckit.converge` | Re-reads spec/plan/tasks, diffs code against them, appends missing work | At the end of every implement iteration |
 | `/speckit.taskstoissues` | Deprecated: converts tasks into GitHub issues (the bundled `github` extension provides the namespaced replacement) | Only if you track work externally and have not installed the `github` extension |
 | `/speckit.checklist` | Generates a custom checklist for the feature | During planning/review |
-| `/speckit.constitution` | Creates/updates the project constitution (principles) | Project setup, or when rules change |
+| `/speckit.constitution` | Creates/updates the project constitution (principles) | Before the first feature; again only when principles change (not a per-feature loop step) |
 
 Commands are shown in OpenCode's dot form; with agy or Copilot they are
 hyphenated (`/speckit-specify`, `/speckit-plan`, ...).
@@ -31,6 +31,17 @@ specify init --here --non-interactive --integration opencode --force   # new pro
 specify --version                                                      # check CLI
 specify preset resolve spec-template                                   # see active template
 ```
+
+## Project location
+
+`~/petstore` inside the container is mounted from `<clone>/petstore` on
+your host. Open that folder in your IDE; it is git-ignored by the workshop
+repository and has its own git history. The whole clone is also mounted at
+`/project`, so the same folder appears as `/project/petstore`; always work
+through `~/petstore`.
+
+If `~/petstore` is missing, re-run `./scripts/workshop.sh` on your host
+and check `workshop info speckit-ws` for the `workdir` `petstore` mount.
 
 ## Running the app
 
@@ -56,10 +67,13 @@ uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 | Spec | `specs/NNN-feature/spec.md` | User scenarios, functional requirements (testable), success criteria, assumptions, edge cases | `/speckit.specify`, refined by clarify |
 | Plan | `specs/NNN-feature/plan.md` | Technical approach, files, data model, interface design | `/speckit.plan` |
 | Tasks | `specs/NNN-feature/tasks.md` | Ordered task list, each naming a file (the checkboxes are the plan, not a progress tracker) | `/speckit.tasks`, appended by converge |
-| Constitution | `.specify/memory/constitution.md` | Project principles and governance the agent must honor | `/speckit.constitution` |
+| Constitution | `.specify/memory/constitution.md` | Project principles and governance the agent must honor | `specify init` seeds a placeholder; `/speckit.constitution` ratifies or updates it |
 | Feature pointer | `.specify/feature.json` | Which feature is active | `/speckit.specify` |
 
 ## The closed loop
+
+The constitution is project-level and sits above this loop; plan, analyze,
+implement, and converge read it.
 
 ```
 specify -> clarify -> plan -> tasks -> implement -> converge
@@ -79,6 +93,8 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 |---|---|
 | Spec Kit | A spec-driven development (SDD) process toolkit for agentic coding |
 | `specify` | The CLI that installs the agent integration and commands |
+| Constitution | Project-level principles in `.specify/memory/constitution.md`, created or updated by `/speckit.constitution` and read by plan, analyze, implement, and converge |
+| Constitution Check | The gate in `plan.md` that evaluates the design against the constitution; a MUST conflict is CRITICAL in analyze and converge |
 | `.opencode/commands/` / `.agents/skills/` / `.github/skills/` | The installed command definitions and skills OpenCode, agy, and Copilot load |
 | Feature directory | `specs/NNN-name/`; the folder holding spec.md, plan.md, tasks.md |
 | Converge | The step that compares code to spec/plan/tasks and restarts the loop if they disagree |
@@ -101,8 +117,10 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 | `command not found: specify` (or `uv`) in your shell | You are in the host shell, not the workshop container - the sdks live inside it. Re-enter with `workshop shell`. |
 | Agent plans against the wrong feature | Check `.specify/feature.json`; if it points at a prior feature, the agent is resolving the wrong directory. |
 | Test suite passes but converge complains | Converge compares against the *spec*, not just the tests. The spec likely states a requirement the tests do not assert (see the non-trivial requirement phase). |
+| Plan's Constitution Check is empty or still says "Gates determined based on constitution file", or converge's metrics line reports the constitution principles were skipped | The constitution is still the unfilled seed. Run `/speckit.constitution` and confirm the check in [01](01-setup.md#14-ratify-the-project-constitution) returns nothing. |
+| `/speckit.constitution` left `TODO(...)` placeholders | Supply the missing date or version, or rerun with the ratification date and version explicit. |
 | uvicorn reports `Could not import module "petstore_app"` when starting the server | The plan args pinned the module name `petstore_app.py`; if your agent chose a different name, run uvicorn against the module it created (`uv run uvicorn <that-module>:app --reload --host 0.0.0.0`). |
-| Agent reports `pytest: command not found` | The venv is not activated in the agent's shell. Run tests with `uv run pytest` (see [01](01-setup.md) §1.4). |
+| Agent reports `pytest: command not found` | The venv is not activated in the agent's shell. Run tests with `uv run pytest` (see [01](01-setup.md) Section 1.5). |
 | `uv pip install` fails for the venv | Run from the project root, after `uv venv` has created `.venv`. |
 | Question about whether something is in scope | Ask `/speckit.clarify`, or edit the spec directly. Scope is a spec property, not an implementation detail. |
 | Multiple features in one session | Spec Kit is one-feature-per-loop. Start a fresh session for a new feature. |

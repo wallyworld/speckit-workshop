@@ -25,7 +25,9 @@
 #   - agent command shims (dot-form, registered by `specify extension add`)
 # It then installs the extension and prints the fill-in checklist.
 #
-# Idempotent: re-running the script never overwrites customized content.
+# Idempotent: re-running the script never overwrites customized skeleton
+# content. The extension tree, tests, Makefile, requirements.txt, workflow
+# overlay, helper scripts, and generated skills are machinery and refresh.
 # Skeleton files (AGENTS.md, CONTRIBUTING.md, agent-instructions.md,
 # .github/copilot-instructions.md, docs/implementation-mechanics.md, the
 # constitution) are only copied when absent, when still byte-identical to
@@ -33,17 +35,16 @@
 # stock file a bare `specify init` seeds (the previous content is kept in
 # a .bootstrap-backup beside it); a customized file is never overwritten.
 # The extension tree, tests, and skills are always regenerated (they are
-# machinery, not user content). The
-# phrases.txt data file is only seeded when absent and is preserved
-# across the extension-tree re-copy, together with the manifest's
-# author and repository attribution lines (all three are user
-# content). Example files installed with --with-examples are only
-# reinstalled over absent or pristine destinations; a customized file
-# is kept.
+# machinery, not user content). The project's requirement-phrases.txt and
+# domain-terms.txt are seeded only when absent and are never touched by the
+# extension re-copy (they live outside the extension tree); the manifest's
+# author and repository attribution lines are user content and are preserved.
+# Example files installed with --with-examples are only reinstalled over
+# absent or pristine destinations; a customized file is kept.
 #
 # --with-examples copies the worked sample (requirements, roadmap, spec,
-# phrases) from examples/ into the target so the tooling can be verified
-# green before writing your own content.
+# requirement phrases) from examples/ into the target so the tooling can
+# be verified green before writing your own content.
 set -euo pipefail
 
 HERE=$(cd -- "$(dirname -- "$0")" && pwd)
@@ -126,15 +127,20 @@ sed_inplace() {
 }
 
 echo "Installing extension tooling"
-# The extension tree is regenerated machinery, but three values in it
-# are user content and survive the re-copy: the curated phrases.txt
-# data file and the manifest's author and repository attribution
-# lines. They are snapshotted before the tree is replaced and spliced
-# back into the fresh copy afterwards.
-saved_phrases=""
-if [ -f "$TARGET/extensions/requirements/data/phrases.txt" ]; then
-  saved_phrases=$(mktemp)
-  cp "$TARGET/extensions/requirements/data/phrases.txt" "$saved_phrases"
+# The extension tree is regenerated machinery; the manifest's author and
+# repository attribution lines are user content and survive the re-copy.
+# Requirement phrases live at the project root, outside the extension
+# tree. A legacy extension-tree phrases file (projects seeded before the
+# move) is migrated before the tree is replaced.
+PHRASES_DST="$TARGET/requirement-phrases.txt"
+LEGACY_PHRASES="$TARGET/extensions/requirements/data/phrases.txt"
+has_phrases_entries() {
+  [ -f "$1" ] && grep -qvE '^[[:space:]]*(#|$)' "$1"
+}
+if { [ ! -f "$PHRASES_DST" ] || ! has_phrases_entries "$PHRASES_DST"; } \
+  && has_phrases_entries "$LEGACY_PHRASES"; then
+  cp "$LEGACY_PHRASES" "$PHRASES_DST"
+  echo "  ~ migrated extensions/requirements/data/phrases.txt to requirement-phrases.txt"
 fi
 saved_author=""
 saved_repository=""
@@ -145,13 +151,17 @@ fi
 mkdir -p "$TARGET/extensions"
 rm -rf "$TARGET/extensions/requirements"
 cp -R "$HERE/extension" "$TARGET/extensions/requirements"
-mkdir -p "$TARGET/extensions/requirements/data"
-if [ -n "$saved_phrases" ]; then
-  cp "$saved_phrases" "$TARGET/extensions/requirements/data/phrases.txt"
-  rm -f "$saved_phrases"
-  echo "  = extensions/requirements/data/phrases.txt kept, curated"
+if [ ! -f "$PHRASES_DST" ]; then
+  copy "$HERE/requirement-phrases.txt.example" "$PHRASES_DST"
 else
-  copy "$HERE/phrases.txt.example" "$TARGET/extensions/requirements/data/phrases.txt"
+  echo "  = requirement-phrases.txt kept"
+fi
+
+DOMAIN_TERMS_DST="$TARGET/domain-terms.txt"
+if [ ! -f "$DOMAIN_TERMS_DST" ]; then
+  copy "$HERE/domain-terms.txt.example" "$DOMAIN_TERMS_DST"
+else
+  echo "  = domain-terms.txt kept"
 fi
 YML="$TARGET/extensions/requirements/extension.yml"
 if [ -n "$saved_author" ]; then
@@ -165,18 +175,13 @@ else
   sed_inplace "$YML" "s|^  repository: .*|  repository: TODO-your-repo-url|"
 fi
 
-# The worked examples overwrite source files (phrases.txt) that the
-# extension install copies into .specify/, so they must land in the
-# source tree before `specify extension add` runs; installing first
-# and overwriting after leaves the installed copy diverged from the
-# source, which the reinstall-stability test fails on.
 if [ "$WITH_EXAMPLES" = "yes" ]; then
   echo "Installing the worked examples"
   copy_example "$HERE/examples/REQUIREMENTS.md" "$TARGET/REQUIREMENTS.md"
   copy_example "$HERE/examples/ROADMAP.md" "$TARGET/ROADMAP.md"
-  copy_example "$HERE/examples/phrases.txt" \
-    "$TARGET/extensions/requirements/data/phrases.txt" \
-    "$HERE/phrases.txt.example"
+  copy_example "$HERE/examples/requirement-phrases.txt" \
+    "$TARGET/requirement-phrases.txt" \
+    "$HERE/requirement-phrases.txt.example"
   mkdir -p "$TARGET/specs"
   if [ ! -d "$TARGET/specs/001-greeting" ]; then
     cp -R "$HERE/examples/specs/001-greeting" "$TARGET/specs/"
@@ -259,11 +264,10 @@ in this order:
      requirement IDs (see the README's conventions section).
   2. ROADMAP.md: the 9-column feature table mapping each ID to the feature
      that Completes it.
-  3. extensions/requirements/data/phrases.txt: one line per requirement ID
-     with verbatim phrases from your REQUIREMENTS.md (the bash suite
-     validates and enforces coverage). Then reinstall the extension so the
-     installed copy matches the curated source:
-     specify extension add --dev --force extensions/requirements
+  3. requirement-phrases.txt: one line per requirement ID with verbatim
+     phrases from your REQUIREMENTS.md (the bash suite validates and
+     enforces coverage). It is a project artifact beside REQUIREMENTS.md,
+     outside the extension tree, so editing it needs no extension reinstall.
   4. AGENTS.md and CONTRIBUTING.md skeletons (Project, Verification,
      tooling sections), then AGENTS.md's Project checklist
      instances.
@@ -272,10 +276,10 @@ in this order:
      systems.
   7. .specify/memory/constitution.md: Part 2 (your domain principles).
   8. extensions/requirements/extension.yml: the repository URL.
-  9. Extend the domain-term deny list in tests/test_enforcement_chain.py
-     with your domain's terms; the shipped entry is a demonstrative
-     placeholder and the scan guards your vocabulary once your terms
-     are in.
+  9. domain-terms.txt: extend the deny list with your domain's terms.
+     Keep the shipped acme-storefront placeholder and append your own,
+     one per line. The file is a project artifact; the scan guards your
+     vocabulary once your terms are in, and a bootstrap re-run keeps it.
 
 The no-unfilled-markers test in tests/test_style.py fails until every
 @FILL-IN@ marker is resolved; run `make test` to see the remaining ones.

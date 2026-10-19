@@ -8,11 +8,15 @@ _guard-uv:
 _guard-venv:
 	@[ -f .venv/bin/activate ] || { echo "Error: run 'make install' first to create the virtual environment" >&2; exit 1; }
 
-.venv/bin/activate: requirements.txt | _guard-uv
+# Always install the mirror-test dependencies. Keying installation on
+# .venv/bin/activate skips it when uv (or `uv run`) has already created a
+# venv that is newer than requirements.txt but lacks pytest or pyyaml.
+# Projects add their own suite to `test` (for example a test-app target
+# that runs the application tests) and expose it as a workshop action or
+# allowlist it in tests/test_workshop_actions.py.
+install: _guard-uv
 	uv venv 2>/dev/null || uv venv --clear
 	uv pip install -r requirements.txt
-
-install: .venv/bin/activate
 	uv tool install --upgrade specify-cli
 
 test: test-style test-traceability test-enforcement test-workshop-actions \

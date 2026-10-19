@@ -145,6 +145,10 @@ extension manifest (`extensions/requirements/extension.yml`) and registered
 into `.specify/extensions.yml` at install time, so a reinstall can never
 drop the enforcement checks; `make test` asserts the registrations.
 
+The full per-command explanation - what each command does and what a
+vanilla Spec Kit project lacks without it - is in the README's
+"The requirements extension, piece by piece" section.
+
 The enforcement hooks are carried by the extension's checklist commands:
 
 - `/speckit-requirements-plan-checklist` (mandatory `before_plan` hook):

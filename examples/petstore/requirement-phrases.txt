@@ -16,4 +16,3 @@ UI-2|pet creation form with client-side validation|refresh the catalog display i
 UI-3|order action for each catalog item|visually disabled whenever stock count is zero
 UI-4|display active orders and provide a cancel action|updates both the order list and the catalog stock count in place
 UI-5|served directly by the FastAPI backend|without requiring an external frontend build pipeline
-

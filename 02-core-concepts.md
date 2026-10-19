@@ -18,7 +18,33 @@ The result is a chain: `spec -> plan -> tasks -> code`. When the chain is
 complete, you have an audit trail from "what the user asked for" to "the
 code that implements it."
 
+## The constitution: the layer above the loop
+
+Before the first feature, a project records its **constitution**: the
+principles every feature must honor. It lives in
+`.specify/memory/constitution.md` and is created or updated by
+`/speckit.constitution`. `specify init` seeds a placeholder; the command
+ratifies it (the workshop does this in
+[01](01-setup.md#14-ratify-the-project-constitution)).
+
+The constitution is project-level, not per-feature, and it is not a step
+in the loop. The loop's commands read it:
+
+| Command | How it uses the constitution |
+|---|---|
+| `/speckit.plan` | Fills the plan's **Constitution Check**; a violation must be justified in Complexity Tracking or the design changed |
+| `/speckit.analyze` | Treats a conflict with a constitution MUST principle as CRITICAL |
+| `/speckit.implement` | Reads it as a governance constraint |
+| `/speckit.converge` | Treats a constitution violation as the highest-severity finding and appends remediation |
+
+If the file is still an unfilled template, converge skips it explicitly
+and plan and analyze have no concrete principles to check. A project with
+a placeholder constitution therefore has no governance layer at all.
+
 ## The loop
+
+The loop below is per feature. The constitution above it applies to every
+feature.
 
 ```
 specify -> clarify -> plan -> tasks -> implement -> converge
@@ -39,22 +65,27 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 
 > **Command form.** Command names are shown in OpenCode's dot form
 > (`/speckit.specify`). With the agy or Copilot integration the same commands
-> are hyphenated: `/speckit-specify`, `/speckit-clarify`, `/speckit-plan`,
-> `/speckit-tasks`, `/speckit-implement`, `/speckit-converge`.
+> are hyphenated: `/speckit-constitution`, `/speckit-specify`,
+> `/speckit-clarify`, `/speckit-plan`, `/speckit-tasks`,
+> `/speckit-implement`, `/speckit-converge`.
 
 ## The artifacts
 
+- **`constitution.md`** - *the rules*. Project principles and governance,
+  versioned and amended explicitly. It is not a feature artifact; it is
+  read at every step.
 - **`spec.md`** - *what* and *why*. User stories, functional requirements,
   success criteria. This is the contract the whole loop is accountable to.
-  Note: each requirement "must be testable" - a vague requirement cannot
-  be verified at converge time.
+  Note: state the observable behaviour, not a meta-rule such as "each
+  requirement must be testable"; a vague requirement cannot be verified at
+  converge time.
 - **`plan.md`** - *how*. Technical design: stack, files, data model,
   interfaces, edge cases.
 - **`tasks.md`** - *who/what order*. The plan broken into small,
   independently-testable tasks, each with a checkbox and a file path.
 
 The loop is "closed" because each artifact must be traceable to the one
-before it: ie every task comes from a plan, every plan from a spec, and
+before it, ie every task comes from a plan, every plan from a spec, and
 converge checks the code against all of them.
 
 ## Where validation occurs
@@ -63,6 +94,7 @@ This is the key concept to internalize.
 
 | Check | Who does it | When |
 |---|---|---|
+| Constitution is honored | `/speckit.plan` Constitution Check; analyze and converge treat MUST conflicts as CRITICAL | plan/analyze/converge time |
 | Testable requirements | Spec author (you and the agent) | spec time |
 | Plan covers the spec | `/speckit.plan` reads spec.md | plan time |
 | Tasks cover the plan | `/speckit.tasks` reads plan.md | tasks time |
@@ -109,9 +141,11 @@ things make it practical:
 
 ## What you now know
 
-- The loop is: `specify -> plan -> tasks -> implement -> converge`.
+- The constitution is project-level governance, not a loop step; plan,
+  analyze, implement, and converge read it.
+- The feature loop is: `specify -> plan -> tasks -> implement -> converge`.
 - The artifacts form a chain of written intent: spec, plan, tasks.
 - Validation is incremental gates, not an end-of-project review.
 - The spec is the contract the whole loop must adhere to.
 
-Next: [the loop, demoed](03-the-loop.md).
+Next: [the implementation loop](03-the-loop.md).

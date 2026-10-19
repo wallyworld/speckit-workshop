@@ -345,7 +345,7 @@ def _spec_completes_set(text: str) -> set[str]:
 
 
 _FR_COMPLETES_ROW_RE = re.compile(
-    r"^\|\s*FR-\d+\s*\|(.*)\|\s*Completes\s*\|[ \t]*$", re.M
+    r"^\|\s*FR-\d+[a-z]?\s*\|(.*)\|\s*Completes\s*\|[ \t]*$", re.M
 )
 
 

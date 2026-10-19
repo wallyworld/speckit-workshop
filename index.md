@@ -12,8 +12,9 @@ how to use it to build a small web application with an AI coding agent.
   model carry into the container), Antigravity agy (your Google credentials
   in `~/.gemini` carry into the container), or GitHub Copilot (log in inside the
   container on first use; its host credential store does not carry).
-  Everything else - uv, the `specify` CLI, a virtual environment, the
-  pet store skeleton - is provisioned inside the container during setup.
+  The workshop script provisions uv and the agent integrations and creates
+  the host-mounted petstore working tree. You install the `specify` CLI and
+  create the virtual environment in the setup steps.
 - **Format**: works self-paced (follow the numbered steps) or instructor-led.
 
 ## Introduction
@@ -28,6 +29,11 @@ runs; the output of each becomes the input of the next. The payoff is a
 closed loop: nothing is "done" until the code matches the spec and every
 task is built, so the agent cannot quietly skip requirements you stated.
 
+Before the first feature you ratify the project **constitution**: the
+principles every feature must honor. Plan, analyze, implement, and
+converge all read it, so the loop has governance above the feature
+artifacts.
+
 ```
 specify -> clarify -> plan -> tasks -> implement -> converge
   ^                                                       |
@@ -38,8 +44,8 @@ specify -> clarify -> plan -> tasks -> implement -> converge
 
 | # | Phase | What happens |
 |---|---|---|
-| 1 | [Setup](01-setup.md) | Launch the workshop container, install the CLI, create an empty project, confirm the commands are live |
-| 2 | [Core concepts](02-core-concepts.md) | The agentic loop, the artifacts, the commands, where validation fires |
+| 1 | [Setup](01-setup.md) | Launch the workshop container, install the CLI, create an empty project, ratify its constitution, confirm the commands are live |
+| 2 | [Core concepts](02-core-concepts.md) | The constitution, the agentic loop, the artifacts, the commands, where validation fires |
 | 3 | [The loop](03-the-loop.md) | You implement a basic pet store |
 | 4 | [The refinement](04-the-refinement.md) | You implement order placement with a non-trivial requirement |
 | 5 | [What's next](05-whats-next.md) | Extensions, presets, phasing for larger projects |
@@ -55,9 +61,11 @@ By the end you will be able to:
    tasks).
 3. Explain where and how "validation" actually fires (converge's
    check-the-code-against-the-spec step).
-4. Identify why requirements-first beats vibe-implement-and-hope, using
+4. Establish a project constitution with `/speckit.constitution` and
+   explain how plan, analyze, implement, and converge use it.
+5. Identify why requirements-first beats vibe-implement-and-hope, using
    a real validation flaw you will hit in the refinement phase.
-5. Know what to read next: extensions, presets, and how larger projects
+6. Know what to read next: extensions, presets, and how larger projects
    layer phased delivery.
 
 ## The 90 minutes, minute by minute
@@ -65,7 +73,7 @@ By the end you will be able to:
 | Time | Segment | Format |
 |---|---|---|
 | 0-8 | What Spec Kit is; the loop; why it exists | TL;DR above + diagram |
-| 8-18 | Setup ([01-setup.md](01-setup.md)) | Instructor + you follow |
+| 8-18 | Setup ([01-setup.md](01-setup.md)) | Instructor + you follow; includes ratifying the constitution |
 | 18-30 | Core concepts ([02-core-concepts.md](02-core-concepts.md)) | Explain |
 | 30-50 | Loop: full loop on pet catalog ([03-the-loop.md](03-the-loop.md)) | Hands on |
 | 50-78 | Refinement: order placement with the non-trivial requirement ([04-the-refinement.md](04-the-refinement.md)) | Hands on |
@@ -81,11 +89,15 @@ as flat requirements: placing an order for a pet that is no longer
 available **must fail**, and an order **may not** drive a pet's stock
 below zero. There is a right way and a wrong way to implement that - the
 refinement phase is about letting the loop tell you which is which.
+Your `~/petstore` working tree is mounted from `<clone>/petstore` on your
+host, so you can follow along in your IDE.
 
 ## After the workshop
 
 - `06-reference.md`: the cheat sheet for future sessions.
-- `05-whats-next.md`: extensions (bug-fixing, assess, community catalog),
-  presets, bundles, and a generic note on phased delivery for larger
-  projects, seeded in full by
+- `05-whats-next.md`: a step-by-step phased-delivery lab (copy product
+  artifacts, bootstrap the requirements extension, retrofit Phase 1
+  specs, build R3 with the hooks), plus extensions, presets, and bundles.
+  The reference companion is [`examples/petstore/`](examples/petstore/),
+  and the full enforcement template is
   [`new-project-template/`](new-project-template/).

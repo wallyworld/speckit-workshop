@@ -78,9 +78,9 @@ which invocation is the single definition of done.
    roadmap is never marked `done` while over-claiming unbuilt work.
 3. **Agentic requirement phrases generation.** When setting up or modifying
    requirements in `REQUIREMENTS.md`, the phrases table
-   (`extensions/requirements/data/phrases.txt`) must be updated. Generate
+   (`requirement-phrases.txt`) must be updated. Generate
    verbatim candidates with
-   `extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o extensions/requirements/data/phrases.txt`
+   `extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`
    then review and tighten them before committing: the script guarantees
    verbatim wording, not distinctiveness, and it overwrites the target file.
    Prefer wording unique to each requirement (a generic phrase lets a spec

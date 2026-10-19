@@ -1,0 +1,5 @@
+# Terms naming this project's product, system, or domain.
+# The seedable checklist surfaces must stay domain-neutral; the
+# enforcement-chain mirror test scans them for these terms. Keep the
+# shipped placeholder and append your own terms, one per line.
+acme-storefront

@@ -5,6 +5,9 @@ your own project, inside your workshop container ([01](01-setup.md)).
 The feature you will specify contains a verification deliverable for a
 non-trivial requirement.
 
+To avoid loading up the context from the initial pet catalog feature, start 
+a new session in your coding harness prior to running the next loop.
+
 > **Command form.** Commands use OpenCode's dot form; with agy or Copilot use
 > the hyphenated form (`/speckit-specify` in place of `/speckit.specify`).
 
@@ -127,11 +130,15 @@ it done when the two disagree.
 
 One more gap this exercise can expose: out of the box, Spec Kit treats test
 tasks as optional, so a tasks list can omit them - the requirement is then
-asserted only if the implementer writes tests on its own initiative. This
-project's [`new-project-template/`](new-project-template/) closes that gap: its
+asserted only if the implementer writes tests on its own initiative. Your
+constitution's principle 2 says every new behaviour, including failure
+paths, has a test, so the omission is a constitution violation, not just a
+spec gap. But in the vanilla project that principle is prose: the agent can
+still ignore it. This project's
+[`new-project-template/`](new-project-template/) closes that gap: its
 constitution principle 8 makes test coverage mandatory, its tasks template
 states tests are required, and a hook checks the test list before tasks and
-converge.
+converge. That is the difference between a principle and a gate.
 
 ## If you finish early
 
