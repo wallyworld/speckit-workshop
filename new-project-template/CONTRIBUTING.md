@@ -16,7 +16,7 @@ Read these files before changing a feature:
 
 Requirement IDs live in [`REQUIREMENTS.md`](REQUIREMENTS.md); the
 requirement-to-feature mapping lives in [`ROADMAP.md`](ROADMAP.md) as the
-**Completes** and **Advances** columns. Spec Kit's core `/speckit-specify`
+**Completes** and **Advances** columns. Spec Kit's core `/speckit.specify`
 command does not resolve RQ (requirement) IDs - the requirements extension
 assembles the mapping into a reviewable brief.
 
@@ -31,7 +31,7 @@ skills. If you add a `CLAUDE.md`, import the shared guidance with
 ## Preparing context for a feature
 
 ```text
-/speckit-requirements-prepare R2
+/speckit.requirements.prepare R2
 ```
 
 The command validates that `R2` exists, that each predecessor is `done`,
@@ -40,8 +40,10 @@ It then prints a self-contained brief with the roadmap intent, scope
 boundary, exact canonical requirement text, and a coverage seed with
 per-requirement digests. Review
 the brief against [`ROADMAP.md`](ROADMAP.md) and
-[`REQUIREMENTS.md`](REQUIREMENTS.md), then run the emitted core
-`/speckit-specify` command. The prepare and verify commands are read-only:
+[`REQUIREMENTS.md`](REQUIREMENTS.md), then run the emitted core command
+exactly once (`/speckit.specify` in OpenCode; `/speckit-specify` with agy or
+Copilot). A second specify creates another numbered spec directory. The
+prepare and verify commands are read-only:
 they never create a branch, feature directory, or spec, and they never
 change roadmap status. The manual acceptance-test command is the exception:
 it writes test files into the project.
@@ -89,7 +91,7 @@ auto-discovers the `speckit-*` skills from the git-tracked
 installed extension are local and ignored by Git; the extension source
 is versioned in [`extensions/requirements/`](extensions/requirements/).
 
-The `/speckit-requirements-verify` command checks that every
+The `/speckit.requirements.verify` command checks that every
 requirement a feature spec claims to *complete* is materially present in
 that spec, and that each claim's recorded digest matches the
 requirement's current wording. It fires as a mandatory
@@ -99,34 +101,32 @@ script runs under your test gate via
 
 ## Command invocation forms
 
-The command form depends on the surface: markdown command integrations
-such as OpenCode scaffold dotted command files (`/speckit.specify`,
-`/speckit.requirements.verify`), while the generated skills carry the
-hyphenated names (`/speckit-requirements-verify`) and are the form the
-hooks and workflow gates (described under Reviews below) name. OpenCode
-discovers the skills
-through the `skills.paths` entry in `.opencode/opencode.json`; GitHub
-Copilot discovers them natively from `.github/skills/`. This guide shows
-the hyphenated skill form.
+The command form depends on the surface. OpenCode's `/` menu runs command
+files, so it uses the dot form for both core and extension commands
+(`/speckit.specify`, `/speckit.requirements.verify`). The generated skills
+carry the hyphenated names (`speckit-requirements-verify`); OpenCode loads
+them through its skill tool, while agy and Copilot expose them as slash
+commands. This guide shows the OpenCode dot form; with agy or Copilot,
+substitute the hyphenated skill form.
 
 ## Feature workflow
 
 For a new feature:
 
 ```text
-/speckit-requirements-prepare R#
-/speckit-specify <reviewed brief emitted by the preparation command>
-/speckit-clarify
-/speckit-plan
-/speckit-checklist
-/speckit-tasks
-/speckit-requirements-acceptance-test
-/speckit-analyze
-/speckit-implement
-/speckit-converge
+/speckit.requirements.prepare R#
+/speckit.specify <reviewed brief emitted by the preparation command>
+/speckit.clarify
+/speckit.plan
+/speckit.checklist
+/speckit.tasks
+/speckit.requirements.acceptance-test
+/speckit.analyze
+/speckit.implement
+/speckit.converge
 ```
 
-`/speckit-clarify` and `/speckit-checklist` are used when their extra
+`/speckit.clarify` and `/speckit.checklist` are used when their extra
 clarification or focused checklist is useful; the other stages are the
 normal delivery path.
 
@@ -140,9 +140,9 @@ roadmap's Sub-spec link after core Specify creates the feature directory.
 ## Reviews
 
 Feature specifications must align with their roadmap entry and state their
-scope boundary. Use `/speckit-analyze` after task generation to check
+scope boundary. Use `/speckit.analyze` after task generation to check
 consistency across the feature artifacts. Analysis findings are remediated
-through `/speckit-requirements-remediation-loop`, which fires automatically
+through `/speckit.requirements.remediation-loop`, which fires automatically
 as the mandatory `after_analyze` hook: every hook is declared in the
 extension manifest (`extensions/requirements/extension.yml`) and registered
 into `.specify/extensions.yml` at install time, so a reinstall can never
@@ -152,14 +152,14 @@ The full per-command explanation - what each command does and what a
 vanilla Spec Kit project lacks without it - is in the README's
 "The requirements extension, piece by piece" section.
 
-After tasks exist, invoke `/speckit-requirements-acceptance-test` manually.
+After tasks exist, invoke `/speckit.requirements.acceptance-test` manually.
 It derives the executable acceptance test for every user-facing requirement
 through the real entry point, adds a known-bad fixture, and wires it into
-the project test gate. It is a procedure skill, not a hook.
+the project test gate. It is a manual command, not a hook.
 
 The enforcement hooks are carried by the extension's checklist commands:
 
-- `/speckit-requirements-plan-checklist` (mandatory `before_plan` hook):
+- `/speckit.requirements.plan-checklist` (mandatory `before_plan` hook):
   no requirement-less scope (every FR traces to a product requirement),
   every user-facing requirement names its real entry point and acceptance
   test, design opt-outs cite the requirement wording that authorizes them,
@@ -169,7 +169,7 @@ The enforcement hooks are carried by the extension's checklist commands:
   behavior its positive-path test, every parser delta its wire-format
   fixture evidence, every new command surface a test on its real
   invocation path, and every validator its malformed-input cases.
-- `/speckit-requirements-tasks-checklist` (mandatory `before_tasks`,
+- `/speckit.requirements.tasks-checklist` (mandatory `before_tasks`,
   `before_implement`, and `before_converge` hooks): every user-facing
   requirement carries an acceptance test through the real entry point on
   the real runtime, not only an implementation or static test; tasks that
@@ -183,13 +183,13 @@ The enforcement hooks are carried by the extension's checklist commands:
   validator matrices include malformed inputs. At `before_implement` the
   rules are applied to the changes and tests being written, not only the
   task text.
-- `/speckit-requirements-diff-review` (mandatory `after_implement` hook):
+- `/speckit.requirements.diff-review` (mandatory `after_implement` hook):
   commissions an independent fresh-context review of the implementation
   diff and the real entry-point or acceptance-test result before the work
   is reported done.
-- `/speckit-requirements-remediation-loop` (mandatory `after_analyze`
+- `/speckit.requirements.remediation-loop` (mandatory `after_analyze`
   hook): the analysis remediation loop.
-- `/speckit-requirements-verify` (mandatory `before_analyze` and
+- `/speckit.requirements.verify` (mandatory `before_analyze` and
   `before_converge` hooks): requirement-phrase traceability of Completes
   claims.
 
@@ -214,16 +214,16 @@ The project overlays review gates onto the native workflow
 extension commands above:
 
 - `review-coverage` (after `specify`) mirrors
-  `/speckit-requirements-verify` before human sign-off.
+  `/speckit.requirements.verify` before human sign-off.
 - `review-plan-checklist` (after `plan`) mirrors
-  `/speckit-requirements-plan-checklist`.
+  `/speckit.requirements.plan-checklist`.
 - `review-tasks` (after `tasks`) mirrors
-  `/speckit-requirements-tasks-checklist`.
+  `/speckit.requirements.tasks-checklist`.
 - `review-implement-checklist` (after `tasks`, applied to the changes being
-  written) mirrors `/speckit-requirements-tasks-checklist`.
+  written) mirrors `/speckit.requirements.tasks-checklist`.
 - `review-diff` (after `implement`) commissions an independent
   fresh-context review of the implementation diff via
-  `/speckit-requirements-diff-review` before the work is reported done.
+  `/speckit.requirements.diff-review` before the work is reported done.
 - `review-final-tree` (after `implement`) confirms each Completed RQ ID
   has realizing implementation, that baseline-completed invariants still
   hold, and that no Advances-only RQ is claimed complete; if findings are

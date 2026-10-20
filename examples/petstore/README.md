@@ -40,9 +40,10 @@ sole requirement-to-feature mapping: each requirement is completed by
 exactly one feature. A feature that only lays groundwork records the
 requirement under `Advances` and never marks it done.
 
-The `Sub-spec` link names the actual spec directory. Slugs are generated
-from the agent's prompt and vary between runs; the retrofit script
-reconciles the link with the directory that exists.
+The `Sub-spec` link names the actual spec directory for a delivered row.
+Planned rows use `-` until the spec exists. Slugs are generated from the
+agent's prompt and vary between runs; the retrofit script reconciles a link
+with the directory that exists.
 
 ### `requirement-phrases.txt`
 
@@ -131,41 +132,50 @@ context and enforcement at each stage.
 
 Command forms:
 
-- Core commands use OpenCode's dot form: `/speckit.specify`.
-- Extension commands are skills, hyphenated: `/speckit-requirements-prepare`.
-- With agy or Copilot, core commands are hyphenated too: `/speckit-specify`.
+- OpenCode slash commands use the dot form for core and extension commands:
+  `/speckit.specify`, `/speckit.requirements.prepare`.
+- With agy or Copilot, use the hyphenated skill form for both:
+  `/speckit-specify`, `/speckit-requirements-prepare`.
 
 ### 1. Prepare
 
 ```text
-/speckit-requirements-prepare R3
+/speckit.requirements.prepare R3
 ```
 
 The command emits a read-only brief with the roadmap intent, scope
 boundary, canonical text for `UI-1..UI-5`, per-requirement digests, and a
-ready-to-run specify command. Review it before running it.
+ready-to-run specify command. Review the brief now, but do not run its
+command yet: step 2 runs it once.
+
+### 2. Specify (once)
+
+Before running anything, check `specs/` for an existing R3 spec. If one
+exists, do not run specify again; keep the first R3 spec (normally
+`003-*`) and continue with clarify, plan, and tasks on it. If you have
+both `003-*` and `004-*`, the troubleshooting entry in 05 covers removing
+the duplicate.
+
+If no R3 spec exists, run the exact command the brief emitted. For this
+sample's `R3` row it is:
+
+```text
+/speckit.specify Interactive browser frontend connecting catalog and orders. Scope boundary: Client frontend served by FastAPI; uses existing R1/R2 API; no external frontend build tools.
+```
+
+Run it **exactly once**. Do not also run a second specify from this page
+or from the brief: each invocation creates a new numbered directory, so
+`R3` would end up with both `003-*` and `004-*`.
 
 Note: if the container clipboard does not work, you do not need to copy the
-emitted command. After reviewing the brief, reply `run the emitted core
-command`; the agent has the brief in context. See
+emitted command. Reply `run the emitted core command`; the agent has the
+brief in context. See
 [06 - Reference](../../06-reference.md#clipboard-inside-the-container)
 for terminal copy alternatives.
 
-### 2. Specify
-
-Run the emitted command, for example:
-
-```text
-/speckit.specify Implement slice R3 from ROADMAP.md: an interactive
-browser frontend served by FastAPI that renders the catalog, creates pets,
-places orders, and cancels orders. Serve it at `/`. Do not add
-authentication, login, roles, sessions, or any capability not listed in
-REQUIREMENTS.md. Implement active orders against a real GET /orders
-endpoint, not placeholder data.
-```
-
 The extension-provided spec template requires a Requirements Coverage
-section. The agent drafts `specs/003-<slug>/spec.md` with `UI-1..UI-5`.
+section. On a fresh run, the agent drafts `specs/003-<slug>/spec.md` with
+`UI-1..UI-5`.
 
 ### 3. Clarify (optional)
 
@@ -219,10 +229,10 @@ Do not run `playwright install`: the test uses the container Chrome with
 `channel="chrome"` (or `--browser-channel=chrome`) and the launch flags
 `--no-sandbox --disable-dev-shm-usage`.
 
-After tasks and before implementation, invoke the manual skill:
+After tasks and before implementation, invoke the manual command:
 
 ```text
-/speckit-requirements-acceptance-test R3
+/speckit.requirements.acceptance-test R3
 ```
 
 It derives the executable test from the spec, plan, and real entry point,
@@ -275,11 +285,14 @@ bash extensions/requirements/scripts/bash/verify-traceability.sh specs/003-*/spe
 make test
 ```
 
+If you kept a differently numbered R3 directory, substitute its path in
+the verifier command.
+
 After the generated test and the manual
 host-browser pass succeed, update `ROADMAP.md` row `R3`:
 
 - change `Status` from `planned` to `done`;
-- set `Sub-spec` to your generated `specs/003-...` directory.
+- set `Sub-spec` to your kept R3 directory (normally `specs/003-...`).
 
 Only mark the row done when the spec content, fresh digest, and code all
 support the claim.

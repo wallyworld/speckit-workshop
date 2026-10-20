@@ -60,10 +60,11 @@ pass.
 ## Advisory guidance
 
 This is an **advisory** check that surfaces drift for the human to resolve
-(by transcribing the required content via `/speckit-specify` or a manual
-edit). It does not rewrite the spec.
+(by transcribing the required content via core specify - `/speckit.specify`
+in OpenCode, `/speckit-specify` on agy or Copilot - or a manual edit). It
+does not rewrite the spec.
 
-Before approving a `review-coverage` gate, and before relying on
-`/speckit-converge` reporting "converged", run this command. If any
+Before approving a `review-coverage` gate, and before relying on the
+converge command reporting "converged", run this command. If any
 `Completes` requirement is flagged, stop: the spec claims completion but does
 not actually specify the requirement, so convergence cannot be trusted.

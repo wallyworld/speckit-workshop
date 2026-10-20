@@ -32,8 +32,8 @@ fi
 # characters, punctuation suffixes - is MALFORMED. All fail closed: a
 # claim that cannot be freshness-checked never passes silently, and only
 # the digests field is read, never prose. The requirements brief
-# (/speckit-requirements-prepare) emits these digests; sha256sum (GNU) or
-# shasum (BSD/macOS) must be available.
+# (from the requirements prepare command) emits these digests; sha256sum
+# (GNU) or shasum (BSD/macOS) must be available.
 #
 # Override environment hooks used to localize the check against fixtures:
 #   SPECKIT_REQUIREMENTS_FILE  path to REQUIREMENTS.md   (default: repo root)
@@ -519,7 +519,7 @@ if [ "${#DRIFTED[@]}" -gt 0 ]; then
   done
   echo
   echo "Resolve each finding by transcribing the requirement's own wording into the"
-  echo "spec, then run a fresh /speckit-requirements-verify to confirm."
+  echo "spec, then run a fresh requirements verify pass to confirm."
 fi
 
 if [ "${#UNCURATED[@]}" -gt 0 ]; then
@@ -546,7 +546,7 @@ if [ "${#STALE[@]}" -gt 0 ]; then
   echo
   echo "Resolve each finding by re-verifying the spec against the requirement's"
   echo "current wording and re-recording its digest (the requirements brief"
-  echo "emits the current digests), then run a fresh /speckit-requirements-verify."
+  echo "emits the current digests), then run a fresh requirements verify pass."
 fi
 
 if [ "${#UNDIGESTED[@]}" -gt 0 ]; then
@@ -558,8 +558,8 @@ if [ "${#UNDIGESTED[@]}" -gt 0 ]; then
     printf '  %s\n' "== ${id} =="
   done
   echo
-  echo "Record each digest from the requirements brief (rerun"
-  echo "/speckit-requirements-prepare for the current digests)."
+  echo "Record each digest from the requirements brief (rerun the"
+  echo "requirements prepare command for the current digests)."
 fi
 
 if [ "${#UNKNOWN[@]}" -gt 0 ]; then
@@ -571,8 +571,8 @@ if [ "${#UNKNOWN[@]}" -gt 0 ]; then
   done
   echo
   echo "Resolve each finding by fixing the ID (or defining the requirement)"
-  echo "and re-recording its digest, then run a fresh"
-  echo "/speckit-requirements-verify."
+  echo "and re-recording its digest, then run a fresh requirements"
+  echo "verify pass."
 fi
 
 if [ "${#MALFORMED[@]}" -gt 0 ]; then
@@ -585,7 +585,7 @@ if [ "${#MALFORMED[@]}" -gt 0 ]; then
   done
   echo
   echo "Re-record each digest verbatim from the requirements brief (rerun"
-  echo "/speckit-requirements-prepare); the digest must be the full"
+  echo "the requirements prepare command); the digest must be the full"
   echo "sha256: line with no extra characters."
 fi
 exit 1

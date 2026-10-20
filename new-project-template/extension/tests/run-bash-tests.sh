@@ -42,6 +42,14 @@ assert_contains() {
   esac
 }
 
+assert_not_contains() {
+  local name=$1 needle=$2
+  case "$OUT" in
+    *"$needle"*) bad "$name (unexpected: $needle)" ;;
+    *) ok "$name" ;;
+  esac
+}
+
 echo "Bash assembler tests"
 echo "===================="
 
@@ -58,7 +66,9 @@ assert_contains "brief cites roadmap ID"        "brief - R2"
 assert_contains "brief has Completes text"       "- **AAA-2**: Second requirement on a single line."
 assert_contains "brief has Advances text"        "- **BBB-1**: Third requirement, foundational"
 assert_contains "brief has coverage seed"        "Roadmap entry: \`ROADMAP.md\` -> **R2**"
-assert_contains "brief has ready core command"   "/speckit-specify Deliver the second slice"
+assert_contains "brief has ready core command"   "/speckit.specify Deliver the second slice"
+assert_not_contains "brief omits hyphen core command" "/speckit-specify"
+assert_contains "brief requires one specify"     "Run it exactly once"
 assert_contains "brief states human review"      "A human must REVIEW"
 assert_contains "brief identifies manual mapping" "mapping remains manual and"
 

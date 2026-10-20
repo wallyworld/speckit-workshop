@@ -10,7 +10,7 @@ fi
 # Deterministically assemble a self-contained requirements-context brief for a
 # single roadmap ID from ROADMAP.md and REQUIREMENTS.md.
 #
-# Read-only: prints a brief and a ready-to-run core /speckit-specify command to
+# Read-only: prints a brief and a ready-to-run core /speckit.specify command to
 # stdout. It never creates a branch, spec, checklist, or any file. It resolves
 # the existing manual roadmap mapping into the brief. All failures are
 # actionable and exit non-zero.
@@ -416,13 +416,14 @@ echo "**Input**: Parent roadmap: \`ROADMAP.md\` -> entry **$ID**. $SEL_INTENT"
 echo
 echo "Ready-to-run core command (review before running)"
 rule
-printf '/speckit-specify %s Scope boundary: %s\n' "$SEL_INTENT" "$SEL_SCOPE"
+printf '/speckit.specify %s Scope boundary: %s\n' "$SEL_INTENT" "$SEL_SCOPE"
 echo
 rule
 cat <<EOF
 NOTE: This brief was assembled deterministically from ROADMAP.md and
 REQUIREMENTS.md. It did NOT create a branch, spec, checklist, or any file, and
 resolved the existing manual ROADMAP.md mapping. The mapping remains manual and
-authoritative. A human must REVIEW this brief and approve the core
-/speckit-specify command above; only that core command creates the feature.
+authoritative. A human must REVIEW this brief and approve the core command
+above; only that core command creates the feature. Run it exactly once: a second
+specify creates another numbered spec directory.
 EOF

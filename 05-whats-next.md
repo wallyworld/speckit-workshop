@@ -17,12 +17,12 @@ artifacts, bootstrap the extension, retrofit the Phase 1 specs, then build
 > Note: step 1 below copies samples written for the pet store project
 > rather than a template that has to be filled in.
 
-- **Core commands** use OpenCode's dot form: `/speckit.specify`.
-- **Extension commands** are skills, so they use the hyphenated form:
-  `/speckit-requirements-prepare`. The dot form
-  (`/speckit.requirements.prepare`) is also installed by the extension.
-- With agy or Copilot, use the hyphenated form for core commands too:
-  `/speckit-specify`.
+- **OpenCode slash commands** use the dot form for both core and extension
+  commands: `/speckit.specify`, `/speckit.requirements.prepare`. The
+  extension's hyphenated names are generated skills; OpenCode loads them
+  through its skill tool, not its `/` menu.
+- **With agy or Copilot**, use the hyphenated skill form for both:
+  `/speckit-specify`, `/speckit-requirements-prepare`.
 
 ## The four-part model
 
@@ -48,10 +48,10 @@ explanation is in [The requirements extension](new-project-template/README.md#th
 
 | Loop stage | What fires |
 | --- | --- |
-| before specify | `/speckit-requirements-prepare R#` builds a reviewed brief with canonical requirement text and digests |
+| before specify | `/speckit.requirements.prepare R#` builds a reviewed brief with canonical requirement text and digests |
 | plan | `before_plan`: plan checklist |
 | tasks | `before_tasks`: tasks checklist, tests required |
-| after tasks | `/speckit-requirements-acceptance-test` (manual): derive the executable acceptance test |
+| after tasks | `/speckit.requirements.acceptance-test` (manual): derive the executable acceptance test |
 | analyze | `before_analyze`: requirement verifier; `after_analyze`: remediation loop |
 | implement | `before_implement`: tasks checklist applied to code being written; `after_implement`: independent diff review |
 | converge | `before_converge`: requirement verifier and tasks checklist |
@@ -161,7 +161,7 @@ overlap, so confirm the mapping. A `REVIEW` line marks a zero-score
 provisional assignment; the verifier is the gate, the mapping is a review
 aid.
 
-The gate itself:
+To perform the verification:
 
 ```bash
 make test
@@ -216,37 +216,40 @@ the Phase 1 context doesn't crowd the new feature.
 ### 5.1 Prepare the brief
 
 ```text
-/speckit-requirements-prepare R3
+/speckit.requirements.prepare R3
 ```
 
 The command validates that `R3` exists, its predecessors are `done`, and
 its Completes/Advances IDs exist in `REQUIREMENTS.md`. It prints a
 read-only brief: roadmap intent, scope boundary, canonical requirement text
-for `UI-1..UI-5`, digests, and a ready-to-run specify command. Review it
-first.
+for `UI-1..UI-5`, digests, and a ready-to-run specify command. Review the
+brief now, but do not run its command yet: step 5.2 runs it once.
 
-**If your container can't copy text:** OpenCode's copy action can report
-success while the text never reaches the terminal. Reply
-`run the emitted core command` (or
-`run the emitted /speckit-specify command`). The agent has the brief in
-the same session. That reply is your approval; the review still happens
-first.
+### 5.2 Specify (once)
 
-### 5.2 Specify
+Before running anything, check `specs/` for an existing R3 spec. If one
+exists, do not run specify again; keep the first R3 spec (normally
+`003-*`) and continue with clarify, plan, and tasks on it. If you have
+both `003-*` and `004-*`, the troubleshooting entry below covers removing
+the duplicate.
 
-For example:
+If no R3 spec exists, run the exact command the brief emitted. For this
+sample's `R3` row it is:
 
 ```text
-/speckit.specify Implement slice R3 from ROADMAP.md: an interactive
-browser frontend served by FastAPI that renders the catalog, creates pets,
-places orders, and cancels orders. Serve it at `/`. Do not add
-authentication, login, roles, sessions, or any capability not listed in
-REQUIREMENTS.md. Implement active orders against a real GET /orders
-endpoint, not placeholder data. Include tests that exercise the real page.
+/speckit.specify Interactive browser frontend connecting catalog and orders. Scope boundary: Client frontend served by FastAPI; uses existing R1/R2 API; no external frontend build tools.
 ```
 
-The agent reads `ROADMAP.md` and `REQUIREMENTS.md` and drafts
-`specs/003-<slug>/spec.md`. The spec template requires Requirements
+Run it **exactly once**. Do not also run a second specify from this page,
+from the brief, or from anywhere else: each invocation creates a new
+numbered directory, so `R3` would end up with both `003-*` and `004-*`.
+
+**If your container can't copy text:** reply `run the emitted core
+command`. The agent has the brief in the same session. That reply is your
+approval; the review still happens first.
+
+On a fresh run, the agent reads `ROADMAP.md` and `REQUIREMENTS.md` and
+drafts `specs/003-<slug>/spec.md`. The spec template requires Requirements
 Coverage; the spec must contain `UI-1..UI-5` and map its FRs to them. It
 passes when it states `UI-1..UI-5` and claims `R3` with the correct
 Completes set.
@@ -310,12 +313,12 @@ launch flags `--no-sandbox --disable-dev-shm-usage`.
 With `tasks.md` in place and no implementation yet, invoke:
 
 ```text
-/speckit-requirements-acceptance-test R3
+/speckit.requirements.acceptance-test R3
 ```
 
-The skill reads the spec, plan, quickstart, and build/test entry points,
-then writes the test first. It's manual, not a hook. It adds isolated
-state and a known-bad fixture, then wires the test into `make test`.
+The command reads the spec, plan, quickstart, and build/test entry points,
+then writes the test first. It's a manual step, not a hook run automatically.
+It adds isolated state and a known-bad fixture, then wires the test into `make test`.
 
 Check the generated test:
 
@@ -331,8 +334,6 @@ Check the generated test:
 
 Run it now; it should fail because the feature isn't implemented. Module
 imports, status checks, and static text aren't an acceptance test.
-
-That's R3's only automated gate; the manual pass is separate.
 
 ### 5.5 Analyze
 
@@ -450,11 +451,13 @@ Verify the `R3` spec:
 bash extensions/requirements/scripts/bash/verify-traceability.sh /project/petstore/specs/003-*/spec.md
 ```
 
+If you kept a differently numbered R3 directory, substitute its path.
+
 Then update `ROADMAP.md` row `R3`:
 
 - change `Status` from `planned` to `done`;
-- confirm or update the `Sub-spec` link to your generated `specs/003-...`
-  directory.
+- confirm or update the `Sub-spec` link to your kept R3 directory (normally
+  `specs/003-...`).
 
 From `/project/petstore`, the full gate and working tree:
 
@@ -468,6 +471,11 @@ fresh digest, and the code all support it.
 
 ## Troubleshooting
 
+- **Two specs for one roadmap row (`003-*` and `004-*`)**: specify ran
+  twice. Keep the first R3 spec (`003-*`), delete the later `004-*`
+  directory, set `.specify/feature.json` to the kept directory, and update
+  the R3 `Sub-spec` link to it. Continue with clarify, plan, and tasks; do
+  not run specify again.
 - **`make test` says `No module named pytest` or `yaml`**: run
   `make install`. It installs the requirements even with an existing venv.
 - **`No module named playwright`**: `uv pip install pytest-playwright`.

@@ -4,7 +4,7 @@ description: "Analysis remediation loop: correct every statement carrying the sa
 
 # Analysis remediation loop
 
-Apply this whenever an analysis (`/speckit-analyze`) or a review reports
+Apply this whenever an analysis or a review reports
 findings. It fires as a mandatory `after_analyze` hook in skills mode and
 mirrors the constitution's rerun rule at the analysis stage.
 

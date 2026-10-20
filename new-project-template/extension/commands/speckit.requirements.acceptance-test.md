@@ -4,6 +4,15 @@ description: "Derive and add an executable acceptance test for every user-facing
 
 # Acceptance test
 
+## User Input
+
+```text
+$ARGUMENTS
+```
+
+Optional: a roadmap ID (for example `R3`) or a feature directory. When
+empty, use the active feature.
+
 Use this procedure after `tasks.md` exists and before implementation. It
 turns each user-facing requirement into an executable acceptance test that
 drives the real delivery entry point. It does not assume a particular

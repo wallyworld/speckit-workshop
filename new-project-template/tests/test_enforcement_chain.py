@@ -189,6 +189,30 @@ def test_hook_registrations_present():
     )
 
 
+def test_manual_commands_accept_arguments():
+    """The manual extension commands that take a roadmap ID or feature path
+    carry the ``$ARGUMENTS`` placeholder.
+
+    OpenCode substitutes ``$ARGUMENTS`` into the generated command file. A
+    command that omits it silently drops the user's argument, so
+    ``/speckit.requirements.acceptance-test R3`` would fall back to whatever
+    feature is currently active. The prepare, acceptance-test, and verify
+    commands are the ones invoked with an argument."""
+    source = EXTENSION_SOURCE
+    if not source.is_dir() and (ROOT / "bootstrap.sh").is_file():
+        source = ROOT / "extension"
+    if not source.is_dir():
+        pytest.skip("requirements extension source is not present")
+    for name in ("prepare", "acceptance-test", "verify"):
+        command = source / "commands" / f"speckit.requirements.{name}.md"
+        text = command.read_text(encoding="utf-8")
+        assert "## User Input" in text, f"{command}: missing User Input section"
+        assert "$ARGUMENTS" in text, (
+            f"{command}: missing $ARGUMENTS; OpenCode would drop the roadmap "
+            f"or feature argument from the generated command"
+        )
+
+
 def test_installed_command_surface_surfaces_hooks():
     """Every installed core command surface this project's hooks ride on still
     carries its hook-check sections.

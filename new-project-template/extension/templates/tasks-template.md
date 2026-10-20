@@ -15,8 +15,9 @@ description: "Task list template for feature implementation"
 
 ## Acceptance tests
 
-After this task list exists, invoke `/speckit-requirements-acceptance-test`
-to derive the executable acceptance tests. For every user-facing
+After this task list exists, invoke `/speckit.requirements.acceptance-test`
+(the hyphenated skill form `/speckit-requirements-acceptance-test` on agy or
+Copilot) to derive the executable acceptance tests. For every user-facing
 requirement, add a task that drives the real entry point named in `plan.md` - an HTTP route, CLI command, UI screen, device
 action, produced file, or whatever the product exposes. The test runs on
 the real runtime, asserts the user-visible outcome and its known failure
@@ -40,7 +41,7 @@ gate. A placeholder or empty/default implementation must fail it.
   ============================================================================
   IMPORTANT: The tasks below are SAMPLE TASKS for illustration purposes only.
 
-  The /speckit.tasks command MUST replace these with actual tasks based on:
+  The tasks command MUST replace these with actual tasks based on:
   - User stories from spec.md (with their priorities P1, P2, P3...)
   - Feature requirements from plan.md
   - Entities from data-model.md

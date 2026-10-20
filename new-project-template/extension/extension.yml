@@ -21,7 +21,7 @@ provides:
   commands:
     - name: speckit.requirements.prepare
       file: commands/speckit.requirements.prepare.md
-      description: "Assemble a self-contained requirements-context brief for a roadmap ID (e.g. R2) and emit a ready-to-run core /speckit-specify command for human review."
+      description: "Assemble a self-contained requirements-context brief for a roadmap ID (e.g. R2) and emit a ready-to-run core /speckit.specify command for human review."
     - name: speckit.requirements.verify
       file: commands/speckit.requirements.verify.md
       description: "Verify that every requirement a feature spec claims to complete is materially present in that spec (requirement-phrase traceability from REQUIREMENTS.md) and recorded against the requirement's current wording (SHA-256 digest freshness); fires as the before_analyze and before_converge hooks."
@@ -105,8 +105,8 @@ hooks:
       result of running the real entry point or acceptance test - fix
       every finding, and re-run until a clean pass before claiming the
       work done
-    prompt: Before reporting the implementation complete, run
-      /speckit-requirements-diff-review - collect the diff, the goal
+    prompt: Before reporting the implementation complete, run the
+      requirements diff-review command - collect the diff, the goal
       artifacts, and the result of running the real entry point or
       acceptance test, delegate the review to a fresh context with no
       author reasoning, fix every finding, and re-run until a clean pass.
@@ -115,7 +115,7 @@ hooks:
   - command: speckit.requirements.verify
     priority: 10
     description: Surface requirement-content drift during analysis
-    prompt: Run /speckit-requirements-verify and include any DRIFT or STALE
+    prompt: Run the requirements verify command and include any DRIFT or STALE
       findings in the analysis report, alongside the spec/plan/tasks
       consistency findings.
     optional: false
@@ -134,7 +134,7 @@ hooks:
     description: Verify claimed-complete requirements are materially present in
       the spec and recorded against current requirement wording before
       relying on convergence
-    prompt: Run /speckit-requirements-verify first. If any claimed-complete
+    prompt: Run the requirements verify command first. If any claimed-complete
       requirement is DRIFTED (its content is absent from the spec) or STALE
       (its recorded digest no longer matches the requirement's current
       wording), surface those findings and do not report 'converged' until

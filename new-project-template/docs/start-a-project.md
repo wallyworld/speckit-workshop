@@ -10,6 +10,11 @@ The guide assumes `bootstrap.sh` has already run in your project. If it has
 not, start with the template README's "Seed a project" instructions, then
 return here.
 
+> **Command form.** This guide shows OpenCode's dot form for both core and
+> extension commands (`/speckit.specify`,
+> `/speckit.requirements.prepare`). With agy or Copilot, use the hyphenated
+> skill form (`/speckit-specify`, `/speckit-requirements-prepare`).
+
 ## The model TL;DR
 
 Four artifacts drive a multi-phase delivery:
@@ -197,7 +202,7 @@ the requirements file declares IDs.
 Then validate the first roadmap row end to end:
 
 ```text
-/speckit-requirements-prepare R1
+/speckit.requirements.prepare R1
 ```
 
 The command checks that `R1` exists, that its dependencies are `done`, and
@@ -211,14 +216,15 @@ ordering constraints, not documentation.
 
 ## 6. Deliver the slice and close the row
 
-Run the core specify command emitted by the brief, then the rest of the
-loop:
+Run the core specify command emitted by the brief exactly once, then the
+rest of the loop. A second specify creates another numbered spec
+directory, so a roadmap row always has one spec:
 
 ```text
 /speckit.clarify
 /speckit.plan
 /speckit.tasks
-/speckit-requirements-acceptance-test R1
+/speckit.requirements.acceptance-test R1
 /speckit.analyze
 /speckit.implement
 /speckit.converge
@@ -254,8 +260,8 @@ When you start a new phase:
    `Completes` owner. Use `Advances` only for groundwork that a later row
    will complete.
 4. Regenerate `requirement-phrases.txt` and review the new entries.
-5. Run `make test` and `/speckit-requirements-prepare` for the next row,
-   for example `/speckit-requirements-prepare R2`.
+5. Run `make test` and `/speckit.requirements.prepare` for the next row,
+   for example `/speckit.requirements.prepare R2`.
 6. Deliver the slice and close the row as in step 6.
 
 If a requirement's wording changes after a spec recorded it, the recorded
@@ -280,7 +286,7 @@ A first phase is ready to specify when all of these are true:
 - every roadmap dependency exists and is ordered before the row;
 - every requirement ID has a reviewed, distinctive phrase;
 - `make test` passes once the bootstrap fill-in checklist is complete,
-  and `/speckit-requirements-prepare R1` emits a brief.
+  and `/speckit.requirements.prepare R1` emits a brief.
 
 ## Common mistakes
 

@@ -1,5 +1,5 @@
 ---
-description: "Assemble a deterministic, self-contained requirements-context brief for a single roadmap ID and emit a ready-to-run core /speckit-specify command for human review."
+description: "Assemble a deterministic, self-contained requirements-context brief for a single roadmap ID and emit a ready-to-run core /speckit.specify command for human review."
 scripts:
   sh: scripts/bash/assemble-brief.sh {ARGS}
 ---
@@ -8,7 +8,7 @@ scripts:
 
 Assemble a **self-contained feature brief** for one roadmap entry by reading the
 project's authoritative, human-maintained `ROADMAP.md` and `REQUIREMENTS.md`,
-then print a ready-to-run core `/speckit-specify` command.
+then print a ready-to-run core `/speckit.specify` command.
 
 This command is **read-only and deterministic**. It does **not** create a
 feature directory, branch, `spec.md`, checklist, or any other file, and it
@@ -47,7 +47,8 @@ Completes/Advances requirement IDs, the **exact full requirement text** grouped
 by classification, a Requirements Coverage seed (with a SHA-256 digest per
 Completes ID, over the requirement's normalized text) that matches the
 project's spec template, a suggested spec `Input` line, and a ready-to-run
-`/speckit-specify ...` command.
+`/speckit.specify ...` command. On hyphenated skill surfaces (agy, Copilot),
+use `/speckit-specify` instead.
 
 ## Human review gate
 
@@ -55,11 +56,13 @@ After presenting the brief, remind the human that:
 
 - they must **review** the assembled brief against `ROADMAP.md` and
   `REQUIREMENTS.md`, and
-- they (not this command) run the emitted core `/speckit-specify` command,
-  unless they explicitly authorize you to run it after review because their
-  environment cannot copy the command. An example authorization is: "I
-  reviewed the brief; run the emitted core command."
+- they (not this command) run the emitted core `/speckit.specify` command
+  exactly once (`/speckit-specify` on agy or Copilot). A second specify
+  creates another numbered spec directory. They may explicitly authorize you
+  to run it after review if their environment cannot copy the command. An
+  example authorization is: "I reviewed the brief; run the emitted core
+  command."
 
-Core `/speckit-specify` does not resolve roadmap or requirement IDs. This
+Core `/speckit.specify` does not resolve roadmap or requirement IDs. This
 project extension resolves the existing manual roadmap mapping into the brief;
 the human still reviews it before starting core Specify.

@@ -96,7 +96,7 @@ justified in the feature that makes it.
 ## Part 2: Project principles
 
 This part carries the governance specific to what this product is. Add one
-principle per domain concern through `/speckit-constitution`, which
+principle per domain concern through the constitution command, which
 versions and records the amendment in the constitution; the plan of the
 feature that makes it carries the justification. One principle per
 domain concern keeps each one checkable at review time.
@@ -105,8 +105,8 @@ domain concern keeps each one checkable at review time.
 
 This constitution governs all feature plans and tasks. A feature may amend
 it only when the amendment is explicit, justified in its plan, and
-versioned and recorded in the constitution by the
-`/speckit-constitution` workflow. Amendments may add or revise
+versioned and recorded in the constitution through the constitution
+command. Amendments may add or revise
 principles in either part; Part 1 stays domain-neutral. Completed feature
 specifications are historical records; later changes use a new numbered
 feature.

@@ -260,9 +260,10 @@ command, a UI screen, a device action, a generated file, or something
 else. The template does not assume a particular technology.
 
 - The plan names the real entry point for every user-facing requirement.
-- After tasks exist, invoke `/speckit-requirements-acceptance-test` (or the
-  dot form) to derive the executable acceptance tests. The skill carries the
-  procedure: real runtime, isolated state, user-visible assertions, a
+- After tasks exist, invoke `/speckit.requirements.acceptance-test` (the
+  hyphenated skill form `/speckit-requirements-acceptance-test` on agy or
+  Copilot) to derive the executable acceptance tests. The command carries
+  the procedure: real runtime, isolated state, user-visible assertions, a
   known-bad fixture, and wiring into the test gate. It is a manual step, not
   a hook.
 - The tasks include an executable acceptance test that drives that entry
@@ -349,7 +350,8 @@ After the bootstrap, read `docs/start-a-project.md`. In short:
 2. copy `docs/ROADMAP.md.example` to `ROADMAP.md`; give every requirement
    exactly one `Completes` owner and order the rows by dependency;
 3. generate and review `requirement-phrases.txt`;
-4. run `make test` and `/speckit-requirements-prepare R1`.
+4. run `make test` and `/speckit.requirements.prepare R1` (hyphenated as
+   `/speckit-requirements-prepare R1` on agy or Copilot).
 
 The full sequence, including adding later phases, is in the guide.
 
@@ -484,7 +486,7 @@ claim with no recorded digest fails as UNDIGESTED.
 | Mode | What runs |
 | --- | --- |
 | `make test` (and CI) | Traceability verifier over every committed spec; the extension's Bash test suite; the style gate (the em-dash and marker rules); the installed extension matching the tracked source; the enforcement-chain mirror tests (hook registrations, checklist rules surviving into every mirror, domain neutrality of the seedable checklists, the AGENTS.md checklist-instances section - see below); the workshop-action sync test (the `.workshop/` definition's actions name real Makefile targets; every public target is exposed or allowlisted); the bootstrap-manifest coverage test (every Python file under `tests/` ships in the seed's copy manifest). The mirror tests gate on adoption: a project without the extension skips them; an adopting project missing an integral file fails. The manifest test is tree-gated: it fires here and skips in a seeded project. |
-| Skills mode (`/speckit-*` commands) | The hooks registered in `.specify/extensions.yml` inject the checklists before plan, tasks, implement, and converge; run the traceability verifier before analyze and converge; commission the independent diff review after implement; and enforce the analysis remediation loop after analyze. |
+| Skills mode (generated `speckit-*` skills) | The hooks registered in `.specify/extensions.yml` inject the checklists before plan, tasks, implement, and converge; run the traceability verifier before analyze and converge; commission the independent diff review after implement; and enforce the analysis remediation loop after analyze. |
 | Workflow mode (`specify workflow run speckit`) | The checks with gate counterparts fire as approve/reject gates in the bundled workflow; the analyze and converge hooks fire in skills mode only. |
 | Acceptance | A human confirms every `Completes` claim (the roadmap's assertion that the feature fully delivers those requirements) has realizing implementation before the roadmap status flips to `done`. |
 
@@ -530,8 +532,10 @@ that adopted it with a broken chain.
 
 Part 1 (delivery principles) is universal and travels with the
 tooling. Part 2 (project principles) is yours. Add one principle per
-domain concern through `/speckit-constitution`, which versions and
-records the amendment in the constitution. After running it, check that
+domain concern through the constitution command
+(`/speckit.constitution` in OpenCode; `/speckit-constitution` on agy or
+Copilot), which versions and records the amendment in the constitution.
+After running it, check that
 the two-part structure survived; the command resolves the stock
 constitution template underneath. Part 1 stays domain-neutral (it names
 no product, technology, or domain), so it travels unchanged; reviewing
@@ -541,8 +545,9 @@ This constitution is part of the seeded process, not a drop-in for a
 vanilla `specify init` project: Part 1's principles reference the
 requirements source, roadmap, and implementation mechanics, and the
 enforcement comes from the extension and hooks the bootstrap installs.
-For a vanilla project, use the core `/speckit-constitution` command; for
-this template, run the bootstrap.
+For a vanilla project, use the core constitution command
+(`/speckit.constitution` in OpenCode; `/speckit-constitution` on agy or
+Copilot); for this template, run the bootstrap.
 
 ## What is optional
 

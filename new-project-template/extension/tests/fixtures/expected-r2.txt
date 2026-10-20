@@ -48,11 +48,12 @@ Suggested spec Input line:
 
 Ready-to-run core command (review before running)
 --------------------------------------------------------------------------------
-/speckit-specify Deliver the second slice with its own outcome. Scope boundary: Uses R1 only.
+/speckit.specify Deliver the second slice with its own outcome. Scope boundary: Uses R1 only.
 
 --------------------------------------------------------------------------------
 NOTE: This brief was assembled deterministically from ROADMAP.md and
 REQUIREMENTS.md. It did NOT create a branch, spec, checklist, or any file, and
 resolved the existing manual ROADMAP.md mapping. The mapping remains manual and
-authoritative. A human must REVIEW this brief and approve the core
-/speckit-specify command above; only that core command creates the feature.
+authoritative. A human must REVIEW this brief and approve the core command
+above; only that core command creates the feature. Run it exactly once: a second
+specify creates another numbered spec directory.

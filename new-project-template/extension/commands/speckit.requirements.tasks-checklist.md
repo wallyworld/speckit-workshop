@@ -91,8 +91,8 @@ in skills mode and as the `review-tasks` gate in workflow mode.
     mode, carries a known-bad fixture, and runs in the project's test gate.
     A placeholder, empty/default implementation, or implementation-only
     assertion fails this rule. After tasks.md exists, invoke
-    `/speckit-requirements-acceptance-test` (the dot form
-    `/speckit.requirements.acceptance-test` where installed) to derive the
+    `/speckit.requirements.acceptance-test` (the hyphenated skill form
+    `/speckit-requirements-acceptance-test` on agy or Copilot) to derive the
     test; this is a manual step after tasks, not a hook.
 
 The command surfaces and coverage-critical artifact kinds specific to
