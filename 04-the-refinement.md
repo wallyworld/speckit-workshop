@@ -1,22 +1,18 @@
 # 04 - Refinement: The Order Placement Logic
 
-This is the refinement phase: you run the same loop on order placement in
-your own project, inside your workshop container ([01](01-setup.md)).
-The feature you will specify contains a verification deliverable for a
-non-trivial requirement.
-
-To avoid loading up the context from the initial pet catalog feature, start 
-a new session in your coding harness prior to running the next loop.
+Order placement, in `~/petstore` inside the workshop container
+([01](01-setup.md)). Start a fresh session. A session carried over from the
+catalog feature can resolve the wrong directory and pick up the previous spec;
+[02](02-core-concepts.md) explains why. The requirement below has a new
+business rule to add to the pet store.
 
 > **Command form.** Commands use OpenCode's dot form; with agy or Copilot use
 > the hyphenated form (`/speckit-specify` in place of `/speckit.specify`).
 
-> **No container clipboard?** You never have to copy a command from the
-> agent's output. Reply with the next step in words (`run the next step`,
-> `run the emitted command`) and the agent will act on the artifacts in
-> the session or on disk. See
-> [06 - Reference](06-reference.md#clipboard-inside-the-container) for
-> terminal copy alternatives.
+> **No container clipboard?** Reply `run the next step` or
+> `run the emitted command`; the agent acts on the files on disk. Copy
+> alternatives are in
+> [06 - Reference](06-reference.md#clipboard-inside-the-container).
 
 ## The feature description you will run
 
@@ -26,13 +22,13 @@ a new session in your coding harness prior to running the next loop.
 > still open must restore the pet's stock by one. An order may not bring a pet's
 > stock below zero.
 
-That final sentence is the non-trivial requirement. The whole refinement phase
-is about whether the loop turns that sentence into a real check - and whether a
-naive implementation survives it.
+The last sentence is the interesting one for this workshop. Does the loop turn
+it into a check, or leave it as prose in `spec.md`?
 
 ## Implement the requirement
 
-Run the full loop on the order-placement feature:
+The block is the full loop. Run it one command at a time from `~/petstore`;
+the sections below mark the required interactions.
 
 ```
 /speckit.specify You are building a pet store. Users can place an order for a pet. Placing
@@ -54,118 +50,95 @@ pet catalog schema and endpoints already present.
 /speckit.converge
 ```
 
-**Pass condition**: your `spec.md` states, in the Functional Requirements,
-that an order for an unavailable pet **must fail** and that stock **must
-not** go below zero. If the agent's clarify step collapsed that into a
-vague phrase, feed the precise sentence back into the spec before
-continuing.
-
-If the spec does not state the "must not go below zero" requirement
-explicitly, that is the spec being loose - a loose requirement cannot be
-verified at converge time.
+After clarify, check the spec. Functional Requirements must say an order for
+an unavailable pet **must fail** and stock **must not** go below zero. If
+clarify turned either into a vague phrase, put the precise sentence back. A
+loose requirement can't be verified at converge time.
 
 ## Analyze the artifacts
 
-`/speckit.analyze` cross-checks the spec, plan, and tasks before
-implementation. Review its findings and correct any inconsistency in the
-artifacts; the command is read-only and does not change the code.
+Analyze is read-only and only checks the written artifacts, not the code. Fix
+the spec, plan, or tasks until its report is clean.
 
-## Implementation and its tests exist
+## Check the tests and the API
 
-**Pass condition**: `pytest` passes in your project. You now have an
-implementation of order placement and a test suite. The implementation will have
-added an `orders` table and `POST /orders` (and possibly a cancel action, e.g.
-`POST /orders/{id}/cancel`) to your FastAPI app.
+`uv run pytest` passes, and you've got order placement plus a suite. Look for an
+`orders` table and `POST /orders`; a cancel route may be
+`POST /orders/{id}/cancel`, depending on the run.
 
-**Check**: does the suite include a test that an order for a
-zero-stock pet **fails**, and a test that placing an order never drives
-stock below zero? Open the test file and look. If the tests only cover
-the happy path (order for an in-stock pet succeeds), you have discovered
-the potential flaw: the loop will have produced tests that pass, but
-the *requirement* is not asserted.
+Open the test file. Look for a case where an order for a zero-stock pet
+**fails**, and one showing stock never drops below zero. If the suite only
+covers an in-stock order succeeding, it passes without asserting the
+requirement - this is the potential gap this phase is about investigating.
 
-**See it in the browser**: with the server running
-(`uv run uvicorn petstore_app:app --reload --host 0.0.0.0`), open the
-served docs UI in a browser on your host: the `hostname:` line of
-`workshop info` (run from your clone) gives the address
-(`<workshop-name>.<clone-name>.wp`), so a clone named `speckit-workshop`
-uses <http://speckit-ws.speckit-workshop.wp:8000/docs>. Then try it like
-a real pet store: create a pet with stock 1, place an order for it,
-then place a second order for the same pet. Whether that second order
-**fails in the UI** - or is silently accepted - is the $64,000,000 question.
+Start the server in a second byobu window:
+`uv run uvicorn petstore_app:app --reload --host 0.0.0.0`. Starting it in the
+foreground of the agent's turn hangs the turn.
+
+Open the docs UI from your host browser. Use the `hostname:` line from
+`workshop info` (run it in your clone); for a clone named `speckit-workshop`
+that's
+<http://speckit-ws.speckit-workshop.wp:8000/docs>. Create a pet with stock 1,
+order it, then order it again. The second call should fail, and stock should
+stay at 0. A 200 means the implementation missed the requirement; stock at -1
+would be the indication something went wrong.
 
 ## Converge
 
-Now run the loop's converge check again - the converge step re-reads the
-spec and compares the code to it:
+Converge re-reads the spec, plan, and tasks, then compares the code to them.
+The block ends with converge. Run it again after the test check:
 
 ```
 /speckit.converge
 ```
 
-Two outcomes:
+Converge reports **converged** when code and artifacts agree. Otherwise it
+points at a missing test or a gap in the code. Mine needed two cycles. The
+common gap: the code decrements stock without an availability check, so orders
+drive it to -1 while a happy-path suite stays green. Converge appends the
+missing task, for example "write a test asserting an order for a zero-stock pet
+fails", and you run implement and converge again.
 
-- **The loop closes**: converge reports the implementation matches the
-  spec. Your tests assert the invariant, the code enforces it, and
-  converge finds no gap. The feature is (hopefully) done.
-- **The loop re-enters**: converge points at a missing test or gap in the
-  code. A common one: the spec says "must not go below zero" but the
-  implementation decrements stock without checking availability first -
-  so a sequence of orders can drive stock to -1, and the test suite
-  (written from the happy path) never noticed. Converge appends the
-  missing task ("write a test asserting an order for zero-stock fails")
-  and you re-run implement and converge.
-
-**Either** outcome is a successful exercise. The loop does not let "the tests
-pass" stand in for "the requirement is met."
+Either result is a successful exercise. The loop doesn't let "tests pass" stand
+in for "requirement met".
 
 ## Summary
 
-The demonstrable lesson of this phase is that **specs and tests are not
-the same thing, and the loop keeps them consistent with each other**:
+Specs and tests aren't the same thing. The spec states the requirement, tests
+assert it, code implements it. Analyze checks that the written artifacts agree;
+converge checks that the code agrees with them.
 
-- The spec is the *requirement* (stock must not go below zero).
-- The tests are the *assertions* (the invariant is checked).
-- The implementation is the *behavior*.
-- Analyze checks that the written artifacts agree with each other before
-  code exists; converge checks that the code agrees with them afterward.
+A naive "decrement stock, done" passes a happy-path suite and violates the
+spec. The loop catches it because the requirement was written independently of
+the code. If you'd told the agent only "write an order endpoint", it would've
+produced the happy-path implementation, the tests would've passed, and nobody
+would've noticed the issue until production.
 
-A naive implementation - "place an order, decrement stock, done" - passes
-tests that only check the happy path, but violates the spec. The loop
-catches it because the *requirement* was stated independently of
-the code. If you had just told the agent "write an order endpoint," the
-agent would have produced the happy-path implementation, the tests would
-have passed, and nobody would have noticed the drain below zero until
-production.
-
-The loop does not prevent you from writing a bad spec.
-But it makes a *bad or incomplete spec* visible, because the loop's last
-step checks the code against the spec you wrote, and it refuses to call
-it done when the two disagree.
+The loop doesn't stop you writing a bad spec. It makes a bad or incomplete spec
+visible: converge checks the code against it and refuses to call it done when
+they disagree.
 
 One more gap this exercise can expose: out of the box, Spec Kit treats test
 tasks as optional, so a tasks list can omit them - the requirement is then
 asserted only if the implementer writes tests on its own initiative. Your
-constitution's principle 2 says every new behaviour, including failure
-paths, has a test, so the omission is a constitution violation, not just a
-spec gap. But in the vanilla project that principle is prose: the agent can
-still ignore it. This project's
+constitution's principle 2 says every new behaviour, including failure paths,
+has a test, so the omission is a constitution violation, not just a spec gap.
+But in the vanilla project that principle is prose: the agent can still ignore
+it. This project's
 [`new-project-template/`](new-project-template/) closes that gap: its
 constitution principle 8 makes test coverage mandatory, its tasks template
 states tests are required, and a hook checks the test list before tasks and
-converge. That is the difference between a principle and a gate.
+converge. That's the difference between a principle and a gate.
 
 ## If you finish early
 
-Add one more requirement to the order feature and run the loop again, for
-example: *"An order that has not been canceled must not be modified after
-it is placed."* Watch how the loop carries that requirement through to
-converge. It shows how a *complete* spec  produces *verified* code.
+Add another requirement and run the loop again, for example: *"An order that
+has not been canceled must not be modified after it is placed."* See what
+converge says about it.
 
-Or, for fun (explicitly **outside** the loop): ask the agent, in a fresh
-non-spec-kit session, to add a single `index.html` storefront page served by
-FastAPI (`StaticFiles`) that lists the pets and places orders against the API.
-Because it's hand-written for "fun", it does not enter the requirements chain -
-notice the contrast with everything you just did through the loop.
+Or, explicitly **outside** the loop: in a fresh non-spec-kit session, ask for a
+single `index.html` storefront served by FastAPI (`StaticFiles`), listing pets
+and placing orders against the API. Because this would be written outside the
+loop, it never enters the requirements chain.
 
 Next: [what's next](05-whats-next.md) and [reference](06-reference.md).

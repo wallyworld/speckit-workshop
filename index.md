@@ -26,15 +26,15 @@ implement, and verify the result against what you specified." The loop
 is: **specify what to build, clarify ambiguity, plan how to build it,
 break it into tasks, analyze the artifacts, implement, converge (check
 the code against the spec and tasks, filling any gaps)**. Each step is a
-command your agent
-runs; the output of each becomes the input of the next. The payoff is a
-closed loop: nothing is "done" until the code matches the spec and every
-task is built, so the agent cannot quietly skip requirements you stated.
+command your agent runs; the output of each becomes the input of the
+next. The result is a closed loop: nothing is "done" until the code
+matches the spec and every task is built, so the agent (hopefully)
+should not quietly skip requirements you stated.
 
 Before the first feature you ratify the project **constitution**: the
 principles every feature must honor. Plan, analyze, implement, and
-converge all read it, so the loop has governance above the feature
-artifacts.
+converge all read it, so the loop has governance at a layer above
+the feature artifacts.
 
 ```
 specify -> clarify -> plan -> tasks -> analyze -> implement -> converge
@@ -62,41 +62,26 @@ By the end you will be able to:
    implement, converge.
 2. Read and reason about the artifacts the loop produces (spec, plan,
    tasks).
-3. Explain where and how "validation" actually fires (analyze's
+3. Explain where and how "validation" actually fires (eg analyze's
    cross-artifact check and converge's check-the-code-against-the-spec
    step).
 4. Establish a project constitution with `/speckit.constitution` and
    explain how plan, analyze, implement, and converge use it.
-5. Identify why requirements-first beats vibe-implement-and-hope, using
-   a real validation flaw you will hit in the refinement phase.
-6. Know what to read next: extensions, presets, and how larger projects
+5. Know what to read next: extensions, presets, and how larger projects
    layer phased delivery.
-
-## The 90 minutes, minute by minute
-
-| Time | Segment | Format |
-|---|---|---|
-| 0-8 | What Spec Kit is; the loop; why it exists | TL;DR above + diagram |
-| 8-18 | Setup ([01-setup.md](01-setup.md)) | Instructor + you follow; includes ratifying the constitution |
-| 18-30 | Core concepts ([02-core-concepts.md](02-core-concepts.md)) | Explain |
-| 30-50 | Loop: full loop on pet catalog ([03-the-loop.md](03-the-loop.md)) | Hands on |
-| 50-78 | Refinement: order placement with the non-trivial requirement ([04-the-refinement.md](04-the-refinement.md)) | Hands on |
-| 78-85 | Debrief: what the loop caught in the room | Group |
-| 85-90 | Extensions, phasing note, Q&A ([05-whats-next.md](05-whats-next.md)) | Instructor |
 
 ## The project you will build: a pet store
 
-A small REST API for a pet store. The instructor demos the pet catalog
-(list, create, get, delete). You implement order placement. The feature
-description you will work from includes a deliberately sharp edge, stated
+A small REST API for a pet store: there's a pet catalog
+(list, create, get, delete) and order placement. The feature
+description you will work from includes a business rule, stated
 as flat requirements: placing an order for a pet that is no longer
 available **must fail**, and an order **may not** drive a pet's stock
-below zero. There is a right way and a wrong way to implement that - the
-refinement phase is about letting the loop tell you which is which.
+below zero.
 Your `~/petstore` working tree is mounted from `<clone>/petstore` on your
 host, so you can follow along in your IDE.
 
-## After the workshop
+## After the base workshop
 
 - `06-reference.md`: the cheat sheet for future sessions.
 - `05-whats-next.md`: a step-by-step phased-delivery lab (copy product

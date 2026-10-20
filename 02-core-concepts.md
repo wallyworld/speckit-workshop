@@ -1,51 +1,44 @@
 # 02 - Core Concepts
 
-How Spec Kit's moving parts work, from first principles.
-
 ## The mental model: an agentic loop around a requirements spec
 
-You already know how to work with a coding agent: you describe a problem,
-it reads your files, edits code, runs tests, and iterates. The problem
-with that workflow is that "the agent's plan" lives in its context window
-and is discarded when the session ends. Nothing preserves *what you asked
-for* independently of what the agent decided to build.
-
-Spec Kit's answer is to make the specification a **first-class artifact in
-your repository**. This is a file (`spec.md`) that states what the feature must
-do, in a form the agent re-reads at every phase. Each command in the loop
-reads the artifacts written by earlier commands; most write a new
-artifact, and analyze reports on the set without changing them.
-The result is a chain: `spec -> plan -> tasks -> code`. When the chain is
-complete, you have an audit trail from "what the user asked for" to "the
-code that implements it."
+Spec Kit puts the specification in your repository, where it survives the
+session. `spec.md` states what the feature must do, and the agent re-reads it
+at every phase. Each command in the loop reads the artifacts written before
+it; most write a new one, and analyze only reports. The chain is
+`spec -> plan -> tasks -> code`, with an audit trail from the request to the
+code.
 
 ## The constitution: the layer above the loop
 
-Before the first feature, a project records its **constitution**: the
-principles every feature must honor. It lives in
-`.specify/memory/constitution.md` and is created or updated by
-`/speckit.constitution`. `specify init` seeds a placeholder; the command
-ratifies it (the workshop does this in
-[01](01-setup.md#14-ratify-the-project-constitution)).
+Before the first feature, the project records its constitution: principles
+every feature must honor. It lives in
+`.specify/memory/constitution.md`. `specify init` seeds a placeholder;
+`/speckit.constitution` ratifies or updates it (workshop:
+[01](01-setup.md#14-ratify-the-project-constitution)). It isn't a loop step.
 
-The constitution is project-level, not per-feature, and it is not a step
-in the loop. The loop's commands read it:
+Two sections of `plan.md` are relevant here. The **Constitution Check** tests the
+design against each principle. A conflict either changes the design or goes in
+**Complexity Tracking**: an entry naming the principle, why the deviation is
+necessary, and what simpler option was rejected. Example: the constitution
+says "minimal runtime stack"; the design wants a background job library. Drop
+the library, or record why it needs the dependency.
 
-| Command | How it uses the constitution |
-|---|---|
-| `/speckit.plan` | Fills the plan's **Constitution Check**; a violation must be justified in Complexity Tracking or the design changed |
-| `/speckit.analyze` | Treats a conflict with a constitution MUST principle as CRITICAL |
-| `/speckit.implement` | Reads it as a governance constraint |
-| `/speckit.converge` | Treats a constitution violation as the highest-severity finding and appends remediation |
+Analyze treats a MUST conflict as CRITICAL. Implement reads the constitution
+as a governance constraint. Converge treats a MUST violation as CRITICAL and
+appends remediation.
 
-If the file is still an unfilled template, converge skips it explicitly
-and plan and analyze have no concrete principles to check. A project with
-a placeholder constitution therefore has no governance layer at all.
+An unfilled template gives plan and analyze nothing to check, and converge
+skips it. If the Constitution Check still says "Gates determined based on
+constitution file", or converge's metrics line reports the principles were
+skipped, the file is still a placeholder. Run `/speckit.constitution` first.
 
 ## The loop
 
-The loop below is per feature. The constitution above it applies to every
-feature.
+The loop is per feature; the constitution applies to every feature.
+In my run with `openrouter/z-ai/glm-4.6`, it took about 21 minutes of agent
+work: specify 1 minute, plan 2, tasks 1, analyze 1, implement 10, and 3 across
+two converge cycles. Clarify asked three questions.
 
 ```
 specify -> clarify -> plan -> tasks -> analyze -> implement -> converge
@@ -65,38 +58,34 @@ specify -> clarify -> plan -> tasks -> analyze -> implement -> converge
 | 6 | `/speckit.implement` | Executes the tasks, writing code | code changes |
 | 7 | `/speckit.converge` | Re-reads spec/plan/tasks, diffs the code against them, and adds any missing work as new tasks | updated `tasks.md` (and the loop repeats) |
 
-> **Command form.** Command names are shown in OpenCode's dot form
-> (`/speckit.specify`). With the agy or Copilot integration the same commands
-> are hyphenated: `/speckit-constitution`, `/speckit-specify`,
-> `/speckit-clarify`, `/speckit-plan`, `/speckit-tasks`,
-> `/speckit-analyze`, `/speckit-implement`, `/speckit-converge`.
+Commands above use OpenCode's dot form. With agy or Copilot they're
+hyphenated: `/speckit-constitution`, `/speckit-specify`, `/speckit-clarify`,
+`/speckit-plan`, `/speckit-tasks`, `/speckit-analyze`, `/speckit-implement`,
+`/speckit-converge`.
 
 ## The artifacts
 
-- **`constitution.md`** - *the rules*. Project principles and governance,
-  versioned and amended explicitly. It is not a feature artifact; it is
-  read at every step.
-- **`spec.md`** - *what* and *why*. User stories, functional requirements,
-  success criteria. This is the contract the whole loop is accountable to.
-  Note: state the observable behaviour, not a meta-rule such as "each
-  requirement must be testable"; a vague requirement cannot be verified at
-  converge time.
-- **`plan.md`** - *how*. Technical design: stack, files, data model,
-  interfaces, edge cases.
-- **`tasks.md`** - *who/what order*. The plan broken into small,
-  independently-testable tasks, each with a checkbox and a file path.
+- **`constitution.md`** - project rules, versioned and amended explicitly.
+  Read at every step; not a feature artifact.
+- **`spec.md`** - what and why: user stories with priorities, functional
+  requirements, success criteria. This is the contract. State observable
+  behaviour, not a meta-rule such as "each requirement must be testable"; a
+  vague requirement can't be verified at converge time.
+- **`plan.md`** - how: stack, files, data model, interfaces, edge cases.
+- **`tasks.md`** - the plan broken into small, independently testable tasks,
+  each with a checkbox and a file path. The checkboxes are the plan, not a
+  progress tracker.
 
-The loop is "closed" because each artifact must be traceable to the one
-before it, ie every task comes from a plan, every plan from a spec, and
-converge checks the code against all of them.
+Each artifact traces to the one before it; converge checks the code against
+all of them.
 
 ## Where validation occurs
 
-This is the key concept to internalize.
+Validation isn't a reviewer at the end. It's a series of gates:
 
 | Check | Who does it | When |
 |---|---|---|
-| Constitution is honored | `/speckit.plan` Constitution Check; analyze and converge treat MUST conflicts as CRITICAL | plan/analyze/converge time |
+| Constitution is honored | plan's Constitution Check; deviations recorded in Complexity Tracking; analyze and converge treat MUST conflicts as CRITICAL | plan/analyze/converge time |
 | Testable requirements | Spec author (you and the agent) | spec time |
 | Plan covers the spec | `/speckit.plan` reads spec.md | plan time |
 | Tasks cover the plan | `/speckit.tasks` reads plan.md | tasks time |
@@ -104,52 +93,33 @@ This is the key concept to internalize.
 | Code passes its tests | test runner in `/speckit.implement` | implement time |
 | Code matches spec and tasks | `/speckit.converge` re-reads spec/plan/tasks and diffs | converge time |
 
-Validation is **not** "a reviewer at the end." It is a series of
-incremental gates that force the agent to read and reconcile the intent
-it wrote down. If the code drifts from the spec, converge does not say
-"done" - it appends the missing work and re-enters the loop.
+Analyze is read-only and never inspects code; converge is the closing gate.
+If code drifts, converge doesn't say done. It appends the missing work and
+re-enters the loop.
 
 ### A non-trivial requirement (preview)
 
-In this part of the workshop, the spec will include requirements along these
-lines: *"Placing an order for a pet that is no longer listed as available
-must fail"* and *"An order may not bring a pet's stock
-below zero."* There is a subtle way to violate both at once: an
-implementation that checks availability in the wrong order, or not at
-all, can still pass happy-path tests ("place an order when stock is 1,
-expect success") while silently letting a sold-out pet be ordered and
-stock count go negative. The **loop** catches this error, because the spec's
-requirements drive tests that a naive implementation won't pass.
+The order feature in 04 has two flat requirements: *"Placing an order for a
+pet that is no longer listed as available must fail"* and *"An order may not
+bring a pet's stock below zero."* A naive implementation can pass the happy
+path (order when stock is 1, expect success) and still let a sold-out pet be
+ordered or drive stock to -1. If the tests only assert the happy path,
+converge appends a test for the missing rule; it re-reads the spec, not just
+the tests. A passing suite isn't the same as a verified requirement.
 
-Why not just write the test? You actually do write the test :-) The spec drives
-the test, the test drives the implementation, and converge confirms the test
-exists and passes. The point of putting a spec in front is that the
-*requirement* is stated independently of any one implementation, so a later
-refactor or rewrite has to still honor it.
+The spec drives the test, the test drives the implementation, and converge
+confirms the test exists and passes. The point of putting a spec in front
+is that the *requirement* is stated independently of any one implementation,
+so a later refactor or rewrite has to still honor it.
 
 ## The agent side: context management
 
-None of this works if the agent cannot hold the loop in its head. Two
-things make it practical:
+Each command re-reads the artifacts from disk, so the agent doesn't have to
+remember earlier messages. Keep one feature per session. A session that spans
+features can resolve the wrong directory; if the plan looks like it belongs
+to a previous feature, check `.specify/feature.json`.
 
-1. **Each command re-reads the artifacts.** By structuring the work as
-   explicit files, Spec Kit makes the spec/plan/tasks available to the
-   agent at every step without it having to remember earlier messages -
-   it reads the file fresh each time.
-2. **Run one feature per session when possible.** A session that spans
-   multiple unrelated features fills the context with stale reasoning.
-   Starting a new session for a new phase in the loop (plan, then a fresh
-   one for implement) keeps the context clean and the agent's attention
-   on the task at hand.
-
-## What you now know
-
-- The constitution is project-level governance, not a loop step; plan,
-  analyze, implement, and converge read it.
-- The feature loop is:
-  `specify -> clarify -> plan -> tasks -> analyze -> implement -> converge`.
-- The artifacts form a chain of written intent: spec, plan, tasks.
-- Validation is incremental gates, not an end-of-project review.
-- The spec is the contract the whole loop must adhere to.
+Governance above the loop, artifacts between the commands, a gate at every
+handoff.
 
 Next: [the implementation loop](03-the-loop.md).

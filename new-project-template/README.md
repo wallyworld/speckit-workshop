@@ -121,7 +121,7 @@ exact formats). On top of that convention, the seed installs:
   same guidance (`agent-instructions.md`, `.github/copilot-instructions.md`,
   `.opencode/opencode.json`).
 
-## The requirements extension, piece by piece
+## The requirements extension
 
 The seed installs **one** extension package, `requirements`. It is not a
 collection of extensions. The package declares seven commands, two template

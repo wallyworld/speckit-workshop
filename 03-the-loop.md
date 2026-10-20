@@ -1,43 +1,29 @@
 # 03 - The Loop - Build a pet store
 
-Run each command and let the agent work - watch what happens at each
-step. This walkthrough assumes you are inside your workshop container
-([01](01-setup.md)), in the `~/petstore` project you created there, with
-the agent open and `/speckit` commands available.
+Start in the workshop container from [01](01-setup.md), with `~/petstore`,
+the agent open, and `/speckit` commands available.
 
 > **Command form.** As in [02](02-core-concepts.md), the commands below use
 > OpenCode's dot form; with agy or Copilot use the hyphenated form
 > (`/speckit-specify` in place of `/speckit.specify`).
 
-> **No container clipboard?** You never have to copy a command from the
-> agent's output. Reply with the next step in words (`run the next step`,
-> `run the emitted command`) and the agent will act on the artifacts in
-> the session or on disk. See
-> [06 - Reference](06-reference.md#clipboard-inside-the-container) for
-> terminal copy alternatives.
+> **No container clipboard?** You never have to copy a command. Reply
+> `run the next step` or `run the emitted command`; the agent acts on the
+> artifacts on disk. Copy alternatives are in
+> [06 - Reference](06-reference.md#clipboard-inside-the-container).
 
-The constitution was ratified in
-[01](01-setup.md#14-ratify-the-project-constitution). If
-`.specify/memory/constitution.md` is still the unfilled template, go back
-and run that step first; the plan's Constitution Check has nothing to
-check otherwise.
+`.specify/memory/constitution.md` should already be ratified from
+[01](01-setup.md#14-ratify-the-project-constitution). If it still has
+template placeholders, go back: the plan's Constitution Check has nothing
+to check.
 
 ## The feature description
 
-We ask the agent to build the *pet catalog* slice of the pet store:
-
-> You are building a pet store. Users can list pets with an availability status,
-> add a new pet, view a pet by id, and delete a pet. Each pet has a name, a
-> stock count, and an availability status that is derived from whether stock is
-> above zero. Placing an order for a pet is out of scope for this feature.
-
-Notice that order placement is deliberately **excluded**: features are
-independent slices, and the spec records what is out of scope. The
-next phase ([04](04-the-refinement.md)) is the order-placement slice.
+This is the pet catalog slice. Order placement is deliberately **excluded**:
+features are independent slices, and the spec records what is out of scope.
+[04](04-the-refinement.md) is that slice.
 
 ## Step 1: `/speckit.specify <the feature description>`
-
-Run:
 
 ```
 /speckit.specify You are building a pet store. Users can list pets with an availability
@@ -47,30 +33,18 @@ whether stock is above zero. Placing an order for a pet is out of scope
 for this feature.
 ```
 
-> **Why inline text here?**
-> Spec Kit's core command accepts a description prompt directly
-> (`/speckit.specify <text>`). In this workshop, we pass the description
-> inline so you can see the agent turn raw intent into the first repository
-> artifact (`spec.md`) without extra file-management friction. In production
-> or multi-feature projects, this input is typically assembled from a
-> requirements document (`REQUIREMENTS.md`) and a roadmap - an architecture
-> we explore in [05 - What's Next](05-whats-next.md).
+The agent creates `specs/001-<slug>/` and fills `spec.md` from the template.
+The slug comes from your description, so it varies; one run produced
+`specs/001-pet-crud/`. Open the spec and check that it lists user stories,
+functional requirements, success criteria, edge cases, and assumptions; that
+the stories have priorities; that the requirements are testable; and that the
+"stock-derived availability" rule is stated. If the rule is missing, say so
+before moving on. The run may also produce a requirements checklist beside
+the spec; `research.md` arrives later with `/speckit.plan`.
 
-What you should see happen (narrate as you go):
-
-- The agent generates a feature directory: `specs/001-<slug>/` - the slug
-  is derived from your description, so yours will differ (in one run it
-  was `specs/001-pet-crud/`).
-- Inside it, `spec.md` is created from the spec template.
-- The spec is filled in with: user stories, functional requirements,
-  success criteria, edge cases, assumptions. (The run may also produce a
-  requirements checklist alongside the spec; `research.md` comes later,
-  from `/speckit.plan`.)
-
-Open `spec.md` and read it: the user stories have priorities, the
-functional requirements are each testable, the agent derived the
-"stock-derived availability" rule from your description and stated it
-as a requirement.
+Inline text is the vanilla starting point for a single slice. Production
+projects usually assemble the prompt from `REQUIREMENTS.md` and a roadmap;
+[05 - What's Next](05-whats-next.md) shows that bridge.
 
 ## Step 2: `/speckit.clarify` (optional but useful)
 
@@ -78,15 +52,11 @@ as a requirement.
 /speckit.clarify
 ```
 
-The clarify command asks up to 5 targeted questions about underspecified
-areas - typical ones are scope ("is X in this feature?"), validation,
-and data-shape choices. Accept its questions and answer them - the
-answers get folded back into the spec. It is interactive: the questions
-arrive one at a time, so keep answering until it is done.
-
-Clarify exists to prevent the "informed guess that turns out wrong"
-failure mode. If the agent asks a question whose answer materially
-changes the feature, that is the mechanism working.
+Clarify asks up to 5 questions about underspecified areas, one at a time.
+In my run it asked three. Answer them and keep going until it stops; the
+answers are folded back into `spec.md`. Reopen the file afterward and check
+the new lines. If a question changes the feature materially, that is the
+mechanism working, not friction.
 
 ## Step 3: `/speckit.plan`
 
@@ -101,14 +71,13 @@ HTTP client for TestClient is fine). Include pytest tests covering
 every functional requirement.
 ```
 
-What you should see:
-
-- `specs/001-<slug>/plan.md` is created: the technical approach, the
-  files to create, the data model, the API endpoints, the edge cases.
-- A **Constitution Check** section: the plan is evaluated against
-  `.specify/memory/constitution.md`; a conflict must be justified in
-  Complexity Tracking or the design changed. This is where the principles
-  you ratified in 01 constrain the feature.
+`plan.md` lands in the feature directory with the technical approach, files,
+data model, API endpoints, edge cases, and a **Constitution Check** against
+`.specify/memory/constitution.md`. A conflict has to be justified in
+Complexity Tracking or the design changes. The plan is written before any
+code, and it is the agent's own work product. Open the Constitution Check
+and read the tests-required and minimal-stack entries. If the check is
+empty, stop and fix the constitution first.
 
 ## Step 4: `/speckit.tasks`
 
@@ -116,12 +85,10 @@ What you should see:
 /speckit.tasks
 ```
 
-What you should see:
-
-- `specs/001-<slug>/tasks.md` is created: a dependency-ordered task
-  list. Each task has a checkbox, a clear action, and a file path. The
-  checkboxes are the plan, not a progress tracker - implementations do
-  not always tick them off, so read the list, not the marks.
+`tasks.md` is dependency-ordered. Each task has a checkbox, an action, and a
+file path. The checkboxes are the plan, not a progress tracker:
+implementations do not always tick them, so read the list, not the marks.
+Pick two tasks and confirm each names the file it touches.
 
 ## Step 5: `/speckit.analyze`
 
@@ -129,12 +96,11 @@ What you should see:
 /speckit.analyze
 ```
 
-What you should see:
-
-- The agent cross-checks `spec.md`, `plan.md`, and `tasks.md` and reports
-  inconsistencies, ambiguities, and constitution conflicts.
-- The check is read-only. If it reports findings, correct the artifacts
-  before implementing; it does not change the code.
+Analyze cross-checks `spec.md`, `plan.md`, and `tasks.md` and reports
+inconsistencies, ambiguities, and constitution conflicts. It is read-only.
+Fix the artifacts before implementing; the command will not touch the code.
+[05 - What's Next](05-whats-next.md) makes this same check mandatory through
+extension hooks.
 
 ## Step 6: `/speckit.implement`
 
@@ -142,13 +108,15 @@ What you should see:
 /speckit.implement
 ```
 
-What you should see:
+The agent works through the tasks: FastAPI app, SQLite storage, endpoints,
+tests. It runs the suite and fixes failures until it passes, and it reads the
+constitution as a governance constraint (tests required, minimal stack).
+Its verify loop becomes visible here: run tests, read failures, fix, re-run.
 
-- The agent executes the tasks in order: creates the FastAPI app, the
-  SQLite storage layer, the endpoints, and the tests.
-- It runs the test suite and fixes failures until it passes.
-- It reads the constitution as a governance constraint (for example, the
-  tests-required and minimal-stack principles).
+If it starts the dev server in the foreground, the turn hangs. Escape does
+not always recover; quit the TUI with Ctrl-C, relaunch `opencode`, and
+continue. The speckit commands re-read the artifacts from disk, so nothing
+is lost.
 
 ## Step 7: `/speckit.converge`
 
@@ -156,26 +124,22 @@ What you should see:
 /speckit.converge
 ```
 
-What you should see:
+Converge re-reads `spec.md`, `plan.md`, and `tasks.md`, diffs the code
+against them, and reports whether the implementation is complete. A
+constitution MUST violation is CRITICAL. If the metrics line says the
+constitution principles were skipped, the constitution is still unfilled;
+go back to [01](01-setup.md#14-ratify-the-project-constitution) Section 1.4.
 
-- The agent re-reads `spec.md`, `plan.md`, and `tasks.md`, diffs the
-  current code against them, and reports whether the implementation is
-  complete.
-- It may append missing work to `tasks.md` (for example: a test for an
-  edge case you specified but the agent did not implement). Review what
-  it appends before re-running implement - appended findings can name
-  work the code already contains.
-- It treats a constitution MUST violation as CRITICAL. If the metrics line
-  reports that the constitution principles were skipped, the constitution
-  is still unfilled; return to
-  [01](01-setup.md#14-ratify-the-project-constitution) Section 1.4.
-- The loop repeats: re-run `/speckit.implement`, then `/speckit.converge`
-  again, until it reports **converged**.
+It may append missing work to `tasks.md`, for example a test for an edge case
+you specified but the agent did not implement. Review what it appends before
+re-running implement. Appended findings can name work the code already
+contains; check the task against the code first. My run needed two converge
+cycles. Re-run `/speckit.implement`, then `/speckit.converge`, until it
+reports **converged**.
 
-This is how the loop is closed: converge is the step that checks the code
-against the stated intent. If the agent planned a `status` field but
-implemented it as a column when the plan said "derived," converge flags
-the discrepancy and re-enters the loop.
+Converge is the closing check, and it compares against the spec, not only the
+tests. If the plan said `status` is derived but the code stores it as a
+column, converge flags the discrepancy and sends you back into the loop.
 
 ## Step 8: See it live
 
@@ -184,42 +148,25 @@ uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 
 Run it in the foreground in a second byobu window (F2, or the tmux prefix
-Ctrl-b c) or a separate terminal inside the container, and
-leave it running for the demo, so the request log and the reload output
-stay visible as you click through the UI. 
-About `--host 0.0.0.0`: without it uvicorn binds to the container's
-loopback only, which your host browser cannot reach.
-Stop the server with Ctrl-C when done.
+Ctrl-b c) or another terminal inside the container. Leave it running so the
+request log and reload output stay visible as you click through the UI.
+`--host 0.0.0.0` matters; without it uvicorn binds to the container's
+loopback, which your host browser cannot reach. Stop it with Ctrl-C.
 
-Open the served docs UI in a browser **on your host**. Your host
-browser cannot reach the container's 127.0.0.1 - that address is the
-container's own loopback. The workshop tool instead registers a DNS
-name for your container that your host *can* reach: run `workshop info`
-from your clone directory and read the `hostname:` line. The name
-follows the pattern `<workshop-name>.<clone-name>.wp` - for a clone
-named `speckit-workshop`, that is `speckit-ws.speckit-workshop.wp`, so
-the served UI lives at
-<http://speckit-ws.speckit-workshop.wp:8000/docs>.
-FastAPI auto-serves an interactive UI (Swagger) there - every endpoint
-is now clickable. Try it like a real pet store:
+Open the docs UI in a browser **on your host** at the address from
+`workshop info` (run it from your clone directory and read the `hostname:`
+line). For a clone named `speckit-workshop` that is
+<http://speckit-ws.speckit-workshop.wp:8000/docs>. Swagger lists the pet
+endpoints: POST `/pets`, GET `/pets`, GET `/pets/{id}`, DELETE `/pets/{id}`.
+Add a pet with a name and a stock count, list it, then delete it. The API
+surface should match the functional requirements in `spec.md`. If uvicorn
+reports `Could not import module "petstore_app"`, the agent chose a different
+module name; run `uv run uvicorn <that-module>:app --reload --host 0.0.0.0`.
 
-- **POST** `/pets` - add a pet with a name and a stock count.
-- **GET** `/pets` - list the pets and their availability.
-- **GET** `/pets/{id}` - view one pet.
-- **DELETE** `/pets/{id}` - remove a pet.
+## On disk
 
-## What just happened
-
-- You wrote a feature description, and the agent turned it into a written
-  artifact chain: spec, plan, tasks.
-- The plan's Constitution Check and converge's constitution check ran
-  against the principles you ratified in 01.
-- Analyze cross-checked the three artifacts before any code was written.
-- The agent implemented the tasks and ran its own tests as it went.
-- Converge checked the final code against the spec/plan/tasks and
-  reconciled any gaps.
-- Nothing was "done" until converge said so.
-- You then pointed a browser at it: the feature is live at `/docs`, a
-  clickable pet store rendered by FastAPI itself.
+The spec, plan, and tasks are files under `specs/001-<slug>/`.
+Converge was the closing gate hence nothing counted as done
+until it reported converged.
 
 Next: [the-refinement](04-the-refinement.md) - add a non-trivial requirement.

@@ -351,4 +351,4 @@ Open DevTools Console and confirm it is free of red errors on `/`,
 
 The full per-command explanation and the comparison with a vanilla Spec
 Kit project are in the
-[template README](../../new-project-template/README.md#the-requirements-extension-piece-by-piece).
+[template README](../../new-project-template/README.md#the-requirements-extension).

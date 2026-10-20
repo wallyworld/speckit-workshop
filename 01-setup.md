@@ -1,15 +1,10 @@
 # 01 - Setup
 
-You'll get a workshop container and, inside it, a host-mounted petstore
-working tree that you will initialize as a Spec Kit project, ratify its
-constitution, and build.
-
 ## 1.0 Launch your workshop environment
 
-This workshop runs inside a LXC container. This is a fresh Ubuntu 24.04
-environment the `workshop` CLI builds from this repository's definition
-(`.workshop/speckit-ws.yaml`). Your host needs git, snap, and the
-workshop CLI; everything else is provisioned inside the container.
+The workshop runs in a fresh Ubuntu 24.04 LXC container built by the
+`workshop` CLI from `.workshop/speckit-ws.yaml`. Your host needs git,
+snap, and the workshop CLI; the container gets everything else.
 
 From a clone of this repository on your host:
 
@@ -17,15 +12,17 @@ From a clone of this repository on your host:
 ./scripts/workshop.sh
 ```
 
-The first run builds the container (a few minutes) and installs the sdks:
-uv, OpenCode, Copilot, Antigravity (agy), and gh. The script also mounts
-your existing agent configuration (`~/.config/opencode`, `~/.copilot`,
-`~/.gemini`) into the container, so your logins carry over. It creates
-`<clone>/petstore` on your host and mounts it at `~/petstore` inside the
-container, so you can open that folder in your IDE while the workshop runs.
-It installs `yq` on your host via snap if it is missing (that step asks for
-sudo). Re-running the script is safe: it refreshes the container and only
-restarts it when a mount is stale.
+The first build can take minutes. Later runs are fast unless a mount is stale.
+The container comes with uv, OpenCode, Copilot, Antigravity (agy), and gh.
+The script mounts `~/.config/opencode`, `~/.local/share/opencode`,
+`~/.copilot`, and `~/.gemini`. It creates `<clone>/petstore` on your host
+and mounts it at `~/petstore` inside the container, so you can open it in
+your IDE. The container can be rebuilt; `~/petstore` persists on the host.
+
+It also snap-installs `yq` on your host if it's missing; that step asks
+for sudo. Re-run the script any time: it refreshes the container and
+restarts only when a mount is stale. OpenCode and agy pick up your host
+logins. Copilot doesn't; 1.2 covers the `/login`.
 
 Then connect:
 
@@ -33,32 +30,29 @@ Then connect:
 workshop shell
 ```
 
-You land in a byobu session, as user `workshop`, with this repository's
-materials mounted at `/project`. Everything from here on happens inside this
-container. Your build work goes in `~/petstore`, which is mounted from
-`<clone>/petstore` on your host; that is the folder to open in your IDE.
-`/project` is the shared workshop material, not the petstore this workshop
-is building. The same folder also appears at `/project/petstore` because
-the whole clone is mounted there; always work through `~/petstore`.
+You land in a byobu session as user `workshop`, with the workshop material
+at `/project` and your project at `~/petstore`. The petstore folder is
+git-ignored by this repository; `git init` in 1.2 starts its own history.
+The same folder also appears at `/project/petstore` because the whole clone
+is mounted; work through `~/petstore`.
 
 ## 1.1 Install the `specify` CLI
 
-Spec Kit's CONTROL PLANE is the `specify` CLI. You install it once, per
-environment. It does not enter your project. (uv is already in the
-container, as one of the sdks from 1.0.)
+Install `specify` once, in the container. It doesn't live in your project.
+uv is already here from 1.0.
 
 ```bash
 uv tool install specify-cli
 ```
 
-Confirm it installed:
-
 ```bash
 specify --version
 ```
 
-You should see a `1.x` version (1.0 or later). If you see anything
-else, or the command is not found:
+A 1.x version is fine; 1.2.1 is what I ran. If the shell says
+`command not found: specify`, you're usually in the host shell, not the
+container: run `workshop shell`. If the install is partial or the version
+is stale, re-run the install or pin a release:
 
 ```bash
 # Retry with a specific release (replace X.Y.Z with the latest tag from
@@ -68,14 +62,9 @@ uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@vX
 
 ## 1.2 Create an empty project
 
-**Important**: this workshop starts from scratch. If `<clone>/petstore`
-already contains files from an earlier run, delete them on your host first.
-Do not copy existing project files into it - you will generate everything
-during the workshop.
-
-Create it in your home directory. The workshop script has already mounted
-`<clone>/petstore` on your host at `~/petstore`, so your IDE can see the
-files:
+If `<clone>/petstore` has files from an earlier run, clear the contents on
+your host and keep the directory. Don't copy an existing project in; you'll
+generate everything here.
 
 ```bash
 cd ~/petstore
@@ -84,47 +73,29 @@ git init
 specify init --here --non-interactive --integration opencode --force
 ```
 
-If `cd ~/petstore` fails or the mountpoint check says nothing, re-run
-`./scripts/workshop.sh` on your host. Do not create the directory inside
-the container; that would give you a container-only directory the host
-cannot see.
+If `cd ~/petstore` fails or the mountpoint line is missing, re-run
+`./scripts/workshop.sh` on your host. Don't create the directory inside the
+container; the host won't see it.
 
-Notes:
+`--here` initializes in the current directory; `--non-interactive` skips
+the picker; `--force` is needed because `git init` already made the
+directory non-empty, and it makes the command idempotent.
+`--integration opencode` installs OpenCode's commands. For agy or Copilot,
+swap the integration:
 
-- `--here` initializes in the current directory.
-- `--non-interactive` and `--force` let it run unattended (ie no picker or
-  confirmation prompt). Because `git init` has already created `.git`, the
-  directory is not empty, so `--force` is required here (it makes the
-  command idempotent).
-- `--integration opencode` installs the agent integration for OpenCode.
-  Spec Kit works with many agents (Claude, Copilot, Gemini, ...); we use
-  OpenCode for this workshop.
-- Home rather than `/project`: `/project` is the workshop material,
-  shared by every attendee; your project is yours, in `~`. The host copy
-  `<clone>/petstore` is git-ignored by this repository and has its own git
-  history. The same folder is visible at `/project/petstore`; work through
-  `~/petstore`.
-
-**Using Antigravity (agy) instead of OpenCode**: run the init with
-`--integration agy`; the same commands install as skills under
+**agy:** `--integration agy` installs skills under
 `.agents/skills/speckit-<command>/SKILL.md` (`/speckit-specify`,
-`/speckit-plan`, ...) and you run them inside `agy`. Because `~/.gemini`
-is mounted from your host, your Google authentication and configuration
-carry directly into the container. `agy` in this workshop is pre-configured
-to run with Gemini 3.8 Flash (`gemini-3.8-flash-high`) in autonomous build mode,
-auto-applying diffs and commands without prompt fatigue. You can press
-`Shift+Tab` inside `agy` at any time to toggle into read-only Plan Mode.
+`/speckit-plan`, ...). `~/.gemini` is mounted, so your Google auth and
+config carry into the container. In this workshop, `agy` runs with
+`--mode accept-edits --dangerously-skip-permissions --model gemini-3.8-flash-high`;
+`Shift+Tab` toggles read-only Plan Mode.
 
-**Using Copilot instead of OpenCode**: run the init with
-`--integration copilot`; the same commands install as skills under
-`.github/skills/` (`speckit-specify`, `speckit-plan`, ...) and you run
-them inside Copilot. Copilot authenticates against GitHub - its host
-credential store does not carry into the container - so on first use
-run `copilot`, then `/login`, and complete the GitHub device flow.
+**Copilot:** `--integration copilot` installs skills under
+`.github/skills/` (`speckit-specify`, `speckit-plan`, ...). The host
+credential store doesn't carry into the container, so on first use run
+`copilot`, then `/login`, and finish the GitHub device flow.
 
 ## 1.3 Confirm it works
-
-Run this and confirm you see the Spec Kit command list:
 
 ```bash
 # For OpenCode:
@@ -137,38 +108,31 @@ ls .agents/skills/
 ls .github/skills/
 ```
 
-You should see 10 files (or skill folders), including
+Ten commands, as files or skill folders, with `specify` 1.2.1, including
 `speckit.constitution.md` (or the `speckit-constitution/` skill folder),
 `speckit.specify.md`, `speckit.plan.md`, `speckit.tasks.md`,
 `speckit.analyze.md`, `speckit.implement.md`, and `speckit.converge.md`.
-These are the slash commands your agent will run. (The OpenCode
-integration creates `.opencode/commands/`, agy creates `.agents/skills/`,
-and Copilot creates `.github/skills/`.)
+The count can drift between 1.x releases; those are the ones to check.
 
-Open the project in your agent and confirm the `/speckit` command surface is
-available: from `~/petstore`, run `opencode` (or `agy` if using Antigravity,
-or `copilot` if using Copilot), then in the TUI type `/` and
-confirm the `speckit.*` commands appear. While you are there, confirm
-your model: the input line shows the active model and provider. If it shows a
-model you cannot use - or a provider you have not authenticated - pick
-one that works for you before continuing.
+From `~/petstore`, run `opencode` (or `agy`, or `copilot`), type `/`, and
+confirm the Speckit commands appear: `speckit.*` in OpenCode, `speckit-*`
+in agy and Copilot. The input line also shows the active model and
+provider. If it's one you can't use or haven't authenticated, switch now;
+otherwise the first command can fail.
 
-Also confirm there are **no** `REQUIREMENTS.md` or `ROADMAP.md` files at
-the project root. There should not be. Spec Kit's core is
-one-feature-at-a-time; the "phased delivery" concept (a requirements
-source, a roadmap mapping many features) is a layer some larger projects
-add *on top of* this core - the workshop will show you the core first, and
-the [What's next](05-whats-next.md) page mentions the phased delivery layer.
+There shouldn't be `REQUIREMENTS.md` or `ROADMAP.md` at the project root.
+If either exists, you're not on the vanilla core; the core is one feature
+at a time. [05](05-whats-next.md) covers the phased-delivery layer.
 
 ## 1.4 Ratify the project constitution
 
 `specify init` seeded `.specify/memory/constitution.md` from Spec Kit's
-template. That file is a scaffold: it still contains `[PROJECT_NAME]` and
-`[PRINCIPLE_...]` placeholders. Spec Kit's plan, analyze, implement, and
-converge steps read the constitution; an unfilled template gives them no
-governance to apply (converge says so explicitly and skips it).
+template. It's still a scaffold: `[PROJECT_NAME]`, `[PRINCIPLE_...]`
+placeholders, no real governance. Plan, analyze, implement, and converge
+read it; an unfilled template gives them nothing to apply, and converge
+says so and skips the check.
 
-Ratify it now, before the first feature. In the agent, run (dot form):
+Ratify it before the first feature. Run this in the agent (dot form):
 
 ```
 /speckit.constitution Ratify version 1.0.0 of the project constitution today for "petstore". This is governance, not a feature request. Use hyphens instead of em dashes. Principles:
@@ -180,72 +144,67 @@ Ratify it now, before the first feature. In the agent, run (dot form):
 Amendments are explicit, justified, versioned, and recorded through this command. Keep it concise.
 ```
 
-With agy or Copilot use `/speckit-constitution`.
+With agy or Copilot, use `/speckit-constitution`.
 
-The command takes a few minutes. Start it, then open a second byobu
-window (F2, or the tmux prefix Ctrl-b c) and do Section 1.5 while it works. When
-it finishes, open `.specify/memory/constitution.md` and read the
-principles. Check that it is ratified:
+Start it, open a second byobu window (F2, or your byobu prefix
+then `c`; the status bar shows the prefix), and do Section 1.5
+while it runs. When it finishes, read the principles and run the
+placeholder check:
 
 ```bash
 sed -e 's/<!--.*-->//g' -e '/<!--/,/-->/d' .specify/memory/constitution.md \
   | grep -nE '\[[A-Z][A-Z0-9_]*\]'
 ```
 
-No output means the placeholders are gone (the check exits 1 when clean;
-that is expected). The `sed` removes HTML comments, including the
-temporary Sync Impact Report, whose "placeholders replaced" lines can name
-the tokens without leaving them unfilled. If the command left any
-`TODO(...)` items, resolve them before continuing.
+The check exits 1 when clean. The `sed` strips HTML comments, including
+the temporary Sync Impact Report, whose "placeholders replaced"
+lines can name the tokens without leaving them unfilled. If any
+`TODO(...)` items remain, resolve them before continuing.
 
-> **Do not copy `new-project-template/constitution.md` here.** That
-> two-part constitution belongs to the requirements-first template and
-> references `REQUIREMENTS.md`, `ROADMAP.md`, `AGENTS.md`, and
-> `docs/implementation-mechanics.md`, which this project does not have.
+> **Don't copy `new-project-template/constitution.md` here.** That two-part
+> constitution belongs to the requirements-first template and references
+> `REQUIREMENTS.md`, `ROADMAP.md`, `AGENTS.md`, and
+> `docs/implementation-mechanics.md`, which this project doesn't have.
 > [05](05-whats-next.md) explains when to adopt the full template.
 
 ## 1.5 (For the hands-on) Set up the pet store app dependencies
 
-Later you will build a FastAPI app. Now, in the same `petstore` directory,
-create a virtual environment and install the web framework plus a test
-runner:
+The FastAPI app comes later. For now, from `~/petstore`, create the venv and
+install the web framework plus test runner:
 
 ```bash
 uv venv
 uv pip install fastapi "uvicorn[standard]" pytest httpx
 ```
 
-(`httpx` is the HTTP client library used by FastAPI's `TestClient` - you
-will use it in the tests.)
+`httpx` backs FastAPI's `TestClient`; the tests use it. The Phase 2 browser
+is installed on demand in [05](05-whats-next.md); phases 01-04 don't need
+it.
 
-The browser used by the Phase 2 Web UI acceptance test is installed on
-demand in [05](05-whats-next.md); it is not needed for phases 01-04.
-
-Confirm the venv works before moving on:
+Check the venv:
 
 ```bash
 uv run pytest --version
 ```
 
-`uv run` runs a command inside the project's `.venv` and is used to
-run the tests throughout the workshop because it works
-without activating the venv itself.
+It prints pytest's version and exits 0. A missing module means the
+install didn't work properly. `uv run` uses the project venv without
+activation, which is why the rest of the workshop runs tests this way.
 
-> If `uv venv` complains that no Python interpreter was found, install
-> one explicitly first:
+> If `uv venv` can't find an interpreter, install one explicitly first:
 > `uv python install 3.14 && uv venv --python 3.14`
 
 ## Summary
 
 | Item | Goal |
 |---|---|
-| `./scripts/workshop.sh` + `workshop shell` | In-container byobu session as user `workshop` |
-| `specify --version` | A current 1.x CLI (1.0 or later) is present |
+| `./scripts/workshop.sh` + `workshop shell` | Byobu session as user `workshop` |
+| `specify --version` | A current 1.x CLI is present |
 | `ls .opencode/commands/` (or `.agents/skills/`) | 10 commands or skills, including `speckit.constitution` / `speckit-constitution` |
-| OpenCode / agy / Copilot | `/speckit` commands resolvable |
+| OpenCode / agy / Copilot | Type `/`; Speckit commands appear |
 | `.specify/memory/constitution.md` | Ratified v1.0.0; no unfilled template placeholders |
 | `~/petstore` -> `<clone>/petstore` | Host-visible working tree; open it in your IDE |
-| No `REQUIREMENTS.md`/`ROADMAP.md` | Confirms you are on the vanilla core |
-| `.venv` with fastapi/uvicorn/pytest + HTTP test client | Ready for the build phase |
+| No `REQUIREMENTS.md`/`ROADMAP.md` | Vanilla core, not the phased-delivery layer |
+| `.venv` with fastapi/uvicorn/pytest + HTTP test client | `uv run pytest --version` exits 0 |
 
 Next: [Core concepts](02-core-concepts.md).
