@@ -69,8 +69,12 @@ host; it creates the host directory.
 
 ## Running the app
 
+Use the launch command recorded in the project's `plan.md` or
+`quickstart.md`; the module name varies by run. The two common layouts are:
+
 ```bash
-uv run uvicorn petstore_app:app --reload --host 0.0.0.0
+uv run uvicorn petstore_app:app --reload --host 0.0.0.0   # plan named petstore_app.py
+uv run uvicorn src.main:app --reload --host 0.0.0.0       # src/ package layout
 ```
 
 - The API is live at <http://127.0.0.1:8000> inside the container; from
@@ -167,7 +171,7 @@ specify -> clarify -> plan -> tasks -> analyze -> implement -> converge
 | opencode says it copied text, but paste does nothing | The container does not share the host clipboard. See [Clipboard inside the container](#clipboard-inside-the-container); reply `run the emitted command` instead of copying. |
 | Plan's Constitution Check is empty or still says "Gates determined based on constitution file", or converge's metrics line reports the constitution principles were skipped | The constitution is still the unfilled seed. Run `/speckit.constitution` and confirm the check in [01](01-setup.md#14-ratify-the-project-constitution) returns nothing. |
 | `/speckit.constitution` left `TODO(...)` placeholders | Supply the missing date or version, or rerun with the ratification date and version explicit. |
-| uvicorn reports `Could not import module "petstore_app"` when starting the server | The plan args pinned the module name `petstore_app.py`; if your agent chose a different name, run uvicorn against the module it created (`uv run uvicorn <that-module>:app --reload --host 0.0.0.0`). |
+| uvicorn reports `Could not import module "petstore_app"` when starting the server | The plan named a different app module. Use the launch command from the feature's `plan.md` or `quickstart.md` (`uv run uvicorn src.main:app --reload --host 0.0.0.0`, or the module your plan named). |
 | Agent reports `pytest: command not found` | The venv is not activated in the agent's shell. Run tests with `uv run pytest` (see [01](01-setup.md) Section 1.5). |
 | `uv pip install` fails for the venv | Run from the project root, after `uv venv` has created `.venv`. |
 | Question about whether something is in scope | Ask `/speckit.clarify`, or edit the spec directly. Scope is a spec property, not an implementation detail. |

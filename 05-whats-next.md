@@ -75,7 +75,7 @@ Note: for you own project, use [the new-project guide](new-project-template/docs
 and the starter files; don't copy these samples.
 
 `REQUIREMENTS.md` groups Phase 1 (catalog `CAT-1..CAT-4`, orders
-`ORD-1..ORD-4`) and Phase 2 (web UI `UI-1..UI-5`). `ROADMAP.md` maps those
+`ORD-1..ORD-4`) and Phase 2 (web UI `UI-1..UI-6`). `ROADMAP.md` maps those
 to `R1` (catalog), `R2` (orders), and `R3` (web UI): `R1` and `R2` are
 `done`, `R3` is `planned`. `requirement-phrases.txt` holds verbatim
 phrases from each requirement. It's a **project artifact** beside
@@ -203,8 +203,9 @@ point, not only through internal functions.
 | Entry route | `/` |
 | Hash routes | `#/catalog`, `#/orders`, `#/create-pet` |
 | Authentication | none: no login, roles, passwords, sessions, or credentials |
-| Active orders | `GET /orders?status=open`; cancel with `DELETE /orders/{id}` |
+| Active orders | `GET /api/v1/orders?status=open`; cancel with `DELETE /api/v1/orders/{id}` |
 | Implementation | static HTML/CSS/JS served by FastAPI; no node runtime or build |
+| API calls | same-origin relative paths (`/api/v1/...`); no hardcoded host or port |
 | Placeholders | none; the orders page must use the real API |
 | Acceptance | the generated acceptance test is the gate; the manual host-browser pass verifies the visible outcomes |
 
@@ -222,7 +223,7 @@ the Phase 1 context doesn't crowd the new feature.
 The command validates that `R3` exists, its predecessors are `done`, and
 its Completes/Advances IDs exist in `REQUIREMENTS.md`. It prints a
 read-only brief: roadmap intent, scope boundary, canonical requirement text
-for `UI-1..UI-5`, digests, and a ready-to-run specify command. Review the
+for `UI-1..UI-6`, digests, and a ready-to-run specify command. Review the
 brief now, but do not run its command yet: step 5.2 runs it once.
 
 ### 5.2 Specify (once)
@@ -234,10 +235,10 @@ both `003-*` and `004-*`, the troubleshooting entry below covers removing
 the duplicate.
 
 If no R3 spec exists, run the exact command the brief emitted. For this
-sample's `R3` row it is:
+sample's `R3` row it will be something like:
 
 ```text
-/speckit.specify Interactive browser frontend connecting catalog and orders. Scope boundary: Client frontend served by FastAPI; uses existing R1/R2 API; no external frontend build tools.
+/speckit.specify Interactive browser frontend connecting catalog and orders. Scope boundary: Client frontend served by FastAPI; uses existing R1/R2 API via same-origin relative paths; no hardcoded host or port; no external frontend build tools.
 ```
 
 Run it **exactly once**. Do not also run a second specify from this page,
@@ -250,8 +251,8 @@ approval; the review still happens first.
 
 On a fresh run, the agent reads `ROADMAP.md` and `REQUIREMENTS.md` and
 drafts `specs/003-<slug>/spec.md`. The spec template requires Requirements
-Coverage; the spec must contain `UI-1..UI-5` and map its FRs to them. It
-passes when it states `UI-1..UI-5` and claims `R3` with the correct
+Coverage; the spec must contain `UI-1..UI-6` and map its FRs to them. It
+passes when it states `UI-1..UI-6` and claims `R3` with the correct
 Completes set.
 
 ### 5.3 Clarify, plan, tasks
@@ -271,14 +272,22 @@ Completes set.
 At `plan`, `before_plan` injects the plan checklist: FR-to-requirement
 traceability, real entry point and acceptance test for user-facing
 requirements, opt-out citations, operational thresholds, a task for every
-MUST, and explicit boundaries. At `tasks`, `before_tasks` injects the
-tasks checklist: tests first, an acceptance test through the real entry
-point, sequential IDs, failure paths. The tasks template makes tests
-required.
+MUST, explicit boundaries, and no example value becoming an implementation
+constant (a same-origin UI uses relative API paths). At `tasks`,
+`before_tasks` injects the tasks checklist: tests first, an acceptance test
+through the real entry point that starts the runtime and uses a non-example
+origin for a same-origin UI, sequential IDs, failure paths. The tasks
+template makes tests required.
+
+The plan must reuse the Phase 1 FastAPI app module and record its real
+launch command in `plan.md` and `quickstart.md`. Do not let it create a
+second application module. If the plan does not name the launch command,
+ask the agent to add it before tasks.
 
 **Pass condition**: `plan.md` and `tasks.md` exist, the plan's Constitution
-Check ran, the plan names the real entry point (`/`), and the tasks include
-an acceptance-test task.
+Check ran, the plan names the real entry point (`/`), runtime launch
+command, and relative API paths for a same-origin UI with no hardcoded host
+or port, and the tasks include an acceptance-test task.
 
 ### 5.4 Install the browser and write the acceptance test (manual skill)
 
@@ -322,15 +331,20 @@ It adds isolated state and a known-bad fixture, then wires the test into `make t
 
 Check the generated test:
 
-- it starts the real runtime, loads `/`, `#/catalog`, `#/create-pet`, and
-  `#/orders` in a real browser, and fails on console or page errors;
-- it asserts every `UI-1..UI-5` outcome, not only HTTP status or static
+- it starts the real runtime itself (or the project gate starts it), loads
+  `/`, `#/catalog`, `#/create-pet`, and `#/orders` in a real browser, and
+  fails on console or page errors; a test that assumes a server is already
+  running at a hardcoded URL is a finding;
+- for this same-origin UI, it starts the app on an ephemeral port and loads
+  the page from `127.0.0.1:<port>`, not the example `localhost:8000`, so a
+  hardcoded API base URL fails;
+- it asserts every `UI-1..UI-6` outcome, not only HTTP status or static
   text;
 - it uses temporary state, cleans up, has a known-bad fixture, and can be
   made to fail;
-- it includes fast contract checks (no auth/session surface, no
-  placeholders, real `GET /orders`, stock restore on cancel) and runs under
-  `make test`.
+- it includes fast contract checks (no auth/session surface, no hardcoded
+  API host or port, no placeholders, real `GET /api/v1/orders`, stock
+  restore on cancel) and runs under `make test`.
 
 Run it now; it should fail because the feature isn't implemented. Module
 imports, status checks, and static text aren't an acceptance test.
@@ -395,11 +409,20 @@ make test
 ```
 
 Start the app in a second byobu window (F2, or the tmux prefix Ctrl-b c)
-or another container terminal:
+or another container terminal. Use the launch command recorded in the R3
+`plan.md` or `quickstart.md`; do not guess the module:
 
 ```bash
 cd /project/petstore
-uv run uvicorn petstore_app:app --reload --host 0.0.0.0
+rg -n 'uvicorn .*:app' specs/003-*/plan.md specs/003-*/quickstart.md
+```
+
+If you kept a differently numbered R3 directory, substitute its path.
+Run the command it prints. The two common layouts are:
+
+```bash
+uv run uvicorn petstore_app:app --reload --host 0.0.0.0   # if the plan named petstore_app.py
+uv run uvicorn src.main:app --reload --host 0.0.0.0       # if the agent used a src/ package
 ```
 
 Leave it running while you try the UI. Stop it with Ctrl-C.
@@ -428,6 +451,11 @@ Try each requirement:
   list and catalog stock update in place.
 - **Serving (`UI-5`)**: a static single-page app served by FastAPI, no node
   runtime or frontend build, no full-page reload for in-app actions.
+- **Same-origin (`UI-6`)**: the page works from the workshop hostname (not
+  `localhost:8000`), and network calls go to relative paths such as
+  `/api/v1/pets`, not `http://localhost:8000/api/v1`. The automated
+  acceptance test also serves the app on an ephemeral port to catch a
+  hardcoded port.
 
 If the page doesn't load, check that uvicorn is bound to `0.0.0.0`, that
 you used the `workshop info` hostname, and that `/` is served. The DevTools
@@ -437,8 +465,9 @@ independently.
 
 **Why API-only tests miss this.** A test suite can pass while the browser is
 broken: uncaught JavaScript errors, a shared state object that is not
-exposed, an API path prefix that does not match the backend, or placeholder
-code that returns an empty list etc.
+exposed, an API path prefix that does not match the backend, a hardcoded API
+base URL that only works from `localhost:8000`, or placeholder code that
+returns an empty list etc.
 
 ## Step 7: Verify and close the loop
 
@@ -471,6 +500,15 @@ fresh digest, and the code all support it.
 
 ## Troubleshooting
 
+- **`Could not import module "petstore_app"`**: the R3 plan named a
+  different app module. Read the launch command from
+  `specs/003-*/quickstart.md` or `plan.md` and run that module instead,
+  for example `uv run uvicorn src.main:app --reload --host 0.0.0.0`.
+- **`NetworkError when attempting to fetch resource` or "Failed to fetch"**:
+  the client hardcoded `http://localhost:8000` or another absolute API base
+  URL. Use same-origin relative paths such as `/api/v1/pets`; keep absolute
+  URLs only in curl/quickstart examples. Load the page from the workshop
+  hostname; the acceptance test covers the ephemeral-port case.
 - **Two specs for one roadmap row (`003-*` and `004-*`)**: specify ran
   twice. Keep the first R3 spec (`003-*`), delete the later `004-*`
   directory, set `.specify/feature.json` to the kept directory, and update
@@ -502,13 +540,14 @@ fresh digest, and the code all support it.
 - **Login page or `/auth` 404s**: auth is out of scope. Remove the login
   route, auth module, session middleware, and credentials.
 - **Orders page says the feature would need an endpoint**: UI-4 isn't
-  implemented. Add `GET /orders?status=open`; wire the real list and
+  implemented. Add `GET /api/v1/orders?status=open`; wire the real list and
   cancel actions.
 - **Repeated 500s after the first request**: the SQLite connection must
   work across FastAPI's worker threads. Use `check_same_thread=False` or a
   per-request connection.
-- **`/api` returns 404**: backend routes are root-relative. Remove the
-  `/api` prefix from the client.
+- **A request to `/api/...` returns 404**: the client used a prefix or path
+  the backend does not serve. Match the existing R1/R2 routes; the worked
+  sample uses `/api/v1/...`. Do not assume every backend is root-relative.
 - **Acceptance-test skill not available**: rerun `bootstrap.sh` or
   `generate-skills.sh`, reinstall the extension. The skill comes from
   `extensions/requirements/commands/speckit.requirements.acceptance-test.md`.

@@ -1,5 +1,5 @@
 ---
-description: "Derive and add an executable acceptance test for every user-facing requirement through the real delivery entry point (HTTP route, CLI command, UI route, device action, or produced file), on the real runtime, with isolated state, a known-bad fixture, and wiring into the project test gate; invoked manually after tasks and before implementation."
+description: "Derive and add an executable acceptance test for every user-facing requirement through the real delivery entry point (HTTP route, CLI command, UI route, device action, or produced file), on the real runtime, with isolated state, a known-bad fixture, a self-starting or gate-started runtime, a non-example origin for same-origin UIs, and wiring into the project test gate; invoked manually after tasks and before implementation."
 ---
 
 # Acceptance test
@@ -34,19 +34,27 @@ injected doubles do not replace it.
    CLI command, UI route or screen, device action, produced file, and so
    on), the observable outcome, and the known failure mode. Keep this map;
    it is the review artifact.
-3. **Identify the runtime and isolation.** Name the command that starts the
-   real runtime, the test framework already in use, the isolated state
-   (temporary database, directory, port, device harness, or fixture), and
-   the teardown. Do not point a test at production data or a developer's
+3. **Identify the runtime and isolation.** Name the launch command from
+   `plan.md` or `quickstart.md`, the test framework already in use, the
+   isolated state (temporary database, directory, port, device harness, or
+   fixture), and the teardown. The test must start that runtime itself, or
+   the project test gate must start it explicitly. A test that assumes a
+   server is already running at a hardcoded URL is not self-contained and
+   is a finding. For a same-origin browser UI, serve the app on an ephemeral
+   port and load the page from `127.0.0.1:<port>`, not the example
+   `localhost:8000`; a client that hardcodes the example origin must fail.
+   Add a fast contract check that client code has no hardcoded API host or
+   port. Do not point a test at production data or a developer's
    live database. If the entry point is a browser UI, drive the real page
    with the browser the environment provides; do not download one unless
    none is available. Record its launch flags. Console and page errors are
    failures, not noise.
 4. **Write the test in stages, tests first.** Start with one user-facing
-   requirement: start the real runtime, drive the real entry point, and
-   assert the user-visible outcome. Run it before the implementation exists
-   and confirm it fails for the expected reason. Then extend the same test
-   to the remaining requirements, one at a time.
+   requirement: start the real runtime in the test fixture (or let the
+   project gate start it), drive the real entry point, and assert the
+   user-visible outcome. Run it before the implementation exists and confirm
+   it fails for the expected reason. Then extend the same test to the
+   remaining requirements, one at a time.
 5. **Add a known-bad fixture.** Create a fixture or mutation that proves the
    test can fail on the failure mode the user would see. Run it, confirm
    the failure, and restore the good state.
@@ -59,7 +67,14 @@ injected doubles do not replace it.
    - only imports modules, calls internal helpers, or asserts static text;
    - checks a status code or file existence without the user-visible
      outcome;
-   - does not start the real runtime;
+   - does not start the real runtime itself and has no project gate that
+     starts it;
+   - assumes a server is already running at a hardcoded URL, or uses a
+     launch command different from the one in `plan.md`/`quickstart.md`;
+   - loads the browser UI only from the same origin used in the examples, so
+     a hardcoded API base URL can still pass;
+   - contains a hardcoded absolute API host or port when the requirement is
+     same-origin;
    - for a browser entry point, does not load the real page or lets console
      and page errors pass;
    - shares production state or leaves state behind;
@@ -67,9 +82,10 @@ injected doubles do not replace it.
    - skips a user-facing requirement in the spec;
    - is not wired into the project test gate.
 8. **Report.** Report the requirement-to-entry-point-to-test mapping, the
-   files changed, the red/green/mutation results, and any requirement whose
-   entry point cannot be automated. For a manual fallback, name the manual
-   check and record the acceptance evidence.
+   runtime start path (test fixture or project gate), the files changed, the
+   red/green/mutation results, and any requirement whose entry point cannot
+   be automated. For a manual fallback, name the manual check and record the
+   acceptance evidence.
 
 The project's test gate, not this procedure, is the gate. A generated test
 that has never failed is not evidence.

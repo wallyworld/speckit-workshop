@@ -230,12 +230,6 @@ directory, so a roadmap row always has one spec:
 /speckit.converge
 ```
 
-If the slice is a browser UI, install the browser driver in the project
-environment before generating the test and use the browser the environment
-provides. In the workshop container, install Chrome on demand from a host
-terminal in the clone with `workshop run --uid 0 -- install-browser`, then
-run `uv pip install pytest-playwright`; do not run `playwright install`.
-
 After the acceptance gate passes:
 
 1. update the `R1` row in `ROADMAP.md`:

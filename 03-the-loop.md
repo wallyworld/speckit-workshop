@@ -143,25 +143,24 @@ column, converge flags the discrepancy and sends you back into the loop.
 
 ## Step 8: See it live
 
-```
-uv run uvicorn petstore_app:app --reload --host 0.0.0.0
-```
-
-Run it in the foreground in a second byobu window (F2, or the tmux prefix
-Ctrl-b c) or another terminal inside the container. Leave it running so the
-request log and reload output stay visible as you click through the UI.
-`--host 0.0.0.0` matters; without it uvicorn binds to the container's
-loopback, which your host browser cannot reach. Stop it with Ctrl-C.
+Start the server in a second byobu window with the launch command from the
+feature's `plan.md` or `quickstart.md` (for example
+`uv run uvicorn petstore_app:app --reload --host 0.0.0.0`, or
+`uv run uvicorn src.main:app --reload --host 0.0.0.0` if the agent used a
+`src/` package).
 
 Open the docs UI in a browser **on your host** at the address from
 `workshop info` (run it from your clone directory and read the `hostname:`
 line). For a clone named `speckit-workshop` that is
 <http://speckit-ws.speckit-workshop.wp:8000/docs>. Swagger lists the pet
-endpoints: POST `/pets`, GET `/pets`, GET `/pets/{id}`, DELETE `/pets/{id}`.
+endpoints: POST `/api/v1/pets`, GET `/api/v1/pets`, GET
+`/api/v1/pets/{id}`, DELETE `/api/v1/pets/{id}`. If your plan chose a
+different prefix, use the paths Swagger shows.
 Add a pet with a name and a stock count, list it, then delete it. The API
 surface should match the functional requirements in `spec.md`. If uvicorn
 reports `Could not import module "petstore_app"`, the agent chose a different
-module name; run `uv run uvicorn <that-module>:app --reload --host 0.0.0.0`.
+module name; run `uv run uvicorn <that-module>:app --reload --host 0.0.0.0`
+(for example `uv run uvicorn src.main:app --reload --host 0.0.0.0`).
 
 ## On disk
 

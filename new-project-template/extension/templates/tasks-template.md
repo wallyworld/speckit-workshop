@@ -21,8 +21,10 @@ Copilot) to derive the executable acceptance tests. For every user-facing
 requirement, add a task that drives the real entry point named in `plan.md` - an HTTP route, CLI command, UI screen, device
 action, produced file, or whatever the product exposes. The test runs on
 the real runtime, asserts the user-visible outcome and its known failure
-mode, includes a known-bad fixture, and is wired into the project's test
-gate. A placeholder or empty/default implementation must fail it.
+mode, starts the runtime itself or relies on a project gate that starts it,
+includes a known-bad fixture, and is wired into the project's test gate. A
+test that assumes a server is already running at a hardcoded URL, or a
+placeholder or empty/default implementation, must fail it.
 
 ## Format: `[ID] [P?] [Story] Description`
 

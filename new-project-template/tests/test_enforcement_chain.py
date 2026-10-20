@@ -213,6 +213,38 @@ def test_manual_commands_accept_arguments():
         )
 
 
+def test_acceptance_test_rejects_hardcoded_origins():
+    """The acceptance-test procedure requires a self-starting or gate-started
+    runtime and a non-example browser origin for a same-origin UI.
+
+    A generated test that assumes a server at `localhost:8000`, or a client
+    that hardcodes that origin, can pass while the delivered page is broken
+    from every other host or port. The source procedure must keep both rules;
+    the tasks checklist mirrors the runtime half."""
+    source = EXTENSION_SOURCE
+    if not source.is_dir() and (ROOT / "bootstrap.sh").is_file():
+        source = ROOT / "extension"
+    if not source.is_dir():
+        pytest.skip("requirements extension source is not present")
+    text = (
+        source / "commands" / "speckit.requirements.acceptance-test.md"
+    ).read_text(encoding="utf-8")
+    required = (
+        "The test must start that runtime itself, or",
+        "the project test gate must start it explicitly",
+        "`127.0.0.1:<port>`",
+        "not the example",
+        "hardcoded API host or",
+        "hardcoded absolute API host or port",
+    )
+    for phrase in required:
+        assert phrase in text, (
+            f"acceptance-test procedure lost {phrase!r}; a hardcoded "
+            f"localhost origin or an externally assumed runtime would no "
+            f"longer be rejected"
+        )
+
+
 def test_installed_command_surface_surfaces_hooks():
     """Every installed core command surface this project's hooks ride on still
     carries its hook-check sections.
@@ -411,11 +443,16 @@ PLAN_CHECKLIST_RULES = (
     ("wire", "fixture"),
     ("command", "invocation path"),
     ("validator", "malformed"),
+    ("example", "constant"),
+    ("same-origin", "relative"),
+    ("hardcoded host", "token"),
 )
 TASKS_CHECKLIST_RULES = (
     ("enum", "checker"),
     ("acceptance test", "real entry point"),
     ("placeholder", "user-facing"),
+    ("runtime", "hardcoded URL"),
+    ("project gate", "runtime"),
     ("sequential", "IDs"),
     ("tests-first", "known-good"),
     ("tests-first", "known-bad"),
@@ -789,7 +826,7 @@ def test_extension_surface_is_documented():
     readme = ROOT / "README.md"
     assert readme.is_file(), "template README.md is missing"
     text = readme.read_text(encoding="utf-8")
-    assert "The requirements extension, piece by piece" in text, (
+    assert "The requirements extension" in text, (
         "README lost the per-command section heading"
     )
     assert "Why not a generic Spec Kit project?" in text, (

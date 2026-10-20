@@ -63,17 +63,21 @@ the spec, plan, or tasks until its report is clean.
 ## Check the tests and the API
 
 `uv run pytest` passes, and you've got order placement plus a suite. Look for an
-`orders` table and `POST /orders`; a cancel route may be
-`POST /orders/{id}/cancel`, depending on the run.
+`orders` table and `POST /api/v1/orders`; a cancel route may be
+`POST /api/v1/orders/{id}/cancel` or `DELETE /api/v1/orders/{id}`,
+depending on the run. If your plan chose a different prefix, use the paths
+Swagger shows.
 
 Open the test file. Look for a case where an order for a zero-stock pet
 **fails**, and one showing stock never drops below zero. If the suite only
 covers an in-stock order succeeding, it passes without asserting the
 requirement - this is the potential gap this phase is about investigating.
 
-Start the server in a second byobu window:
-`uv run uvicorn petstore_app:app --reload --host 0.0.0.0`. Starting it in the
-foreground of the agent's turn hangs the turn.
+Start the server in a second byobu window with the launch command from the
+feature's `plan.md` or `quickstart.md` (for example
+`uv run uvicorn petstore_app:app --reload --host 0.0.0.0`, or
+`uv run uvicorn src.main:app --reload --host 0.0.0.0` if the agent used a
+`src/` package).
 
 Open the docs UI from your host browser. Use the `hostname:` line from
 `workshop info` (run it in your clone); for a clone named `speckit-workshop`

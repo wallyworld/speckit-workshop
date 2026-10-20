@@ -16,7 +16,7 @@ This directory is the finished reference, not a starter.
   - **R2** ([`ORD-1` through `ORD-4`](REQUIREMENTS.md)): completed in
     [04 - The Refinement](../../04-the-refinement.md).
 - **Phase 2 (Web UI)**:
-  - **R3** ([`UI-1` through `UI-5`](REQUIREMENTS.md)): the follow-up
+  - **R3** ([`UI-1` through `UI-6`](REQUIREMENTS.md)): the follow-up
     feature slice you build after the workshop.
 
 ## The artifacts
@@ -120,8 +120,9 @@ extension manifest at install time.
 | Entry route | `/` |
 | Hash routes | `#/catalog`, `#/orders`, `#/create-pet` |
 | Authentication | none: no login, roles, passwords, sessions, or credentials |
-| Active orders | `GET /orders?status=open`; cancel with `DELETE /orders/{id}` |
+| Active orders | `GET /api/v1/orders?status=open`; cancel with `DELETE /api/v1/orders/{id}` |
 | Implementation | static HTML/CSS/JS served by FastAPI; no node runtime or build |
+| API calls | same-origin relative paths (`/api/v1/...`); no hardcoded host or port |
 | Placeholders | none; the orders page must use the real API |
 | Acceptance | the generated acceptance test is the gate; the manual host-browser pass verifies the visible outcomes |
 
@@ -144,7 +145,7 @@ Command forms:
 ```
 
 The command emits a read-only brief with the roadmap intent, scope
-boundary, canonical text for `UI-1..UI-5`, per-requirement digests, and a
+boundary, canonical text for `UI-1..UI-6`, per-requirement digests, and a
 ready-to-run specify command. Review the brief now, but do not run its
 command yet: step 2 runs it once.
 
@@ -157,10 +158,10 @@ both `003-*` and `004-*`, the troubleshooting entry in 05 covers removing
 the duplicate.
 
 If no R3 spec exists, run the exact command the brief emitted. For this
-sample's `R3` row it is:
+sample's `R3` row it will likely be something along the lines of:
 
 ```text
-/speckit.specify Interactive browser frontend connecting catalog and orders. Scope boundary: Client frontend served by FastAPI; uses existing R1/R2 API; no external frontend build tools.
+/speckit.specify Interactive browser frontend connecting catalog and orders. Scope boundary: Client frontend served by FastAPI; uses existing R1/R2 API via same-origin relative paths; no hardcoded host or port; no external frontend build tools.
 ```
 
 Run it **exactly once**. Do not also run a second specify from this page
@@ -175,7 +176,7 @@ for terminal copy alternatives.
 
 The extension-provided spec template requires a Requirements Coverage
 section. On a fresh run, the agent drafts `specs/003-<slug>/spec.md` with
-`UI-1..UI-5`.
+`UI-1..UI-6`.
 
 ### 3. Clarify (optional)
 
@@ -184,7 +185,7 @@ section. On a fresh run, the agent drafts `specs/003-<slug>/spec.md` with
 ```
 
 Address design questions such as styling or component layout. If clarify
-asks who may create pets or how users log in, do not add auth: UI-1..UI-5
+asks who may create pets or how users log in, do not add auth: UI-1..UI-6
 do not require it. Answer "any user; authentication is out of scope," or
 remove the question from the spec.
 
@@ -196,8 +197,10 @@ remove the question from the spec.
 
 The `before_plan` hook injects the plan checklist. The architecture
 constraints are already in `REQUIREMENTS.md` (`UI-5`: served by FastAPI,
-no external frontend build pipeline or node runtime) and the existing
-backend is in `petstore_app.py`; the agent reads both.
+no external frontend build pipeline or node runtime; `UI-6`: same-origin
+relative API paths, no hardcoded host or port) and the existing
+Phase 1 backend module is named in its plan/quickstart; the agent reuses
+it.
 
 ### 5. Tasks
 
@@ -239,10 +242,13 @@ It derives the executable test from the spec, plan, and real entry point,
 adds isolated state and a known-bad fixture, and wires it into `make test`.
 Review the generated test: it must load `/`, `#/catalog`, `#/create-pet`,
 and `#/orders` in the real browser, fail on console/page errors, assert every
-`UI-1..UI-5` outcome, include the fast contract checks (no auth/session
-surface, no placeholder implementation, real `GET /orders`, stock restore),
-and run under `make test`. Run it before implementation and confirm it
-fails for the expected reason. It is the automated acceptance gate.
+`UI-1..UI-6` outcome, start the runtime itself or rely on the project gate
+to start it, load the page from an ephemeral port rather than the example
+`localhost:8000` so a hardcoded API base URL fails, include the fast
+contract checks (no auth/session surface, no hardcoded API host or port, no
+placeholder implementation, real `GET /api/v1/orders`, stock restore), and
+run under `make test`. Run it before implementation and confirm it fails for the
+expected reason. It is the automated acceptance gate.
 
 ### 7. Analyze
 
@@ -312,11 +318,20 @@ restoring the code. The browser install and `pytest-playwright` dependency
 from [section 6](#6-install-the-browser-and-write-the-acceptance-test) are
 prerequisites.
 
-Then start the FastAPI application:
+Then start the FastAPI application with the launch command recorded in the
+R3 `plan.md` or `quickstart.md`:
 
 ```bash
 cd /project/petstore
-uv run uvicorn petstore_app:app --reload --host 0.0.0.0
+rg -n 'uvicorn .*:app' specs/003-*/plan.md specs/003-*/quickstart.md
+```
+
+If you kept a differently numbered R3 directory, substitute its path.
+Run the command it prints. The two common layouts are:
+
+```bash
+uv run uvicorn petstore_app:app --reload --host 0.0.0.0   # if the plan named petstore_app.py
+uv run uvicorn src.main:app --reload --host 0.0.0.0       # if the agent used a src/ package
 ```
 
 From your host browser, open the workshop address from `workshop info`
@@ -333,13 +348,22 @@ You can:
   disabled at zero (`UI-3`);
 - view open orders and cancel them to restore inventory in place (`UI-4`);
 - confirm the UI is a static single-page app served by FastAPI, with no
-  node runtime or external build (`UI-5`).
+  node runtime or external build (`UI-5`);
+- confirm the page works from the workshop hostname (not `localhost:8000`)
+  and that network calls use relative paths such as `/api/v1/pets`, not
+  `http://localhost:8000/api/v1`; the acceptance test also covers an
+  ephemeral port (`UI-6`).
 
 Open DevTools Console and confirm it is free of red errors on `/`,
 `#/catalog`, `#/create-pet`, and `#/orders`.
 
 ## If something fails
 
+- `NetworkError when attempting to fetch resource` or "Failed to fetch":
+  the client hardcoded `http://localhost:8000` or another absolute API base
+  URL. Use same-origin relative paths such as `/api/v1/pets`; keep absolute
+  URLs only in curl/quickstart examples. Load the page from the workshop
+  hostname; the acceptance test covers the ephemeral-port case.
 - `No module named pytest` or `yaml`: run `make install`.
 - `No module named playwright`: install the driver in the project venv:
   `uv pip install pytest-playwright`.

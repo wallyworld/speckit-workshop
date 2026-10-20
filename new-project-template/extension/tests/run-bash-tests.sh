@@ -72,6 +72,44 @@ assert_contains "brief requires one specify"     "Run it exactly once"
 assert_contains "brief states human review"      "A human must REVIEW"
 assert_contains "brief identifies manual mapping" "mapping remains manual and"
 
+# 1a. Workshop sample integration: R3 carries the same-origin requirement
+# and the emitted command uses the dot form. Skipped when the sample is not
+# present (for example when this suite runs from a seeded project).
+SAMPLE_DIR="$TESTS_DIR/../../../examples/petstore"
+if [ -f "$SAMPLE_DIR/ROADMAP.md" ] && [ -f "$SAMPLE_DIR/REQUIREMENTS.md" ]; then
+  OUT=$(SPECKIT_ROADMAP_FILE="$SAMPLE_DIR/ROADMAP.md" \
+    SPECKIT_REQUIREMENTS_FILE="$SAMPLE_DIR/REQUIREMENTS.md" \
+    bash "$ASSEMBLE" R3 2>&1)
+  RC=$?
+  assert_success "sample R3 assembles"
+  assert_contains "sample R3 includes UI-6" "- **UI-6**:"
+  assert_contains "sample R3 completes UI-6" "Completes: UI-1, UI-2, UI-3, UI-4, UI-5, UI-6"
+  assert_contains "sample R3 includes UI-6 digest" "UI-6 sha256:"
+  assert_contains "sample R3 emits relative-path scope" "same-origin relative paths"
+  assert_not_contains "sample R3 omits hyphen core command" "/speckit-specify"
+  if grep -q '^UI-6|' "$SAMPLE_DIR/requirement-phrases.txt"; then
+    ok "sample phrases include UI-6"
+  else
+    bad "sample phrases missing UI-6"
+  fi
+  BRIEF_CMD=$(printf '%s\n' "$OUT" | grep -m1 '^/speckit\.specify ')
+  REPO_ROOT="$SAMPLE_DIR/../.."
+  DOC_CMD=$(grep -m1 '^/speckit\.specify ' "$REPO_ROOT/05-whats-next.md")
+  README_CMD=$(grep -m1 '^/speckit\.specify ' "$SAMPLE_DIR/README.md")
+  if [ -n "$BRIEF_CMD" ] && [ "$BRIEF_CMD" = "$DOC_CMD" ]; then
+    ok "sample R3 command matches 05"
+  else
+    bad "sample R3 command differs from 05"
+  fi
+  if [ -n "$BRIEF_CMD" ] && [ "$BRIEF_CMD" = "$README_CMD" ]; then
+    ok "sample R3 command matches example README"
+  else
+    bad "sample R3 command differs from example README"
+  fi
+else
+  printf '  skip - workshop sample not present\n'
+fi
+
 # 2. Malformed IDs.
 for badid in R0 RX 2 R2x r2; do
   run roadmap-ok.md "$badid"

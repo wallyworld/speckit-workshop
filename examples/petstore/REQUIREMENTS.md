@@ -40,4 +40,7 @@ browser web user interface.
 - **UI-5**: The web UI MUST be served directly by the FastAPI backend as a
   static single-page application without requiring an external frontend build
   pipeline or node runtime.
+- **UI-6**: The web UI MUST call the API with same-origin relative paths
+  such as `/api/v1/pets`, and MUST NOT hardcode a host or port, so the UI
+  works on any host or port that serves it.
 
