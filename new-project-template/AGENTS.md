@@ -81,7 +81,7 @@ which invocation is the single definition of done.
    requirements in `REQUIREMENTS.md`, the phrases table
    (`requirement-phrases.txt`) must be updated. Generate
    verbatim candidates with
-   `extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`
+   `scripts/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`
    then review and tighten them before committing: the script guarantees
    verbatim wording, not distinctiveness, and it overwrites the target file.
    Prefer wording unique to each requirement (a generic phrase lets a spec

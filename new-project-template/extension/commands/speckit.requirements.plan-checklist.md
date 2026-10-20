@@ -1,5 +1,5 @@
 ---
-description: "Plan checklist: escape hatches need requirement authority, no requirement-less scope (every FR traces to a product requirement), the real entry point and its acceptance test named, qualitative thresholds are operationalized, every MUST the plan relies on has a task that builds it, boundaries are specified (raise to catcher, fail-closed positive-path tests, wire-format fixtures, command-surface tests on their real invocation path, validator malformed-input cases), and example values are not constants (sample hosts, ports, base URLs, tokens, and paths must not become hardcoded implementation constants; no hardcoded host or port; same-origin UIs use relative paths)."
+description: "Plan checklist: escape hatches need requirement authority, no requirement-less scope (every FR traces to a product requirement), the real entry point and its acceptance test named, qualitative thresholds are operationalized, every MUST the plan relies on has a task that builds it, boundaries are specified (raise to catcher, fail-closed positive-path tests, wire-format fixtures, command-surface tests on their real invocation path, validator malformed-input cases), and example values are not constants (a sample address, port, credential, token, path, or identifier must not become a hardcoded implementation constant; any such value is supplied at run time)."
 ---
 
 # Plan checklist
@@ -40,11 +40,12 @@ It fires as a mandatory `before_plan` hook in skills mode and as the
    test on its real invocation path (the default or primary route a
    user takes), not only a flagged or synthetic variant; every new
    validator names its schema-valid-but-malformed input cases.
-7. **Examples are not constants.** A host, port, base URL, token, or path
-   in a requirement, contract, or quickstart is illustrative unless the
-   requirement makes it a constraint. For a same-origin browser UI, the plan
-   must state relative API paths and forbid a hardcoded host or port;
-   contracts must label absolute example URLs as external-tool examples
+7. **Examples are not constants.** An address, port, credential, token,
+   path, or identifier in a requirement, contract, or quickstart is
+   illustrative unless the requirement makes it a constraint. The plan
+   must state that such a value is supplied at run time (environment,
+   configuration, or fixture) and must forbid a hardcoded example value;
+   contracts must label example values as environment-specific examples
    only.
 
 The command surfaces and coverage-critical artifact kinds specific to

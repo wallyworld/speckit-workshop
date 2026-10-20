@@ -155,9 +155,8 @@ vanilla Spec Kit project lacks without it - is in the README's
 After tasks exist, invoke `/speckit.requirements.acceptance-test` manually.
 It derives the executable acceptance test for every user-facing requirement
 through the real entry point, adds a known-bad fixture, and wires it into
-the project test gate. It is a manual command, not a hook. For a same-origin
-browser UI, the test serves the app on an ephemeral port and loads the page
-from a non-example origin so a hardcoded API base URL fails.
+the project test gate. It is a manual command, not a hook. The test supplies
+any example value it needs at run time, so a hardcoded example value fails.
 
 The enforcement hooks are carried by the extension's checklist commands:
 
@@ -171,9 +170,9 @@ The enforcement hooks are carried by the extension's checklist commands:
   behavior its positive-path test, every parser delta its wire-format
   fixture evidence, every new command surface a test on its real
   invocation path, and every validator its malformed-input cases. Example
-  values are not constants: sample hosts, ports, base URLs, tokens, and
-  paths must not become hardcoded implementation constants, and a
-  same-origin UI uses relative API paths with no hardcoded host or port.
+  values are not constants: a sample address, port, credential, token,
+  path, or identifier must not become a hardcoded implementation constant;
+  any such value is supplied at run time.
 - `/speckit.requirements.tasks-checklist` (mandatory `before_tasks`,
   `before_implement`, and `before_converge` hooks): every user-facing
   requirement carries an acceptance test through the real entry point on
@@ -188,8 +187,7 @@ The enforcement hooks are carried by the extension's checklist commands:
   validator matrices include malformed inputs. At `before_implement` the
   rules are applied to the changes and tests being written, not only the
   task text. The acceptance test starts the runtime itself or the project
-  gate starts it; for a same-origin UI it loads the page from a non-example
-  origin.
+  gate starts it and supplies any example value it needs at run time.
 - `/speckit.requirements.diff-review` (mandatory `after_implement` hook):
   commissions an independent fresh-context review of the implementation
   diff and the real entry-point or acceptance-test result before the work

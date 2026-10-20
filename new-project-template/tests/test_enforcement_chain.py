@@ -213,14 +213,15 @@ def test_manual_commands_accept_arguments():
         )
 
 
-def test_acceptance_test_rejects_hardcoded_origins():
+def test_acceptance_test_requires_self_starting_runtime():
     """The acceptance-test procedure requires a self-starting or gate-started
-    runtime and a non-example browser origin for a same-origin UI.
+    runtime and run-time-supplied values instead of hardcoded examples.
 
-    A generated test that assumes a server at `localhost:8000`, or a client
-    that hardcodes that origin, can pass while the delivered page is broken
-    from every other host or port. The source procedure must keep both rules;
-    the tasks checklist mirrors the runtime half."""
+    A generated test that assumes an already-running instance at a value
+    copied from an example, or an implementation that hardcodes that value,
+    can pass while the delivered interface is broken in every other
+    environment. The source procedure must keep both rules; the tasks
+    checklist mirrors the runtime half."""
     source = EXTENSION_SOURCE
     if not source.is_dir() and (ROOT / "bootstrap.sh").is_file():
         source = ROOT / "extension"
@@ -232,17 +233,69 @@ def test_acceptance_test_rejects_hardcoded_origins():
     required = (
         "The test must start that runtime itself, or",
         "the project test gate must start it explicitly",
-        "`127.0.0.1:<port>`",
-        "not the example",
-        "hardcoded API host or",
-        "hardcoded absolute API host or port",
+        "already-running instance at a hardcoded example value",
+        "must be supplied at run time",
+        "does not hardcode example values",
     )
     for phrase in required:
         assert phrase in text, (
-            f"acceptance-test procedure lost {phrase!r}; a hardcoded "
-            f"localhost origin or an externally assumed runtime would no "
-            f"longer be rejected"
+            f"acceptance-test procedure lost {phrase!r}; an externally "
+            f"assumed runtime or a hardcoded example value would no longer "
+            f"be rejected"
         )
+
+
+def test_seedable_extension_surfaces_have_no_browser_assumptions():
+    """The extension's seedable surfaces stay technology-neutral.
+
+    The commands, templates, manifest, and workflow overlay ship to every
+    seeded project. Browser, origin, and localhost instructions belong to a
+    project's own checklist instance in AGENTS.md, not to the universal
+    rules. A future edit that bakes one back in fails here."""
+    source = EXTENSION_SOURCE
+    if not source.is_dir() and (ROOT / "bootstrap.sh").is_file():
+        source = ROOT / "extension"
+    if not source.is_dir():
+        pytest.skip("requirements extension source is not present")
+    surfaces = [
+        *sorted((source / "commands").glob("*.md")),
+        *sorted((source / "templates").glob("*.md")),
+        source / "extension.yml",
+    ]
+    if GATES_YML.is_file():
+        surfaces.append(GATES_YML)
+    forbidden = ("browser", "same-origin", "localhost", "127.0.0.1")
+    violations = {}
+    for surface in surfaces:
+        text = surface.read_text(encoding="utf-8").lower()
+        hits = [term for term in forbidden if term in text]
+        if hits:
+            violations[str(surface.relative_to(ROOT))] = hits
+    assert not violations, (
+        f"browser-specific assumptions leaked into seedable extension "
+        f"surfaces: {violations}; record the project instance in AGENTS.md"
+    )
+
+
+def test_extension_bash_suite_is_hermetic():
+    """The extension's Bash suite reads its own fixtures and the seeded
+    project's root artifacts, never workshop examples or workshop docs.
+
+    A suite that reaches outside its inputs can silently depend on a
+    sample project that seeded users do not have, and skips instead of
+    failing when that sample is absent."""
+    source = EXTENSION_SOURCE
+    if not source.is_dir() and (ROOT / "bootstrap.sh").is_file():
+        source = ROOT / "extension"
+    if not source.is_dir():
+        pytest.skip("requirements extension source is not present")
+    runner = source / "tests" / "run-bash-tests.sh"
+    text = runner.read_text(encoding="utf-8").lower()
+    forbidden = ("workshop", "05-whats-next", "examples/")
+    hits = [token for token in forbidden if token in text]
+    assert not hits, (
+        f"{runner}: suite reaches outside its hermetic inputs via {hits}"
+    )
 
 
 def test_installed_command_surface_surfaces_hooks():
@@ -444,14 +497,13 @@ PLAN_CHECKLIST_RULES = (
     ("command", "invocation path"),
     ("validator", "malformed"),
     ("example", "constant"),
-    ("same-origin", "relative"),
-    ("hardcoded host", "token"),
+    ("hardcoded", "run time"),
 )
 TASKS_CHECKLIST_RULES = (
     ("enum", "checker"),
     ("acceptance test", "real entry point"),
     ("placeholder", "user-facing"),
-    ("runtime", "hardcoded URL"),
+    ("already-running", "example value"),
     ("project gate", "runtime"),
     ("sequential", "IDs"),
     ("tests-first", "known-good"),

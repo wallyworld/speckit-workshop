@@ -1,5 +1,5 @@
 ---
-description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, an acceptance test through the real entry point for every user-facing requirement (not implementation-only, not a placeholder; the test starts the runtime itself or the project gate starts it, never an assumed hardcoded URL), boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes."
+description: "Tasks checklist: enum-extending tasks grounded in source and existing checkers, sequential IDs, tests-first with known-good and known-bad fixtures, an acceptance test through the real entry point for every user-facing requirement (not implementation-only, not a placeholder; the test starts the runtime itself or the project gate starts it, never an assumed already-running instance at a hardcoded example value), boundary tests (raise to catcher, command-surface tests on their real invocation path), positive-path fixtures for fail-closed behaviors, malformed inputs in validator matrices, one-to-N refactors carrying per-entity and partial-failure tests, semantic checks enumerating every violation class, and failure boundaries enumerating their wrapped calls' failure classes."
 ---
 
 # Tasks checklist
@@ -90,8 +90,9 @@ in skills mode and as the `review-tasks` gate in workflow mode.
     doubles. The test asserts the user-visible outcome and the known failure
     mode, carries a known-bad fixture, and runs in the project's test gate.
     The test starts the runtime itself or the project gate starts it
-    explicitly; a test that assumes a server is already running at a
-    hardcoded URL fails this rule.
+    explicitly; a test that assumes an already-running instance at a
+    hardcoded example value fails this rule. Any value the test needs that
+    appears in an example is supplied at run time.
     A placeholder, empty/default implementation, or implementation-only
     assertion fails this rule. After tasks.md exists, invoke
     `/speckit.requirements.acceptance-test` (the hyphenated skill form

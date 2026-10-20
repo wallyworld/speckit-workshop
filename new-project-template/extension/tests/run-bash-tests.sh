@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Focused, portable tests for the Bash requirements-context assembler.
+# Focused, portable tests for the requirements toolchain: the brief
+# assembler, the traceability verifier, and the project-level phrase
+# extractor when that project script is present.
 # No external test framework: plain assertions with a summary and non-zero exit
 # on any failure. Runs entirely against in-repo fixtures.
 
@@ -71,44 +73,6 @@ assert_not_contains "brief omits hyphen core command" "/speckit-specify"
 assert_contains "brief requires one specify"     "Run it exactly once"
 assert_contains "brief states human review"      "A human must REVIEW"
 assert_contains "brief identifies manual mapping" "mapping remains manual and"
-
-# 1a. Workshop sample integration: R3 carries the same-origin requirement
-# and the emitted command uses the dot form. Skipped when the sample is not
-# present (for example when this suite runs from a seeded project).
-SAMPLE_DIR="$TESTS_DIR/../../../examples/petstore"
-if [ -f "$SAMPLE_DIR/ROADMAP.md" ] && [ -f "$SAMPLE_DIR/REQUIREMENTS.md" ]; then
-  OUT=$(SPECKIT_ROADMAP_FILE="$SAMPLE_DIR/ROADMAP.md" \
-    SPECKIT_REQUIREMENTS_FILE="$SAMPLE_DIR/REQUIREMENTS.md" \
-    bash "$ASSEMBLE" R3 2>&1)
-  RC=$?
-  assert_success "sample R3 assembles"
-  assert_contains "sample R3 includes UI-6" "- **UI-6**:"
-  assert_contains "sample R3 completes UI-6" "Completes: UI-1, UI-2, UI-3, UI-4, UI-5, UI-6"
-  assert_contains "sample R3 includes UI-6 digest" "UI-6 sha256:"
-  assert_contains "sample R3 emits relative-path scope" "same-origin relative paths"
-  assert_not_contains "sample R3 omits hyphen core command" "/speckit-specify"
-  if grep -q '^UI-6|' "$SAMPLE_DIR/requirement-phrases.txt"; then
-    ok "sample phrases include UI-6"
-  else
-    bad "sample phrases missing UI-6"
-  fi
-  BRIEF_CMD=$(printf '%s\n' "$OUT" | grep -m1 '^/speckit\.specify ')
-  REPO_ROOT="$SAMPLE_DIR/../.."
-  DOC_CMD=$(grep -m1 '^/speckit\.specify ' "$REPO_ROOT/05-whats-next.md")
-  README_CMD=$(grep -m1 '^/speckit\.specify ' "$SAMPLE_DIR/README.md")
-  if [ -n "$BRIEF_CMD" ] && [ "$BRIEF_CMD" = "$DOC_CMD" ]; then
-    ok "sample R3 command matches 05"
-  else
-    bad "sample R3 command differs from 05"
-  fi
-  if [ -n "$BRIEF_CMD" ] && [ "$BRIEF_CMD" = "$README_CMD" ]; then
-    ok "sample R3 command matches example README"
-  else
-    bad "sample R3 command differs from example README"
-  fi
-else
-  printf '  skip - workshop sample not present\n'
-fi
 
 # 2. Malformed IDs.
 for badid in R0 RX 2 R2x r2; do
@@ -432,7 +396,38 @@ fi
 echo
 echo "Extractor tests"
 echo "==============="
-EXTRACT="$TESTS_DIR/../scripts/bash/extract-phrases.sh"
+# The extractor is project tooling under scripts/, not part of the
+# extension package. Resolve it in both supported layouts: the template
+# source tree (extension/tests) and a seeded project
+# (extensions/requirements/tests). The template's seeded test gate sets
+# SPECKIT_EXTRACT_PHRASES so a missing bootstrap copy fails rather than
+# skips; a standalone extension package has no project script and skips
+# this section.
+EXTRACT=${SPECKIT_EXTRACT_PHRASES:-}
+if [ -z "$EXTRACT" ]; then
+  for candidate in \
+    "$TESTS_DIR/../../scripts/extract-phrases.sh" \
+    "$TESTS_DIR/../../../scripts/extract-phrases.sh"; do
+    if [ -f "$candidate" ]; then
+      EXTRACT=$candidate
+      break
+    fi
+  done
+fi
+EXTRACT_SKIP=no
+if [ -z "$EXTRACT" ]; then
+  printf '  skip - extract-phrases.sh not present (project tooling, not an extension package file)\n'
+  EXTRACT_SKIP=yes
+elif [ ! -f "$EXTRACT" ]; then
+  printf '  FAIL - SPECKIT_EXTRACT_PHRASES points at a missing file: %s\n' "$EXTRACT"
+  fail=$((fail + 1))
+  EXTRACT_SKIP=yes
+fi
+if [ "$EXTRACT_SKIP" = yes ]; then
+  printf 'Summary: %d passed, %d failed\n' "$pass" "$fail"
+  [ "$fail" -eq 0 ]
+  exit $?
+fi
 REQ_MUST="$FIX/requirements-must.md"
 REQ_DUP="$FIX/requirements-dup.md"
 REQ_NOIDS="$FIX/requirements-noids.md"

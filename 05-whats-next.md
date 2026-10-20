@@ -526,7 +526,7 @@ fresh digest, and the code all support it.
   project root, or run the retrofit script.
 - **`stale phrase` or `DRIFTED`**: the wording changed after the phrase or
   digest was recorded. Regenerate with
-  `extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`,
+  `scripts/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`,
   review, and update the spec text and digests through the brief.
 - **Em dash style failure**: use a hyphen. Retrofit replaces em dashes in
   project files only. If `REQUIREMENTS.md` had one, the curated phrase may

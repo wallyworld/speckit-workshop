@@ -3,7 +3,7 @@
 Seeds a new project with a requirements-first Spec Kit process - the
 product's requirements and a roadmap steer delivery across many
 features - plus the tooling that enforces the process. One command
-installs everything; a short fill-in pass makes it project specific.
+installs everything and a short fill-in pass then makes it project specific.
 
 ## Orientation
 
@@ -24,15 +24,15 @@ features add up to. A product delivered as multiple features needs an
 accounting layer in front of the loop - **phased delivery**: the
 product's requirements are stated once, each with a stable ID, in a
 single source (`REQUIREMENTS.md`); a roadmap (`ROADMAP.md`) maps every
-requirement to the one feature that completes it, in delivery order;
-and each requirement carries requirement phrases - distinctive wording
+requirement to the one feature that completes it in delivery order.
+Each requirement carries requirement phrases - distinctive wording
 copied verbatim from its own text - so a spec claiming to complete the
 requirement can be checked for actually containing its content.
 
 Out of the box, using default upstream Spec Kit, each command is a
 prompt: nothing verifies that the artifacts it produces cover what they
 claim, and nothing connects a feature to the product plan. This project
-template addresses that limitation; it adopts the phased-delivery model
+template addresses that limitation. It adopts the phased-delivery model
 above and adds an enforcement layer to check it, in four ways:
 
 - **deterministic checkers** - Bash scripts over the artifacts, chiefly
@@ -40,7 +40,7 @@ above and adds an enforcement layer to check it, in four ways:
   suite;
 - **moment-of-authoring hooks** - mandatory checklists injected around
   Spec Kit's own commands at the exact moment the artifact is written;
-- **workflow gates** - the same checks composed into Spec Kit's bundled
+- **workflow gates** - the above checks composed into Spec Kit's bundled
   workflow (the command sequence `specify workflow run` executes) as
   approve/reject gates;
 - **mirror tests** - plain pytest modules re-checking the same claims,
@@ -51,17 +51,17 @@ Each mirror test asserts one standing claim - a hook
 registration, a rule's incorporation into every surface - so removing or
 breaking it fails `make test`.
 
-The principle behind the layering: an agent obeys prose unreliably,
+The principle behind the layering is that an agent obeys prose unreliably,
 but it cannot skip a gate. A rule that can be a test must not stay
-prose; a rule no test can decide belongs in a hook injected at the
-moment of authoring; a process-bound check becomes a workflow gate;
-prose is the last resort.
+prose; a rule no test can verify belongs in a hook injected at the
+moment of authoring; a process-bound check becomes a workflow gate.
+Using prose is the last resort.
 
 An **extension** is Spec Kit's packaging for all of this: a manifest
 declaring commands, templates, and hooks, plus the scripts the commands
 run. **Skills** are the agent-facing copies of the extension commands,
 generated into `.github/skills/`, and into `.agents/skills/` or
-`.claude/skills/` when the project's integration created that root.
+`.claude/skills/` according to the harness that is being used.
 
 ## Where this fits in the Spec Kit ecosystem
 
@@ -70,25 +70,25 @@ loop cycle it documents a manual roadmap convention - the "spec of
 specs" ([concepts/spec-of-specs](https://github.github.io/spec-kit/concepts/spec-of-specs.html)):
 a roadmap table with stable IDs, dependencies, and links, with no
 tooling behind it and status maintained by hand. This template does
-what that convention asks for, plus the parts it does not have: a
+what that convention asks for, and add the parts it does not have: a
 product-level requirements source above the roadmap, explicit
 completion semantics per roadmap row (Completes/Advances against
 requirement IDs), and deterministic verification of those claims. Each
 Completes claim is checked two ways, because the two checks catch
-different escapes:
+different modes of failure:
 
 - **requirement phrase** - distinctive wording copied verbatim from the
   requirement, anchored at load time (a phrase that is not verbatim
   source wording fails the build). It proves the requirement's content
-  is present in the spec; an ID in a table proves nothing.
+  is present in the spec (since an ID in a table doesn't prove anything).
 - **requirement digest** - a SHA-256 over the requirement's normalized
   text, recorded in the spec when the claim is written. It proves the
   claim is fresh: if the requirement's wording later changes, the
   recorded digest no longer matches and the spec is flagged stale.
 
-Presence and freshness: one catches a claim whose content was never
-specified; the other, a claim written against wording that has since
-changed.
+So the above ensure presence and freshness: one catches a claim whose
+content was never specified; the other, a claim written against wording
+that has since changed.
 
 ## What lands in the seeded project
 
@@ -107,6 +107,8 @@ exact formats). On top of that convention, the seed installs:
   self-contained brief and verifies every requirement a spec claims to
   complete is materially present in that spec and recorded against the
   requirement's current wording,
+- a **phrase extractor** (`scripts/extract-phrases.sh`) that drafts
+  verbatim requirement-phrase candidates for review,
 - **enforcement hooks** that fire automatically around Spec Kit's
   own commands (plan, tasks, analyze, implement, converge),
 - **review gates** mirroring the same checks as approve/reject steps in
@@ -124,8 +126,8 @@ exact formats). On top of that convention, the seed installs:
 
 ## The requirements extension
 
-The seed installs **one** extension package, `requirements`. It is not a
-collection of extensions. The package declares seven commands, two template
+The seed installs **one** extension package, `requirements` (it is not a
+collection of extensions). The package declares seven commands, two template
 overrides, and eight mandatory hook registrations. The workflow gates and
 mirror tests are separate enforcement layers around it.
 
@@ -147,11 +149,11 @@ mirror tests are separate enforcement layers around it.
 | --- | --- | --- | --- |
 | `speckit.requirements.prepare` | Manually, before specify | Validates the roadmap row and its predecessors, then emits a read-only brief with the roadmap intent, scope boundary, canonical requirement text, per-requirement SHA-256 digests, and a ready-to-run core specify command. | Core specify accepts free-form text. There is no roadmap row concept and no guarantee the requirement wording reaches the spec. |
 | `speckit.requirements.verify` | `before_analyze`, `before_converge`, and `make test` | For every Completes claim, requires at least one curated requirement phrase in the spec body and a recorded digest matching the requirement's current wording. Fails closed on drift, staleness, missing digests, and malformed claims. | Converge checks code against the spec. Nothing checks the spec against the product requirements; an ID in a table can claim content that was never written, and a claim can outlive the wording it was recorded against. |
-| `speckit.requirements.plan-checklist` | `before_plan` | Injects the plan checklist: no requirement-less scope (every FR traces to a product requirement), design opt-outs must cite the requirement wording that authorizes them, every user-facing requirement names its real entry point and acceptance test, threshold-shaped terms need operational definitions, every in-scope MUST needs a task, boundaries must be specified (raise-to-catcher, fail-closed positive-path test, wire-format fixtures, real invocation-path tests, malformed-input cases), and example values are not constants (sample hosts, ports, base URLs, tokens, and paths must not become hardcoded implementation constants; no hardcoded host or port; same-origin UIs use relative paths). | The plan is free-form. It can invent a capability the product requirements do not authorize, silently design around a MUST, leave a qualitative threshold undefined, omit the task that builds a requirement, or leave a user-facing requirement with no executable acceptance path. |
-| `speckit.requirements.tasks-checklist` | `before_tasks`, `before_implement`, `before_converge` | Injects the tasks checklist: tests-first with known-good and known-bad fixtures, an acceptance test through the real entry point for every user-facing requirement, the test starts the runtime itself or the project gate starts it, never an assumed hardcoded URL, sequential IDs, enum grounding in current source, boundary rules applied to the code and tests being written, and append-only compliant convergence tasks. | Stock Spec Kit treats test tasks as optional. A tasks list can omit failure-path tests, ship a placeholder, test only internal functions while the delivered interface is broken, and a constitution principle alone is prose the agent can ignore. |
-| `speckit.requirements.acceptance-test` | Manually, after tasks and before implementation | Derives and adds an executable acceptance test for every user-facing requirement through the real delivery entry point: runtime launch, isolated state, user-visible assertions, a known-bad fixture, a self-starting or gate-started runtime, a non-example origin for same-origin UIs, and wiring into the project test gate. It is a procedure skill, not a hook. | Vanilla Spec Kit has no step that derives an end-to-end test from the plan's entry point. Unit and static tests can stay green while the delivered interface is broken. |
+| `speckit.requirements.plan-checklist` | `before_plan` | Injects the plan checklist: no requirement-less scope (every FR traces to a product requirement), design opt-outs must cite the requirement wording that authorizes them, every user-facing requirement names its real entry point and acceptance test, threshold-shaped terms need operational definitions, every in-scope MUST needs a task, boundaries must be specified (raise-to-catcher, fail-closed positive-path test, wire-format fixtures, real invocation-path tests, malformed-input cases), and example values are not constants (a sample address, port, credential, token, path, or identifier must not become a hardcoded implementation constant; any such value is supplied at run time). | The plan is free-form. It can invent a capability the product requirements do not authorize, silently design around a MUST, leave a qualitative threshold undefined, omit the task that builds a requirement, or leave a user-facing requirement with no executable acceptance path. |
+| `speckit.requirements.tasks-checklist` | `before_tasks`, `before_implement`, `before_converge` | Injects the tasks checklist: tests-first with known-good and known-bad fixtures, an acceptance test through the real entry point for every user-facing requirement, the test starts the runtime itself or the project gate starts it, never an assumed already-running instance at a hardcoded example value, sequential IDs, enum grounding in current source, boundary rules applied to the code and tests being written, and append-only compliant convergence tasks. | Stock Spec Kit treats test tasks as optional. A tasks list can omit failure-path tests, ship a placeholder, test only internal functions while the delivered interface is broken, and a constitution principle alone is prose the agent can ignore. |
+| `speckit.requirements.acceptance-test` | Manually, after tasks and before implementation | Derives and adds an executable acceptance test for every user-facing requirement through the real delivery entry point: runtime launch, isolated state, user-visible assertions, a known-bad fixture, a self-starting or gate-started runtime, run-time-supplied values rather than hardcoded examples, and wiring into the project test gate. It is a procedure skill, not a hook. | Vanilla Spec Kit has no step that derives an end-to-end test from the plan's entry point. Unit and static tests can stay green while the delivered interface is broken. |
 | `speckit.requirements.diff-review` | `after_implement` | Commissions a fresh-context reviewer with the goal, the applicable checklists, the implementation diff, and the real entry-point or acceptance-test result; fix every finding and re-run until a clean pass before reporting done. | No independent review exists. The authoring agent reviews its own diff with its own context and reasoning, and a review that never runs the delivery interface can pass a broken product. |
-| `speckit.requirements.remediation-loop` | `after_analyze` | Requires every analysis finding to be corrected, checks the other instances of the same defect class, and re-verifies on a fresh pass until clean. | Analyze reports findings but does not enforce remediation. One occurrence can be fixed while the class survives. |
+| `speckit.requirements.remediation-loop` | `after_analyze` | Requires every analysis finding to be corrected, checks the other instances of the same defect class, and re-verifies on a fresh pass until clean. | Analyze reports findings but does not enforce remediation. One occurrence can be fixed while others remain. |
 
 **The two templates**
 
@@ -161,7 +163,8 @@ mirror tests are separate enforcement layers around it.
 - `tasks-template`: makes tests required per task and adds the
   acceptance-test shape for user-facing requirements (the real entry
   point, the user-visible outcome, a known-bad fixture, a self-starting or
-  gate-started runtime, and a non-example origin for same-origin UIs).
+  gate-started runtime, and run-time-supplied values rather than hardcoded
+  examples).
   Without it, upstream treats test tasks as optional and leaves the
   delivered interface unexercised.
 
@@ -169,7 +172,7 @@ mirror tests are separate enforcement layers around it.
 
 `bootstrap.sh` installs the extension, and the installer writes these
 registrations into `.specify/extensions.yml` from the manifest. The
-commands exist without the registrations, but they do not fire
+commands do exist without the registrations, but they do not fire
 automatically:
 
 | Lifecycle event | Command |
@@ -185,7 +188,7 @@ automatically:
 
 All eight are registered with `optional: false`. A registration with
 `enabled: false` or a non-empty condition is a silent no-fire, so
-`make test` asserts the full firing-relevant shape. The installer rebuilds
+`make test` asserts these all fire as needed. The installer rebuilds
 the hooks section from the manifest on reinstall; a manifest that loses its
 hooks section silently wipes every registration. `make test` catches that
 too.
@@ -246,12 +249,12 @@ guarantees are not free.
 
 The verifier checks that claimed requirements are present; it does not
 check that the spec contains only authorized scope. An FR with no product
-requirement behind it is scope drift, not extra credit. The plan
+requirement behind it is scope drift, not extra credit :-). The plan
 checklist prompts the review to require authority for design opt-outs,
 but the scope check itself is a human review step: confirm every FR
 traces to a product requirement, and treat a capability absent from
-`REQUIREMENTS.md` as a requirements change. Clarify answers do not
-authorize new scope.
+`REQUIREMENTS.md` as a requirements change. An important point is that
+clarify answers do not authorize new scope.
 
 ## User-facing requirements and the real entry point
 
@@ -265,9 +268,9 @@ else. The template does not assume a particular technology.
   hyphenated skill form `/speckit-requirements-acceptance-test` on agy or
   Copilot) to derive the executable acceptance tests. The command carries
   the procedure: real runtime, isolated state, user-visible assertions, a
-  known-bad fixture, a self-starting or gate-started runtime, a non-example
-  origin for same-origin UIs, and wiring into the test gate. It is a manual
-  step, not a hook.
+  known-bad fixture, a self-starting or gate-started runtime,
+  run-time-supplied values rather than hardcoded examples, and wiring into
+  the test gate. It is a manual step, not a hook.
 - The tasks include an executable acceptance test that drives that entry
   point on the real runtime and asserts the user-visible outcome and its
   known failure mode, with a known-bad fixture that proves the test fails.
@@ -459,7 +462,7 @@ It is a project artifact, deliberately outside the extension source tree,
 so it survives extension reinstall and needs no reinstall after edits.
 Because hand-curating phrases across dozens of requirements is tedious, you
 can draft candidates and then tighten them:
-- Run `bash extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`
+- Run `bash scripts/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt`
   to emit one or two verbatim candidates per requirement ID from its MUST
   clause (it overwrites the target file).
 - Or prompt your agent: *"Generate `requirement-phrases.txt` from

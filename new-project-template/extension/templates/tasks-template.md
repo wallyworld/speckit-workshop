@@ -22,9 +22,10 @@ requirement, add a task that drives the real entry point named in `plan.md` - an
 action, produced file, or whatever the product exposes. The test runs on
 the real runtime, asserts the user-visible outcome and its known failure
 mode, starts the runtime itself or relies on a project gate that starts it,
-includes a known-bad fixture, and is wired into the project's test gate. A
-test that assumes a server is already running at a hardcoded URL, or a
-placeholder or empty/default implementation, must fail it.
+includes a known-bad fixture, and is wired into the project's test gate. Any
+value the test needs that appears in an example is supplied at run time. A
+test that assumes an already-running instance at a hardcoded example value,
+or a placeholder or empty/default implementation, must fail it.
 
 ## Format: `[ID] [P?] [Story] Description`
 

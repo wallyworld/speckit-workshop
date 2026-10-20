@@ -22,7 +22,8 @@
 #   - the mirror dependencies (requirements.txt) and a seed .gitignore
 #   - the Workshop development environment (.workshop/<name>.yaml,
 #     named for the project, and the dev-tools SDK hooks), plus
-#     scripts/workshop.sh, the host-side helper
+#     scripts/workshop.sh, the host-side helper, and
+#     scripts/extract-phrases.sh, the phrase extractor
 #   - agent command shims (dot-form, registered by `specify extension add`)
 # It then installs the extension and prints the fill-in checklist.
 #
@@ -241,6 +242,7 @@ copy_skeleton "$HERE/.workshop/dev-tools/hooks/setup-base" "$TARGET/.workshop/de
 copy_skeleton "$HERE/.workshop/dev-tools/hooks/setup-project" "$TARGET/.workshop/dev-tools/hooks/setup-project"
 mkdir -p "$TARGET/scripts"
 copy "$HERE/scripts/workshop.sh" "$TARGET/scripts/workshop.sh"
+copy "$HERE/scripts/extract-phrases.sh" "$TARGET/scripts/extract-phrases.sh"
 mkdir -p "$TARGET/.opencode"
 copy "$HERE/.opencode/opencode.json" "$TARGET/.opencode/opencode.json"
 mkdir -p "$TARGET/docs"

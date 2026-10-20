@@ -1,5 +1,5 @@
 ---
-description: "Derive and add an executable acceptance test for every user-facing requirement through the real delivery entry point (HTTP route, CLI command, UI route, device action, or produced file), on the real runtime, with isolated state, a known-bad fixture, a self-starting or gate-started runtime, a non-example origin for same-origin UIs, and wiring into the project test gate; invoked manually after tasks and before implementation."
+description: "Derive and add an executable acceptance test for every user-facing requirement through the real delivery entry point (HTTP route, CLI command, UI route, device action, or produced file), on the real runtime, with isolated state, a known-bad fixture, a self-starting or gate-started runtime, run-time-supplied values rather than hardcoded examples, and wiring into the project test gate; invoked manually after tasks and before implementation."
 ---
 
 # Acceptance test
@@ -38,17 +38,17 @@ injected doubles do not replace it.
    `plan.md` or `quickstart.md`, the test framework already in use, the
    isolated state (temporary database, directory, port, device harness, or
    fixture), and the teardown. The test must start that runtime itself, or
-   the project test gate must start it explicitly. A test that assumes a
-   server is already running at a hardcoded URL is not self-contained and
-   is a finding. For a same-origin browser UI, serve the app on an ephemeral
-   port and load the page from `127.0.0.1:<port>`, not the example
-   `localhost:8000`; a client that hardcodes the example origin must fail.
-   Add a fast contract check that client code has no hardcoded API host or
-   port. Do not point a test at production data or a developer's
-   live database. If the entry point is a browser UI, drive the real page
-   with the browser the environment provides; do not download one unless
-   none is available. Record its launch flags. Console and page errors are
-   failures, not noise.
+   the project test gate must start it explicitly. A test that assumes an
+   already-running instance at a hardcoded example value is not
+   self-contained and is a finding. Any value the test needs that appears
+   in an example - an address, port, credential, token, path, or
+   identifier - must be supplied at run time, and a test or implementation
+   that hardcodes the example value must fail. Add a fast check that
+   implementation code does not hardcode example values. Do not point a
+   test at production data or a developer's live database. Use the runtime
+   and tools the environment provides; do not download a new one unless
+   none is available. Record any launch flags. Tool errors are failures,
+   not noise.
 4. **Write the test in stages, tests first.** Start with one user-facing
    requirement: start the real runtime in the test fixture (or let the
    project gate start it), drive the real entry point, and assert the
@@ -69,14 +69,13 @@ injected doubles do not replace it.
      outcome;
    - does not start the real runtime itself and has no project gate that
      starts it;
-   - assumes a server is already running at a hardcoded URL, or uses a
-     launch command different from the one in `plan.md`/`quickstart.md`;
-   - loads the browser UI only from the same origin used in the examples, so
-     a hardcoded API base URL can still pass;
-   - contains a hardcoded absolute API host or port when the requirement is
-     same-origin;
-   - for a browser entry point, does not load the real page or lets console
-     and page errors pass;
+   - assumes an already-running instance at a hardcoded example value, or
+     uses a launch command different from the one in
+     `plan.md`/`quickstart.md`;
+   - hardcodes an example value that the requirement expects to be supplied
+     at run time;
+   - does not exercise the real entry point, or ignores the runtime's
+     errors;
    - shares production state or leaves state behind;
    - has no known-bad fixture or cannot be made to fail;
    - skips a user-facing requirement in the spec;

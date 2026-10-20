@@ -164,7 +164,7 @@ Phrases tie a completion claim to the requirement's own wording. Generate
 candidates from the requirements file:
 
 ```bash
-bash extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt
+bash scripts/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt
 ```
 
 The extractor guarantees that every phrase it writes is verbatim requirement
@@ -299,5 +299,5 @@ A first phase is ready to specify when all of these are true:
 - **A wrapped roadmap row.** Keep each row on one line.
 - **Stale wording.** Requirement text changed after a spec recorded it.
   Regenerate phrases and refresh the digest through the brief.
-- **Copying the petstore sample as your product.** The petstore artifacts
-  are a worked reference. Start from the starter files in `docs/`.
+- **Copying the worked example as your product.** The example artifacts
+  are a reference. Start from the starter files in `docs/`.

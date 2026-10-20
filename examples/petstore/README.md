@@ -57,7 +57,7 @@ The verifier hard-fails on a phrase that is not verbatim wording of its
 requirement. To generate candidates:
 
 ```bash
-bash extensions/requirements/scripts/bash/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt
+bash scripts/extract-phrases.sh REQUIREMENTS.md -o requirement-phrases.txt
 ```
 
 Generated candidates are guaranteed verbatim but not guaranteed

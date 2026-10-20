@@ -11,6 +11,7 @@ a sync check that the installed extension copy matches the tracked source.
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -36,7 +37,19 @@ def test_requirements_extension_bash_suite():
     claims detected with a non-zero exit, no-Completes spec fails closed)."""
     if not SEEDED:
         pytest.skip("extension not installed yet; run bootstrap.sh first")
-    result = subprocess.run([str(RUNNER)], capture_output=True, text=True)
+    # The extractor is project tooling under scripts/, so a seeded project
+    # must carry it. Point the suite at the expected path: a missing
+    # bootstrap copy fails the suite instead of skipping its extractor
+    # section, while a standalone extension package still skips cleanly.
+    result = subprocess.run(
+        [str(RUNNER)],
+        capture_output=True,
+        text=True,
+        env={
+            **os.environ,
+            "SPECKIT_EXTRACT_PHRASES": str(ROOT / "scripts" / "extract-phrases.sh"),
+        },
+    )
     assert result.returncode == 0, result.stdout + result.stderr
 
 
