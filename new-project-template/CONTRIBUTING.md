@@ -54,8 +54,9 @@ reading the roadmap row, the full text of its Completes/Advances IDs, the
 
 The project's standard development environment is a
 [Workshop](https://ubuntu.com/workshop) sandbox: `scripts/workshop.sh`
-launches or refreshes it and mounts the host's agent configuration so
-agents inside share your credentials. See the README's Workshop
+launches or refreshes it. Agent config and credentials stay in the
+workshop's own persistent mounts; sign in inside the workshop on first
+use. See the README's Workshop
 section for the actions it provides. The named actions mirror the
 Makefile's public entry points: when you add a target that defines
 done, add a matching action (the generic `make` passthrough covers
@@ -267,10 +268,11 @@ installer from the extension manifest - never hand-edit them; a
 manifest that loses its hooks section silently wipes the registrations
 on reinstall.
 
-**Regenerating the agent skills**: the skills under `.github/skills/`
-are generated copies of the extension command docs under
-`extensions/requirements/commands/` - the commands are the source of
-truth. After any change to a command, regenerate its skill copy:
+**Regenerating the agent skills**: the skills under `.github/skills/`,
+plus the `.agents/skills/` or `.claude/skills/` copies when the project's
+integration uses them, are generated from the extension command docs
+under `extensions/requirements/commands/` - the commands are the source
+of truth. After any change to a command, regenerate its skill copy:
 
 ```bash
 extensions/requirements/scripts/bash/generate-skills.sh .

@@ -7,14 +7,15 @@ how to use it to build a small web application with an AI coding agent.
 - **Audience**: experienced software engineers, proficient with agentic
   coding, new to Spec Kit.
 - **Prerequisites**: a Linux host with git, snap, and the workshop CLI -
-  the workshop runs in a container it builds and manages - plus a
-  working agent setup on your host: OpenCode (your provider auth and
-  model carry into the container), Antigravity agy (your Google credentials
-  in `~/.gemini` carry into the container), or GitHub Copilot (log in inside the
-  container on first use; its host credential store does not carry).
-  The workshop script provisions uv and the agent integrations and creates
-  the host-mounted petstore working tree. You install the `specify` CLI and
-  create the virtual environment in the setup steps.
+  the workshop runs in a container it builds and manages - plus an account
+  with OpenCode, Antigravity agy, or GitHub Copilot. The container provides
+  the agent CLIs; `specify init --integration ...` installs the
+  agent-specific commands and skills. Sign in inside the container on first
+  use; each agent SDK persists its own config and credentials in the
+  workshop. Host agent config, settings, and skills are not mounted. The
+  workshop script creates the host-backed petstore working tree. You
+  install the `specify` CLI and create the virtual environment in the setup
+  steps.
 - **Format**: works self-paced (follow the numbered steps) or instructor-led.
 
 ## Introduction
@@ -78,8 +79,8 @@ description you will work from includes a business rule, stated
 as flat requirements: placing an order for a pet that is no longer
 available **must fail**, and an order **may not** drive a pet's stock
 below zero.
-Your `~/petstore` working tree is mounted from `<clone>/petstore` on your
-host, so you can follow along in your IDE.
+Your `/project/petstore` working tree is `<clone>/petstore` on your host,
+so you can follow along in your IDE.
 
 ## After the base workshop
 

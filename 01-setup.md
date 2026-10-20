@@ -12,17 +12,22 @@ From a clone of this repository on your host:
 ./scripts/workshop.sh
 ```
 
-The first build can take minutes. Later runs are fast unless a mount is stale.
+The first build can take minutes. Later runs are fast.
 The container comes with uv, OpenCode, Copilot, Antigravity (agy), and gh.
-The script mounts `~/.config/opencode`, `~/.local/share/opencode`,
-`~/.copilot`, and `~/.gemini`. It creates `<clone>/petstore` on your host
-and mounts it at `~/petstore` inside the container, so you can open it in
-your IDE. The container can be rebuilt; `~/petstore` persists on the host.
+The script creates `<clone>/petstore` on your host. The whole clone is mounted
+at `/project`, so the generated project lives at `/project/petstore` inside
+the container and `<clone>/petstore` on the host. The container can be
+rebuilt; the host directory persists.
 
-It also snap-installs `yq` on your host if it's missing; that step asks
-for sudo. Re-run the script any time: it refreshes the container and
-restarts only when a mount is stale. OpenCode and agy pick up your host
-logins. Copilot doesn't; 1.2 covers the `/login`.
+Agent config and credentials are not mounted from your host. Each agent SDK
+keeps its own config in a persistent workshop mount, so sign in inside the
+container once and the credential survives later starts and refreshes. Your
+host's `~/.config/opencode`, `~/.local/share/opencode`, `~/.copilot`, and
+`~/.gemini` - including any skills you have installed there - stay out of
+the container.
+
+Re-run the script any time; it refreshes the container. Sections 1.2 and 1.3
+cover first use of each agent.
 
 Then connect:
 
@@ -31,10 +36,8 @@ workshop shell
 ```
 
 You land in a byobu session as user `workshop`, with the workshop material
-at `/project` and your project at `~/petstore`. The petstore folder is
+at `/project` and your project at `/project/petstore`. The petstore folder is
 git-ignored by this repository; `git init` in 1.2 starts its own history.
-The same folder also appears at `/project/petstore` because the whole clone
-is mounted; work through `~/petstore`.
 
 ## 1.1 Install the `specify` CLI
 
@@ -62,20 +65,18 @@ uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@vX
 
 ## 1.2 Create an empty project
 
-If `<clone>/petstore` has files from an earlier run, clear the contents on
+If `<clone>/petstore` already has files, clear the contents on
 your host and keep the directory. Don't copy an existing project in; you'll
 generate everything here.
 
 ```bash
-cd ~/petstore
-mountpoint -q ~/petstore && echo "petstore is host-mounted"
+cd /project/petstore
 git init
 specify init --here --non-interactive --integration opencode --force
 ```
 
-If `cd ~/petstore` fails or the mountpoint line is missing, re-run
-`./scripts/workshop.sh` on your host. Don't create the directory inside the
-container; the host won't see it.
+If `cd /project/petstore` fails, re-run `./scripts/workshop.sh` on your host;
+it creates the host directory.
 
 `--here` initializes in the current directory; `--non-interactive` skips
 the picker; `--force` is needed because `git init` already made the
@@ -83,17 +84,24 @@ directory non-empty, and it makes the command idempotent.
 `--integration opencode` installs OpenCode's commands. For agy or Copilot,
 swap the integration:
 
+**OpenCode:** the default integration. On first use run `opencode auth login`
+and choose a provider. The credential is stored in
+`~/.local/share/opencode/auth.json`, which its SDK keeps in a persistent
+workshop mount, so later runs and refreshes keep the login.
+
 **agy:** `--integration agy` installs skills under
 `.agents/skills/speckit-<command>/SKILL.md` (`/speckit-specify`,
-`/speckit-plan`, ...). `~/.gemini` is mounted, so your Google auth and
-config carry into the container. In this workshop, `agy` runs with
+`/speckit-plan`, ...). On first use, run `agy` and complete Google sign-in
+inside the container. Its SDK keeps `~/.gemini` in a persistent workshop
+mount, so later runs and refreshes keep the login. In this workshop, `agy`
+runs with
 `--mode accept-edits --dangerously-skip-permissions --model gemini-3.8-flash-high`;
 `Shift+Tab` toggles read-only Plan Mode.
 
 **Copilot:** `--integration copilot` installs skills under
-`.github/skills/` (`speckit-specify`, `speckit-plan`, ...). The host
-credential store doesn't carry into the container, so on first use run
-`copilot`, then `/login`, and finish the GitHub device flow.
+`.github/skills/` (`speckit-specify`, `speckit-plan`, ...). On first use
+run `copilot`, then `/login`, and finish the GitHub device flow. Its SDK
+persists the credentials in the workshop, so later runs keep the login.
 
 ## 1.3 Confirm it works
 
@@ -114,11 +122,13 @@ Ten commands, as files or skill folders, with `specify` 1.2.1, including
 `speckit.analyze.md`, `speckit.implement.md`, and `speckit.converge.md`.
 The count can drift between 1.x releases; those are the ones to check.
 
-From `~/petstore`, run `opencode` (or `agy`, or `copilot`), type `/`, and
+From `/project/petstore`, run `opencode` (or `agy`, or `copilot`), type `/`, and
 confirm the Speckit commands appear: `speckit.*` in OpenCode, `speckit-*`
 in agy and Copilot. The input line also shows the active model and
-provider. If it's one you can't use or haven't authenticated, switch now;
-otherwise the first command can fail.
+provider. Your host's model and provider settings are not mounted, so pick
+a model you can use and authenticate inside the container before starting
+(`opencode auth login` for OpenCode; the login steps in 1.2 for agy and
+Copilot); otherwise the first command can fail.
 
 There shouldn't be `REQUIREMENTS.md` or `ROADMAP.md` at the project root.
 If either exists, you're not on the vanilla core; the core is one feature
@@ -169,7 +179,7 @@ lines can name the tokens without leaving them unfilled. If any
 
 ## 1.5 (For the hands-on) Set up the pet store app dependencies
 
-The FastAPI app comes later. For now, from `~/petstore`, create the venv and
+The FastAPI app comes later. For now, from `/project/petstore`, create the venv and
 install the web framework plus test runner:
 
 ```bash
@@ -202,8 +212,9 @@ activation, which is why the rest of the workshop runs tests this way.
 | `specify --version` | A current 1.x CLI is present |
 | `ls .opencode/commands/` (or `.agents/skills/`) | 10 commands or skills, including `speckit.constitution` / `speckit-constitution` |
 | OpenCode / agy / Copilot | Type `/`; Speckit commands appear |
+| Host agent config and skills | Not mounted; sign in inside the workshop |
 | `.specify/memory/constitution.md` | Ratified v1.0.0; no unfilled template placeholders |
-| `~/petstore` -> `<clone>/petstore` | Host-visible working tree; open it in your IDE |
+| `/project/petstore` (`<clone>/petstore` on host) | Host-visible working tree; open it in your IDE |
 | No `REQUIREMENTS.md`/`ROADMAP.md` | Vanilla core, not the phased-delivery layer |
 | `.venv` with fastapi/uvicorn/pytest + HTTP test client | `uv run pytest --version` exits 0 |
 

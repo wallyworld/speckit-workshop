@@ -1,6 +1,6 @@
 # 04 - Refinement: The Order Placement Logic
 
-Order placement, in `~/petstore` inside the workshop container
+Order placement, in `/project/petstore` inside the workshop container
 ([01](01-setup.md)). Start a fresh session. A session carried over from the
 catalog feature can resolve the wrong directory and pick up the previous spec;
 [02](02-core-concepts.md) explains why. The requirement below has a new
@@ -27,7 +27,7 @@ it into a check, or leave it as prose in `spec.md`?
 
 ## Implement the requirement
 
-The block is the full loop. Run it one command at a time from `~/petstore`;
+The block is the full loop. Run it one command at a time from `/project/petstore`;
 the sections below mark the required interactions.
 
 ```

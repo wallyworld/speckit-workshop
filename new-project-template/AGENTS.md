@@ -69,8 +69,9 @@ which invocation is the single definition of done.
    installed extension (`extensions/requirements/`), hooks in
    `.specify/extensions.yml`, and workflow overlays under
    `.specify/workflows/overlays/`. Inspect what exists before editing
-   vendored skills in `.github/skills/`; the requirements skills are
-   generated from the extension commands - regenerate them with the
+   vendored skills in `.github/skills/` (or the integration's
+   `.agents/skills/` or `.claude/skills/` root); the requirements skills
+   are generated from the extension commands - regenerate them with the
    extension's `generate-skills.sh` instead of hand-editing.
 2. **Verify implementation completeness before claiming delivery.** A
    `Completes` claim implies both spec content and a real code path;

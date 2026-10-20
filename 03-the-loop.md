@@ -1,6 +1,6 @@
 # 03 - The Loop - Build a pet store
 
-Start in the workshop container from [01](01-setup.md), with `~/petstore`,
+Start in the workshop container from [01](01-setup.md), with `/project/petstore`,
 the agent open, and `/speckit` commands available.
 
 > **Command form.** As in [02](02-core-concepts.md), the commands below use

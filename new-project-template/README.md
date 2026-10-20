@@ -60,7 +60,8 @@ prose is the last resort.
 An **extension** is Spec Kit's packaging for all of this: a manifest
 declaring commands, templates, and hooks, plus the scripts the commands
 run. **Skills** are the agent-facing copies of the extension commands,
-generated into `.github/skills/`.
+generated into `.github/skills/`, and into `.agents/skills/` or
+`.claude/skills/` when the project's integration created that root.
 
 ## Where this fits in the Spec Kit ecosystem
 
@@ -308,7 +309,9 @@ customized are preserved; the extension tree, tests, Makefile,
 requirements.txt, workflow overlay, helper scripts, opencode config, and
 generated skills are machinery and are refreshed on every run. It calls
 the extension's `generate-skills.sh`, which produces the agent-facing
-skill copies of the extension's commands.
+skill copies of the extension's commands in `.github/skills/` and in
+the integration's skill root when it uses `.agents/skills/` or
+`.claude/skills/`.
 
 After seeding, read `docs/start-a-project.md` for the authoring
 walkthrough. It takes you from the product idea to the first roadmap row
@@ -375,13 +378,15 @@ Start it from the project root:
 scripts/workshop.sh
 ```
 
-The script launches or refreshes the workshop and mounts this
-machine's agent configuration (`~/.copilot`, `~/.config/opencode`,
-`~/.local/share/opencode`, `~/.gemini`) into it, so agents inside the workshop share
-your credentials. Inside the workshop the project is mounted at
-`/project`, the setup hooks recreate the project's `.venv` on every
-launch (a venv built inside one container must not survive into the
-next), and the project's work runs sandboxed, isolated from the host.
+The script launches or refreshes the workshop. It does not mount host
+agent configuration: each agent SDK persists its own config and
+credentials in a workshop-owned mount, so sign in inside the workshop on
+first use. That keeps host settings, skills, and credentials out of the
+container. Inside the workshop
+the project is mounted at `/project`, the setup hooks recreate the
+project's `.venv` on every launch (a venv built inside one container must
+not survive into the next), and the project's work runs sandboxed, isolated
+from the host.
 Project-specific system packages (a build tool the project needs, for
 example) are added to the `setup-base` hook; re-running the bootstrap
 preserves a customized `.workshop/` tree.
@@ -566,7 +571,8 @@ Every file in this tree is authored and maintained here: the extension
 (`tests/`), the workflow gates (`review-gates.yml`), the constitution,
 the skeletons, this README, `bootstrap.sh`, and `examples/`. When the
 extension's commands or hooks change, keep the mirrors in sync in the
-same change: the skills under `.github/skills/` are generated copies of
+same change: the skills under `.github/skills/` and the harness-specific
+`.agents/skills/` or `.claude/skills/` copies are generated copies of
 the extension commands - the commands are the source of truth - so
 regenerate them with the extension's `generate-skills.sh`, and the mirror
 tests under `make test` fail on any drift between the commands, the

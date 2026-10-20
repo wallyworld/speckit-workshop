@@ -67,7 +67,7 @@ distinctive. Review them and prefer wording unique to each requirement.
 The retrofit helper used by 05. It is state-driven and idempotent:
 
 ```bash
-python3 /project/examples/petstore/retrofit-petstore.py ~/petstore
+python3 /project/examples/petstore/retrofit-petstore.py /project/petstore
 ```
 
 It auto-installs the extension and mirror-test dependencies when needed,
@@ -84,13 +84,13 @@ A `REVIEW` line marks a zero-score provisional mapping.
 [05 - What's Next](../../05-whats-next.md) is the full walkthrough. The sequence is:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 cp /project/examples/petstore/REQUIREMENTS.md .
 cp /project/examples/petstore/ROADMAP.md .
 cp /project/examples/petstore/requirement-phrases.txt .
 
-/project/new-project-template/bootstrap.sh ~/petstore
-python3 /project/examples/petstore/retrofit-petstore.py ~/petstore
+/project/new-project-template/bootstrap.sh /project/petstore
+python3 /project/examples/petstore/retrofit-petstore.py /project/petstore
 make test
 ```
 
@@ -102,7 +102,7 @@ and the application tests.
 If the bootstrap could not run `specify`, register the extension yourself:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 specify extension add --dev --force extensions/requirements
 ```
 
@@ -211,7 +211,7 @@ workshop run --uid 0 -- install-browser
 Back in the container, install the driver in the project environment:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 uv pip install pytest-playwright
 ```
 
@@ -286,11 +286,11 @@ support the claim.
 
 ## Testing the Web UI
 
-From `~/petstore`, first run the generated acceptance test through the
+From `/project/petstore`, first run the generated acceptance test through the
 project gate:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 make test
 ```
 
@@ -302,7 +302,7 @@ prerequisites.
 Then start the FastAPI application:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 

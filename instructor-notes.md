@@ -21,18 +21,19 @@ while the turn is stuck queues and runs when the session continues.
 ## Setup (01-setup.md)
 
 Have students run `./scripts/workshop.sh` before the session. The first
-container build takes minutes. Subsequent are fast (the script only restarts the
-container when a mount is stale). Note: `workshop info` prints the status.
+container build takes minutes. Subsequent runs are fast. Note: `workshop info`
+prints the status.
 
 Inside the container, the most common failure is a stale or partially-installed
 CLI - the "Confirm it works" step at the end is a hard gate. NB: a student whose
 shell says `command not found: specify` is in the host shell, not the container:
 send them back in with `workshop shell`.
 
-Note: OpenCode and Antigravity (agy) mount credentials directly from
-the host (`~/.config/opencode` and `~/.gemini`), while Copilot users
-need to run `copilot` then `/login` inside the container first (GitHub
-device flow; their host credential store does not carry).
+Note: the workshop does not mount host agent config. Students sign in
+inside the container on first use - OpenCode and agy use their normal
+login flow, and Copilot users run `copilot` then `/login` (GitHub device
+flow). Each agent SDK persists its config and credentials in a workshop
+mount, so a refresh or restart does not require signing in again.
 
 Clipboard note: the container does not share the host clipboard, and
 OpenCode's copy action can report success while the text never reaches
@@ -40,13 +41,10 @@ the terminal. Tell students they can reply `run the emitted command`
 instead of pasting, or use the byobu/tmux copy buffer. The workarounds
 are in [06 - Reference](06-reference.md#clipboard-inside-the-container).
 
-The script mounts `<clone>/petstore` on the host at `~/petstore` in the
-container, so students can open it in their IDE. To reset a student's
-project, delete the contents of `<clone>/petstore` on the host and re-run
-`./scripts/workshop.sh`; keep the directory itself. Do not delete the
-mountpoint inside the container. Containers created before this mount
-existed may already have a real `~/petstore` directory; the mount shadows
-it, so move or copy that directory aside before re-running.
+The whole clone is mounted at `/project`, so `<clone>/petstore` on the host
+is `/project/petstore` in the container; students can open it in their IDE.
+To reset a student's project, delete the contents of `<clone>/petstore` on
+the host and re-run `./scripts/workshop.sh`; keep the directory itself.
 
 ### Constitution (01 §1.4)
 
@@ -114,7 +112,7 @@ Those who finish early or want to explore multi-phase delivery after the
 workshop can build **Phase 2 (Web UI)**. Point them to `05-whats-next.md`:
 it is now the step-by-step walkthrough that copies `REQUIREMENTS.md`,
 `ROADMAP.md`, and `requirement-phrases.txt` into their existing
-`~/petstore` project, bootstraps the requirements extension, runs the
+`/project/petstore` project, bootstraps the requirements extension, runs the
 retrofit script for the Phase 1 specs, and drives slice `R3` through the
 loop with the hooks firing. `examples/petstore/README.md` is the reference
 companion with the file formats and troubleshooting. Those interested in

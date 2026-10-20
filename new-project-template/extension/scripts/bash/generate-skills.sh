@@ -6,15 +6,18 @@
 # The skills under .github/skills/ are generated copies of the extension
 # command docs under extensions/requirements/commands/ - the commands are
 # the source of truth, the skills are the agent-facing distribution
-# copies. After any change to a command, regenerate its skill copy:
-# drift between the two fails the mirror test
-# (test_extension_skills_match_source_commands). Idempotent: re-running
-# overwrites the generated skills with the current command bodies, quotes
-# the frontmatter description (a value carrying a colon-and-space must
-# never break the YAML), and prunes generator-owned skill directories
-# whose command no longer exists. Only the generator-owned
-# speckit-requirements-* namespace is pruned; vendored core skills are
-# never touched.
+# copies. Agent harnesses use different project skill roots, so the
+# generator also writes the same copies into .agents/skills/ (agy and other
+# agent-compatible harnesses) or .claude/skills/ (Claude Code) when the
+# project's integration has already created that root. After any change to
+# a command, regenerate its skill copy: drift between the two fails the
+# mirror test (test_extension_skills_match_source_commands). Idempotent:
+# re-running overwrites the generated skills with the current command
+# bodies, quotes the frontmatter description (a value carrying a
+# colon-and-space must never break the YAML), and prunes generator-owned
+# skill directories whose command no longer exists. Only the
+# generator-owned speckit-requirements-* namespace is pruned; vendored core
+# skills are never touched.
 set -euo pipefail
 
 HERE=$(cd -- "$(dirname -- "$0")" && pwd)
@@ -49,6 +52,17 @@ target = Path(sys.argv[1])
 author = sys.argv[2]
 commands = sorted(Path(sys.argv[3]).glob("*.md"))
 assert commands, "no extension commands found"
+
+# .github/skills is the common distribution copy (Copilot, and the
+# template's OpenCode config). The other roots belong to harnesses that
+# install their own core skills there; generate into one only when the
+# integration already created it, so a project gets no tree for a harness
+# it does not use.
+skill_roots = [Path(".github/skills")]
+for candidate in (Path(".agents/skills"), Path(".claude/skills")):
+    if (target / candidate).is_dir():
+        skill_roots.append(candidate)
+
 for cmd in commands:
     lines = cmd.read_text(encoding="utf-8").splitlines()
     assert lines[0] == "---", f"{cmd}: missing frontmatter"
@@ -57,9 +71,7 @@ for cmd in commands:
     desc = re.search(r'^description:\s*"?(.+?)"?\s*$', frontmatter, re.M).group(1)
     body = "\n".join(lines[close + 1:]).strip()
     hyphen = cmd.stem.replace(".", "-")
-    skill_dir = target / ".github/skills" / hyphen
-    skill_dir.mkdir(parents=True, exist_ok=True)
-    (skill_dir / "SKILL.md").write_text(
+    content = (
         "---\n"
         f"name: {json.dumps(hyphen)}\n"
         f"description: {json.dumps(desc)}\n"
@@ -68,20 +80,24 @@ for cmd in commands:
         f"  author: {json.dumps(author)}\n"
         "  source: extension:requirements\n"
         "---\n\n"
-        f"{body}\n",
-        encoding="utf-8",
+        f"{body}\n"
     )
-    print(f"  + .github/skills/{hyphen}/SKILL.md")
+    for root in skill_roots:
+        skill_dir = target / root / hyphen
+        skill_dir.mkdir(parents=True, exist_ok=True)
+        (skill_dir / "SKILL.md").write_text(content, encoding="utf-8")
+        print(f"  + {root}/{hyphen}/SKILL.md")
 
 # Prune stale generated skills: a renamed or removed command must not
 # leave its old skill discoverable. Only generator-owned
 # speckit-requirements-* directories are candidates - the vendored
 # core skills are never touched.
 generated = {cmd.stem.replace(".", "-") for cmd in commands}
-skills = target / ".github/skills"
-if skills.is_dir():
-    for stale in sorted(skills.glob("speckit-requirements-*")):
-        if stale.name not in generated:
-            shutil.rmtree(stale)
-            print(f"  - .github/skills/{stale.name} (removed: no matching command)")
+for root in skill_roots:
+    skills = target / root
+    if skills.is_dir():
+        for stale in sorted(skills.glob("speckit-requirements-*")):
+            if stale.name not in generated:
+                shutil.rmtree(stale)
+                print(f"  - {root}/{stale.name} (removed: no matching command)")
 PY

@@ -6,7 +6,7 @@ This page adds the **phased delivery** layer: a product-level requirements
 source, a roadmap, per-feature completion claims, and tooling that checks
 those claims instead of trusting them.
 
-You'll do this against the petstore you built in `~/petstore`: copy the
+You'll do this against the petstore you built in `/project/petstore`: copy the
 artifacts, bootstrap the extension, retrofit the Phase 1 specs, then build
 `R3` and try it in a browser.
 
@@ -65,7 +65,7 @@ review runs.
 Inside the workshop container:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 cp /project/examples/petstore/REQUIREMENTS.md .
 cp /project/examples/petstore/ROADMAP.md .
 cp /project/examples/petstore/requirement-phrases.txt .
@@ -86,8 +86,14 @@ Read both files; the `R3` row is the work.
 ## Step 2: Bootstrap the tooling
 
 ```bash
-/project/new-project-template/bootstrap.sh ~/petstore
+/project/new-project-template/bootstrap.sh /project/petstore
 ```
+
+The bootstrap generates the extension's agent-facing skills inside
+`/project/petstore`: `.github/skills/` for OpenCode and Copilot, and
+`.agents/skills/` for agy (it writes there when the agy integration
+created that root). Because `/project` is the host-backed clone mount, the
+same files are visible at `<clone>/petstore` on the host.
 
 Leave the manual `make install` and `@FILL-IN@` markers to Step 3's
 retrofit: it runs `make install` if the venv or mirror-test dependencies
@@ -117,11 +123,11 @@ If the bootstrap couldn't run `specify` (`command not found: specify`), it
 still copies the extension source. Register it yourself:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 specify extension add --dev --force extensions/requirements
 ```
 
-**Constitution caveat.** Your `~/petstore` has the workshop constitution
+**Constitution caveat.** Your `/project/petstore` has the workshop constitution
 you ratified in [01](01-setup.md#14-ratify-the-project-constitution).
 `bootstrap.sh` never overwrites a customized constitution, so it keeps
 yours. The template's two-part constitution is therefore not installed.
@@ -137,7 +143,7 @@ Coverage, no curated phrases, so the verifier fails closed. The retrofit
 fills the markers:
 
 ```bash
-python3 /project/examples/petstore/retrofit-petstore.py ~/petstore
+python3 /project/examples/petstore/retrofit-petstore.py /project/petstore
 ```
 
 The script is idempotent. It registers the extension, seeds
@@ -293,7 +299,7 @@ google-chrome --version
 The Python driver goes in the project venv:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 uv pip install pytest-playwright
 ```
 
@@ -380,10 +386,10 @@ manual page checks still have to pass.
 
 ## Step 6: Run the acceptance gate and see the Web UI live
 
-Run the acceptance test through the project gate from `~/petstore`:
+Run the acceptance test through the project gate from `/project/petstore`:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 make test
 ```
 
@@ -391,7 +397,7 @@ Start the app in a second byobu window (F2, or the tmux prefix Ctrl-b c)
 or another container terminal:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 uv run uvicorn petstore_app:app --reload --host 0.0.0.0
 ```
 
@@ -441,7 +447,7 @@ manual pass succeeded. If either failed, don't mark the row done.
 Verify the `R3` spec:
 
 ```bash
-bash extensions/requirements/scripts/bash/verify-traceability.sh ~/petstore/specs/003-*/spec.md
+bash extensions/requirements/scripts/bash/verify-traceability.sh /project/petstore/specs/003-*/spec.md
 ```
 
 Then update `ROADMAP.md` row `R3`:
@@ -450,7 +456,7 @@ Then update `ROADMAP.md` row `R3`:
 - confirm or update the `Sub-spec` link to your generated `specs/003-...`
   directory.
 
-From `~/petstore`, the full gate and working tree:
+From `/project/petstore`, the full gate and working tree:
 
 ```bash
 make test

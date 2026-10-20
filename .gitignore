@@ -17,6 +17,6 @@ node_modules/
 # Workshop runtime lock file
 .workshop.lock
 
-# Student petstore working tree (mounted into the workshop container)
+# Student petstore working tree (host-backed via the project mount)
 /petstore/
 /petstore/**

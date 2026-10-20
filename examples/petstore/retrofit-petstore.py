@@ -3,7 +3,7 @@
 
 Usage: retrofit-petstore.py [PROJECT_DIR]
 
-PROJECT_DIR defaults to ~/petstore.
+PROJECT_DIR defaults to /project/petstore.
 
 Run after:
   1. copying REQUIREMENTS.md, ROADMAP.md, and requirement-phrases.txt
@@ -1201,7 +1201,7 @@ def main() -> int:
     target = (
         Path(sys.argv[1]).expanduser().resolve()
         if len(sys.argv) > 1
-        else (Path.home() / "petstore").resolve()
+        else Path("/project/petstore").resolve()
     )
     script_dir = Path(__file__).resolve().parent
     if not target.is_dir():

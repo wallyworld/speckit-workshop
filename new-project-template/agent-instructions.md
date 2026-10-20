@@ -13,9 +13,10 @@ Repository skills
 
 - This repository publishes agent skills under `.github/skills` (one skill
   per directory, each containing a `SKILL.md` with frontmatter `name` and
-  `description`). Many coding agents auto-discover skills from
-  `.github/skills`; `.github/copilot-instructions.md` and
-  `.opencode/opencode.json` wire the tools that need an explicit pointer.
+  `description`). For an agy or Claude Code project, the same extension
+  skills are also generated under `.agents/skills` or `.claude/skills`.
+  `.github/copilot-instructions.md` and `.opencode/opencode.json` wire the
+  tools that need an explicit pointer.
 - The checklist and remediation skills generated from the extension's
   commands carry the phase checklists for any work you author or
   implement in this repository:

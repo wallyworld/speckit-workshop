@@ -21,59 +21,16 @@ if [ -z "${WORKSHOP_NAME:-}" ]; then
     fi
 fi
 
-# Maps "<sdk>:<mount name>" to the host directory it should be backed by.
-# The tilde is left unexpanded on purpose; expand_home handles it when used.
-declare -A MOUNTS=(
-    [agy:gemini-config]='~/.gemini'
-    [copilot:copilot-config]='~/.copilot'
-    [opencode:opencode-config]='~/.config/opencode'
-    [opencode:opencode-data]='~/.local/share/opencode'
-)
-
-expand_home() {
-    printf '%s' "${1/#\~/${HOME}}"
-}
-
-# Succeed when the mount already points at the wanted host directory,
-# whether workshop reports it with a literal ~ or an expanded path.
-mount_is_current() {
-    local sdk=${1%%:*} mount=${1#*:} wanted=$2 current
-    current=$(yq ".sdks.\"${sdk}\".mounts.\"${mount}\".\"host-source\"" <<<"${INFO}")
-    [[ ${current} == "${wanted}" || ${current} == "$(expand_home "${wanted}")" ]]
-}
+# Agent configuration and credentials are deliberately not mounted from the
+# host. Each agent SDK declares persistent mount plugs for its own config, and
+# Workshop allocates their host directories automatically. Mounting a host
+# agent config directory would expose the host's skills, credentials, and
+# settings to every process in the workshop.
 
 if ! workshop info "${WORKSHOP_NAME}" >&/dev/null; then
     echo "Launching new workshop ${WORKSHOP_NAME}"
     workshop launch "${WORKSHOP_NAME}"
 fi
 workshop refresh "${WORKSHOP_NAME}" >/dev/null
-
-if ! command -v yq >&/dev/null; then
-    echo "Installing yq snap on host"
-    sudo snap install yq
-fi
-
-# Query the workshop once and check every mount against that snapshot.
-INFO=$(workshop info "${WORKSHOP_NAME}")
-
-stale=()
-for key in "${!MOUNTS[@]}"; do
-    if ! mount_is_current "${key}" "${MOUNTS[${key}]}"; then
-        stale+=("${key}")
-    fi
-done
-
-# The slow stop/start cycle happens once, and only if something is stale.
-if ((${#stale[@]} > 0)); then
-    echo "Mounting host configuration directories"
-    workshop stop "${WORKSHOP_NAME}"
-    for key in "${stale[@]}"; do
-        echo "Mounting ${key} from host"
-        host_path=$(expand_home "${MOUNTS[${key}]}")
-        mkdir --parents "${host_path}"
-        workshop remount "${WORKSHOP_NAME}/${key}" "${host_path}"
-    done
-    workshop start "${WORKSHOP_NAME}"
-fi
 
 echo "Workshop ready (connect with 'workshop shell')"

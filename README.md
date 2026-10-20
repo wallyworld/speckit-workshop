@@ -19,5 +19,8 @@ a new Spec Kit project.
 
 To run the workshop: `./scripts/workshop.sh`, then `workshop shell` - it
 runs inside a container the workshop CLI builds ([setup](01-setup.md)).
-The script mounts the host folder `<clone>/petstore` at `~/petstore` in
-the container, so you can open the generated project in your IDE.
+The script creates `<clone>/petstore` on your host; the whole clone is
+mounted at `/project`, so the generated project is `/project/petstore`
+inside the container and visible in your IDE. It does not mount host agent
+config; sign in inside the container on first use and the agent's SDK
+persists the credential in the workshop.

@@ -60,14 +60,12 @@ the same human approval as pasting it.
 
 ## Project location
 
-`~/petstore` inside the container is mounted from `<clone>/petstore` on
-your host. Open that folder in your IDE; it is git-ignored by the workshop
-repository and has its own git history. The whole clone is also mounted at
-`/project`, so the same folder appears as `/project/petstore`; always work
-through `~/petstore`.
+`/project/petstore` inside the container is `<clone>/petstore` on your host,
+because the whole clone is mounted at `/project`. Open that folder in your
+IDE; it is git-ignored by the workshop repository and has its own git history.
 
-If `~/petstore` is missing, re-run `./scripts/workshop.sh` on your host
-and check `workshop info speckit-ws` for the `workdir` `petstore` mount.
+If `/project/petstore` is missing, re-run `./scripts/workshop.sh` on your
+host; it creates the host directory.
 
 ## Running the app
 
@@ -98,7 +96,7 @@ workshop run --uid 0 -- install-browser
 Then, in the container, install the Python driver in the project:
 
 ```bash
-cd ~/petstore
+cd /project/petstore
 uv pip install pytest-playwright
 ```
 

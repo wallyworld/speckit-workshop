@@ -117,29 +117,45 @@ def _prose_after_frontmatter(text: str) -> str:
 
 
 def test_extension_skills_match_source_commands():
-    """Each skill under .github/skills mirrors its extension command doc's
-    prose: the skills are the agent-facing copies of the extension commands.
+    """Each generated skill mirrors its extension command doc's prose in
+    every agent skill root the project has: .github/skills for Copilot and
+    OpenCode, .agents/skills for agy, and .claude/skills for Claude Code.
     Frontmatter and script-path plumbing lines may differ between the two
     surfaces; the rule text may not."""
     if not SEEDED:
         pytest.skip("extension not installed yet; run bootstrap.sh first")
-    skills_dir = ROOT / ".github" / "skills"
-    if not all(
-        (skills_dir / skill / "SKILL.md").is_file()
+    skill_roots = [ROOT / ".github" / "skills"]
+    skill_roots.extend(
+        root
+        for root in (ROOT / ".agents" / "skills", ROOT / ".claude" / "skills")
+        if root.exists()
+    )
+    skill_roots = [root for root in skill_roots if root.exists()]
+    if not skill_roots:
+        pytest.skip("requirements skills not vendored; nothing to compare")
+    missing = [
+        f"{root.relative_to(ROOT)}/{skill}/SKILL.md"
+        for root in skill_roots
         for skill in _SKILL_COMMAND_PAIRS
-    ):
-        pytest.skip("requirements skills not fully vendored; nothing to compare")
-    for skill_name, command_file in sorted(_SKILL_COMMAND_PAIRS.items()):
-        skill = (skills_dir / skill_name / "SKILL.md").read_text(
-            encoding="utf-8"
-        )
-        command = (
-            EXTENSION_SOURCE / "commands" / command_file
-        ).read_text(encoding="utf-8")
-        assert _prose_after_frontmatter(skill) == _prose_after_frontmatter(command), (
-            f"{skill_name}/SKILL.md prose diverges from {command_file}; "
-            f"regenerate the skill from the extension command"
-        )
+        if not (root / skill / "SKILL.md").is_file()
+    ]
+    assert not missing, (
+        "an integration skill root exists but the requirements skills were "
+        "not generated into it: " + ", ".join(missing)
+    )
+    for skills_dir in skill_roots:
+        for skill_name, command_file in sorted(_SKILL_COMMAND_PAIRS.items()):
+            skill = (skills_dir / skill_name / "SKILL.md").read_text(
+                encoding="utf-8"
+            )
+            command = (
+                EXTENSION_SOURCE / "commands" / command_file
+            ).read_text(encoding="utf-8")
+            assert _prose_after_frontmatter(skill) == _prose_after_frontmatter(command), (
+                f"{skills_dir.relative_to(ROOT)}/{skill_name}/SKILL.md prose "
+                f"diverges from {command_file}; regenerate the skill from the "
+                "extension command"
+            )
 
 
 def test_skill_generator_output_hermetic(tmp_path):
@@ -147,8 +163,9 @@ def test_skill_generator_output_hermetic(tmp_path):
     skills the mirrors guard: quoted frontmatter that parses even for
     descriptions carrying a colon-and-space, the command body verbatim,
     the manifest author in the metadata (never the target's basename),
-    and pruning of a generator-owned skill directory whose command no
-    longer exists, while vendored core skills are never touched.
+    copies into existing .agents/skills and .claude/skills integration
+    roots, and pruning of a generator-owned skill directory whose command
+    no longer exists, while vendored core skills are never touched.
 
     The committed-skill mirrors (prose sync, frontmatter parse) guard
     drift between regeneration runs; this test guards the generator
@@ -175,6 +192,18 @@ def test_skill_generator_output_hermetic(tmp_path):
     vendored = tmp_path / ".github" / "skills" / "speckit-plan"
     vendored.mkdir(parents=True)
     (vendored / "SKILL.md").write_text("vendored\n", encoding="utf-8")
+    agent_stale = tmp_path / ".agents" / "skills" / "speckit-requirements-olddiscipline"
+    agent_stale.mkdir(parents=True)
+    (agent_stale / "SKILL.md").write_text("stale\n", encoding="utf-8")
+    agent_vendored = tmp_path / ".agents" / "skills" / "speckit-plan"
+    agent_vendored.mkdir(parents=True)
+    (agent_vendored / "SKILL.md").write_text("vendored\n", encoding="utf-8")
+    claude_stale = tmp_path / ".claude" / "skills" / "speckit-requirements-olddiscipline"
+    claude_stale.mkdir(parents=True)
+    (claude_stale / "SKILL.md").write_text("stale\n", encoding="utf-8")
+    claude_vendored = tmp_path / ".claude" / "skills" / "speckit-plan"
+    claude_vendored.mkdir(parents=True)
+    (claude_vendored / "SKILL.md").write_text("vendored\n", encoding="utf-8")
 
     result = subprocess.run(
         ["bash", str(generator), str(tmp_path)],
@@ -213,10 +242,44 @@ def test_skill_generator_output_hermetic(tmp_path):
     assert _prose_after_frontmatter(text) == command_body.strip(), (
         "generated skill body diverges from the command body"
     )
+    agent_colon_skill = (
+        tmp_path / ".agents" / "skills" / "speckit-requirements-plan-checklist"
+        / "SKILL.md"
+    )
+    assert agent_colon_skill.is_file(), (
+        "generator did not write the skill into the existing .agents/skills "
+        "integration root"
+    )
+    assert agent_colon_skill.read_text(encoding="utf-8") == text, (
+        "the .agents/skills copy diverges from the .github/skills copy"
+    )
+    claude_colon_skill = (
+        tmp_path / ".claude" / "skills" / "speckit-requirements-plan-checklist"
+        / "SKILL.md"
+    )
+    assert claude_colon_skill.is_file(), (
+        "generator did not write the skill into the existing .claude/skills "
+        "integration root"
+    )
+    assert claude_colon_skill.read_text(encoding="utf-8") == text, (
+        "the .claude/skills copy diverges from the .github/skills copy"
+    )
     assert not stale.exists(), "stale generator-owned skill directory survived"
+    assert not agent_stale.exists(), (
+        "stale generator-owned skill directory survived in .agents/skills"
+    )
+    assert not claude_stale.exists(), (
+        "stale generator-owned skill directory survived in .claude/skills"
+    )
     assert vendored.is_dir() and (vendored / "SKILL.md").read_text(
         encoding="utf-8"
     ) == "vendored\n", "vendored core skill was touched"
+    assert agent_vendored.is_dir() and (agent_vendored / "SKILL.md").read_text(
+        encoding="utf-8"
+    ) == "vendored\n", "vendored core skill in .agents/skills was touched"
+    assert claude_vendored.is_dir() and (claude_vendored / "SKILL.md").read_text(
+        encoding="utf-8"
+    ) == "vendored\n", "vendored core skill in .claude/skills was touched"
 
 
 def test_generated_skill_frontmatter_parses():

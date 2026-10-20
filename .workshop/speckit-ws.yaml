@@ -6,20 +6,22 @@ sdks:
   - name: gh-cli
   - name: opencode
   - name: project-dev-tools
-  - name: project-workdir
   - name: uv
 
 actions:
   opencode: |
     set -euo pipefail
+    cd /project/petstore
     opencode "$@"
 
   copilot: |
     set -euo pipefail
+    cd /project/petstore
     copilot "$@"
 
   agy: |
     set -euo pipefail
+    cd /project/petstore
     agy --mode accept-edits --dangerously-skip-permissions --model gemini-3.8-flash-high "$@"
 
   install-browser: |

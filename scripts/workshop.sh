@@ -4,8 +4,8 @@ set -e -u -o pipefail
 
 PROJECT_ROOT=$(cd -- "$(dirname -- "$0")/.." && pwd)
 
-# The petstore working tree is host-backed so students can open it in
-# their IDE. Create it before the workshop refreshes its mount.
+# The petstore working tree is inside the repository, so the project mount
+# makes it host-backed and visible in the IDE.
 mkdir --parents "${PROJECT_ROOT}/petstore"
 
 # NB: the workshop name is the definition file's name (.workshop/<name>.yaml);
@@ -27,61 +27,11 @@ if [ -z "${WORKSHOP_NAME:-}" ]; then
     fi
 fi
 
-# Maps "<sdk>:<mount name>" to the host directory it should be backed by.
-# The tilde is left unexpanded on purpose; expand_home handles it when used.
-declare -A MOUNTS=(
-    [agy:gemini-config]='~/.gemini'
-    [copilot:copilot-config]='~/.copilot'
-    [opencode:opencode-config]='~/.config/opencode'
-    [opencode:opencode-data]='~/.local/share/opencode'
-    [workdir:petstore]="${PROJECT_ROOT}/petstore"
-)
-
-expand_home() {
-    printf '%s' "${1/#\~/${HOME}}"
-}
-
-# Succeed when the mount already points at the wanted host directory,
-# whether workshop reports either side with a literal ~ or an expanded path.
-mount_is_current() {
-    local sdk=${1%%:*} mount=${1#*:} wanted=$2 current
-    current=$(yq ".sdks.\"${sdk}\".mounts.\"${mount}\".\"host-source\"" <<<"${INFO}")
-    [[ "$(expand_home "${current}")" == "$(expand_home "${wanted}")" ]]
-}
-
 if ! workshop info "${WORKSHOP_NAME}" >&/dev/null; then
     echo "Launching new workshop ${WORKSHOP_NAME}"
     workshop launch "${WORKSHOP_NAME}"
 fi
 workshop refresh "${WORKSHOP_NAME}" >/dev/null
 
-if ! command -v yq >&/dev/null; then
-    echo "Installing yq snap on host"
-    sudo snap install yq
-fi
-
-# Query the workshop once and check every mount against that snapshot.
-INFO=$(workshop info "${WORKSHOP_NAME}")
-
-stale=()
-for key in "${!MOUNTS[@]}"; do
-    if ! mount_is_current "${key}" "${MOUNTS[${key}]}"; then
-        stale+=("${key}")
-    fi
-done
-
-# The slow stop/start cycle happens once, and only if something is stale.
-if ((${#stale[@]} > 0)); then
-    echo "Mounting host directories"
-    workshop stop "${WORKSHOP_NAME}"
-    for key in "${stale[@]}"; do
-        echo "Mounting ${key} from host"
-        host_path=$(expand_home "${MOUNTS[${key}]}")
-        mkdir --parents "${host_path}"
-        workshop remount "${WORKSHOP_NAME}/${key}" "${host_path}"
-    done
-    workshop start "${WORKSHOP_NAME}"
-fi
-
 echo "Workshop ready (connect with 'workshop shell')"
-echo "~/petstore is mounted from ${PROJECT_ROOT}/petstore"
+echo "Work in /project/petstore (host: ${PROJECT_ROOT}/petstore)"
