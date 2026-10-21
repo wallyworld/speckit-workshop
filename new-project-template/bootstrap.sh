@@ -14,8 +14,8 @@
 #   - the two-part constitution (replacing the one seeded by specify init)
 #   - the mirror tests (tests/test_style.py,
 #     tests/test_requirement_traceability.py,
-#     tests/test_enforcement_chain.py, tests/test_workshop_actions.py,
-#     tests/test_bootstrap_manifest.py)
+#     tests/test_enforcement_chain.py, tests/test_workshop_actions.py).
+#     The bootstrap-manifest mirror is template-only and is not shipped.
 #   - the AGENTS.md and CONTRIBUTING.md skeletons and the mechanics stub
 #   - the start-a-project guide and the starter requirements/roadmap examples
 #   - .github/copilot-instructions.md (where Copilot discovers it)
@@ -206,7 +206,6 @@ copy "$HERE/tests/test_style.py" "$TARGET/tests/test_style.py"
 copy "$HERE/tests/test_requirement_traceability.py" "$TARGET/tests/test_requirement_traceability.py"
 copy "$HERE/tests/test_enforcement_chain.py" "$TARGET/tests/test_enforcement_chain.py"
 copy "$HERE/tests/test_workshop_actions.py" "$TARGET/tests/test_workshop_actions.py"
-copy "$HERE/tests/test_bootstrap_manifest.py" "$TARGET/tests/test_bootstrap_manifest.py"
 copy "$HERE/Makefile" "$TARGET/Makefile"
 copy "$HERE/requirements.txt" "$TARGET/requirements.txt"
 if [ -f "$TARGET/.gitignore" ]; then

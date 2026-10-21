@@ -1,6 +1,13 @@
 .PHONY: install test test-style test-traceability test-enforcement \
-       test-workshop-actions test-bootstrap-manifest test-extension \
-       _guard-uv _guard-venv
+       test-workshop-actions test-extension _guard-uv _guard-venv
+
+# The bootstrap-manifest mirror is template-only: seeded projects have no
+# bootstrap.sh and carry no such test.
+MIRROR_TESTS = test-style test-traceability test-enforcement test-workshop-actions
+ifneq ($(wildcard bootstrap.sh),)
+MIRROR_TESTS += test-bootstrap-manifest
+.PHONY: test-bootstrap-manifest
+endif
 
 _guard-uv:
 	@command -v uv >/dev/null 2>&1 || { echo "Error: 'uv' is required. Install it from https://docs.astral.sh/uv/#installation" >&2; exit 1; }
@@ -19,8 +26,7 @@ install: _guard-uv
 	uv pip install -r requirements.txt
 	uv tool install --upgrade specify-cli
 
-test: test-style test-traceability test-enforcement test-workshop-actions \
-      test-bootstrap-manifest
+test: $(MIRROR_TESTS)
 
 test-style: | _guard-venv
 	.venv/bin/python -m pytest tests/test_style.py -v
@@ -36,10 +42,13 @@ test-enforcement: | _guard-venv
 test-workshop-actions: | _guard-venv
 	.venv/bin/python -m pytest tests/test_workshop_actions.py -v
 
+ifneq ($(wildcard bootstrap.sh),)
 # The bootstrap-manifest mirror: the copy manifest in bootstrap.sh must
-# cover every Python file under tests/ (both directions).
+# cover every shipped Python file under tests/ (both directions). This
+# test is template-only and is not shipped to seeded projects.
 test-bootstrap-manifest: | _guard-venv
 	.venv/bin/python -m pytest tests/test_bootstrap_manifest.py -v
+endif
 
 # The extension Bash suite: run it directly when the extension is
 # installed; the pytest mirrors also drive it under test-traceability.

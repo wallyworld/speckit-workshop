@@ -9,11 +9,6 @@ two directions, and only one of them is loud:
   under ``set -e``, so bootstrap aborts at the stale line;
 - a Python test file or a project helper script with no line - every
   future seed silently omits it while the trees' own suites stay green.
-
-This mirror fails on both, so the manifest is checked rather than
-accidentally loud. It includes itself: a new mirror test ships only
-with its copy line. Tree-gated: the check fires in the seed template
-tree and skips in a seeded project (which carries no bootstrap.sh).
 """
 
 from __future__ import annotations
@@ -51,7 +46,12 @@ def _manifest() -> set[str]:
 
 
 def _tests_tree() -> set[str]:
-    return {f"tests/{path.name}" for path in TESTS_DIR.glob("*.py")}
+    """The shipped Python tests; this template-only mirror is excluded."""
+    return {
+        f"tests/{path.name}"
+        for path in TESTS_DIR.glob("*.py")
+        if path.name != Path(__file__).name
+    }
 
 
 def _scripts_tree() -> set[str]:
@@ -59,7 +59,7 @@ def _scripts_tree() -> set[str]:
 
 
 def test_manifest_covers_tests_tree():
-    """Reverse: every Python file under tests/ ships in the manifest."""
+    """Reverse: every shipped Python file under tests/ has a copy line."""
     _skip_unless_seed_template()
     missing = sorted(_tests_tree() - _manifest())
     assert not missing, (

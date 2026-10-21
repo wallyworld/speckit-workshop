@@ -490,7 +490,7 @@ claim with no recorded digest fails as UNDIGESTED.
 
 | Mode | What runs |
 | --- | --- |
-| `make test` (and CI) | Traceability verifier over every committed spec; the extension's Bash test suite; the style gate (the em-dash and marker rules); the installed extension matching the tracked source; the enforcement-chain mirror tests (hook registrations, checklist rules surviving into every mirror, domain neutrality of the seedable checklists, the AGENTS.md checklist-instances section - see below); the workshop-action sync test (the `.workshop/` definition's actions name real Makefile targets; every public target is exposed or allowlisted); the bootstrap-manifest coverage test (every Python file under `tests/` ships in the seed's copy manifest). The mirror tests gate on adoption: a project without the extension skips them; an adopting project missing an integral file fails. The manifest test is tree-gated: it fires here and skips in a seeded project. |
+| `make test` (and CI) | Traceability verifier over every committed spec; the extension's Bash test suite; the style gate (the em-dash and marker rules); the installed extension matching the tracked source; the enforcement-chain mirror tests (hook registrations, checklist rules surviving into every mirror, domain neutrality of the seedable checklists, the AGENTS.md checklist-instances section - see below); the workshop-action sync test (the `.workshop/` definition's actions name real Makefile targets; every public target is exposed or allowlisted); the bootstrap-manifest coverage test (template tree only; it is not shipped to seeded projects, and checks that every shipped Python file under `tests/` has a copy line). The mirror tests gate on adoption: a project without the extension skips them; an adopting project missing an integral file fails. |
 | Skills mode (generated `speckit-*` skills) | The hooks registered in `.specify/extensions.yml` inject the checklists before plan, tasks, implement, and converge; run the traceability verifier before analyze and converge; commission the independent diff review after implement; and enforce the analysis remediation loop after analyze. |
 | Workflow mode (`specify workflow run speckit`) | The checks with gate counterparts fire as approve/reject gates in the bundled workflow; the analyze and converge hooks fire in skills mode only. |
 | Acceptance | A human confirms every `Completes` claim (the roadmap's assertion that the feature fully delivers those requirements) has realizing implementation before the roadmap status flips to `done`. |
@@ -527,11 +527,10 @@ that adopted it with a broken chain.
   against the Makefile: every named action's make target exists, and
   every public Makefile target is exposed as an action or allowlisted
   with a reason.
-- `tests/test_bootstrap_manifest.py` - checks the seed's own installer:
-  every Python file under `tests/` appears in `bootstrap.sh`'s copy
-  manifest, and every manifested `tests/` path exists. Tree-gated: it
-  fires in this template tree and skips in a seeded project (which
-  carries no `bootstrap.sh`).
+- `tests/test_bootstrap_manifest.py` - checks the seed's own installer.
+  Template-only: it is not copied into seeded projects. It verifies that
+  every shipped Python file under `tests/` appears in `bootstrap.sh`'s
+  copy manifest, and every manifested `tests/` path exists.
 
 ## Constitution parts
 
@@ -589,7 +588,8 @@ tests under `make test` fail on any drift between the commands, the
 registrations, the gates, and the skills.
 
 The seed's copy manifest in `bootstrap.sh` is mirrored the same way:
-`tests/test_bootstrap_manifest.py` fails when a Python file under
+`tests/test_bootstrap_manifest.py` fails when a shipped Python file under
 `tests/` is added without a matching copy line, or when a line names a
-file that no longer exists. A new mirror test ships with its copy line
-or the gate goes red in this tree.
+file that no longer exists. The mirror is template-only and is not shipped
+to seeded projects. A new shipped mirror test needs its copy line, or the
+gate goes red in this tree.

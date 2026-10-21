@@ -40,8 +40,12 @@ ALLOWLIST: dict[str, str] = {
     "test-traceability": "sub-target of test",
     "test-enforcement": "sub-target of test",
     "test-workshop-actions": "sub-target of test",
-    "test-bootstrap-manifest": "sub-target of test",
 }
+
+# The bootstrap-manifest target exists only in the template tree; seeded
+# projects have no bootstrap.sh and no such target.
+if (REPO_ROOT / "bootstrap.sh").is_file():
+    ALLOWLIST["test-bootstrap-manifest"] = "template-only sub-target of test"
 
 # make <target> in an action script. The generic passthrough
 # (make "$@") carries no literal target and does not match.
@@ -70,6 +74,10 @@ def _makefile_targets() -> set[str]:
         match = TARGET_LINE.match(line)
         if match:
             targets.add(match.group(1))
+    if not (REPO_ROOT / "bootstrap.sh").is_file():
+        # The manifest target is defined only in the template tree; the
+        # raw Makefile still carries its conditional block.
+        targets.discard("test-bootstrap-manifest")
     return targets
 
 
