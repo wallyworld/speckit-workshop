@@ -746,6 +746,23 @@ DOMAIN_TERMS_FILE = ROOT / "domain-terms.txt"
 
 def _project_domain_terms() -> tuple[str, ...]:
     if not DOMAIN_TERMS_FILE.is_file():
+        # Required project data once the extension is adopted. The seed
+        # template tree has no adopted extension (its source lives under
+        # extension/), so it stays importable there and the domain test
+        # skips; a seeded project missing this file fails loudly instead
+        # of silently losing its project-specific deny list.
+        if EXTENSION_SOURCE.is_dir():
+            example = ROOT / "domain-terms.txt.example"
+            recovery = (
+                f"seed it from {example}"
+                if example.is_file()
+                else "create it at the project root with one term per line "
+                "(keep `acme-storefront` and append your project's terms)"
+            )
+            raise AssertionError(
+                f"required project domain terms file is missing: "
+                f"{DOMAIN_TERMS_FILE}; {recovery}"
+            )
         return ()
     terms = []
     for line in DOMAIN_TERMS_FILE.read_text(encoding="utf-8").splitlines():

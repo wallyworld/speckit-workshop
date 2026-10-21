@@ -39,8 +39,8 @@ fi
 #   SPECKIT_REQUIREMENTS_FILE  path to REQUIREMENTS.md   (default: repo root)
 #   SPECKIT_SPECS_ROOT         directory of specs/*      (default: repo root/specs)
 #   SPECKIT_PHRASES_FILE       path to the phrases table (default: the
-#                              project's requirement-phrases.txt, falling
-#                              back to the legacy extension data/phrases.txt)
+#                              requirement-phrases.txt beside the
+#                              requirements file)
 #
 # Positional arguments: zero or more spec.md files to check. With no arguments
 # every spec.md under SPECKIT_SPECS_ROOT is checked. Pass a single spec file
@@ -153,16 +153,11 @@ fi
 # (see extensions/requirements/tests/run-bash-tests.sh).
 # ---------------------------------------------------------------------------
 # The phrases table is a project artifact beside REQUIREMENTS.md, outside
-# the extension source tree. Fall back to the legacy extension-tree path
-# for projects seeded before the move.
-_legacy_phrases="$SCRIPT_DIR/../../data/phrases.txt"
-if [ -n "${PROJECT_ROOT:-}" ] && [ -f "$PROJECT_ROOT/requirement-phrases.txt" ]; then
-  _default_phrases="$PROJECT_ROOT/requirement-phrases.txt"
-elif [ -f "$_legacy_phrases" ]; then
-  _default_phrases="$_legacy_phrases"
-else
-  _default_phrases="${PROJECT_ROOT:+$PROJECT_ROOT/requirement-phrases.txt}"
-fi
+# the extension source tree. Resolve it from the requirements file's
+# directory so an overridden requirements file never borrows the host
+# checkout's table.
+_requirements_dir=$(cd -- "$(dirname -- "$REQUIREMENTS_FILE")" && pwd -P)
+_default_phrases="$_requirements_dir/requirement-phrases.txt"
 PHRASES_FILE=${SPECKIT_PHRASES_FILE:-$_default_phrases}
 [ -f "$PHRASES_FILE" ] || die "phrases file not found: $PHRASES_FILE (override with SPECKIT_PHRASES_FILE)"
 declare -A PHRASES=()

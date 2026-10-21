@@ -340,17 +340,41 @@ assert_contains "heading fixture confirms OK" "OK"
 # requirement phrase at load time. Skipped on a freshly seeded repository
 # before phrases or specs exist; test 17 enforces phrases coverage as soon
 # as REQUIREMENTS.md declares IDs.
-ROOT_REQUIREMENTS="$TESTS_DIR/../../../REQUIREMENTS.md"
-PROJECT_PHRASES="$TESTS_DIR/../../../requirement-phrases.txt"
-[ -f "$PROJECT_PHRASES" ] || PROJECT_PHRASES="$TESTS_DIR/../data/phrases.txt"
+# The suite runs in two layouts:
+#   seeded:   <project>/extensions/requirements/tests
+#   template: <template>/extension/tests
+# Resolve the project root for the active layout before building paths.
+if [ -d "$TESTS_DIR/../../extension" ] && [ -f "$TESTS_DIR/../../bootstrap.sh" ]; then
+  SUITE_ROOT="$TESTS_DIR/../.."
+else
+  SUITE_ROOT="$TESTS_DIR/../../.."
+fi
+ROOT_REQUIREMENTS="$SUITE_ROOT/REQUIREMENTS.md"
+PROJECT_PHRASES="$SUITE_ROOT/requirement-phrases.txt"
+SUITE_SPECS="$SUITE_ROOT/specs"
 if [ -n "$(grep -vE '^#|^$' "$PROJECT_PHRASES" 2>/dev/null || true)" ] \
-   && compgen -G "$TESTS_DIR/../../../specs/*/spec.md" > /dev/null; then
-  OUT=$(SPECKIT_REQUIREMENTS_FILE="$ROOT_REQUIREMENTS" bash "$VERIFY" 2>&1); RC=$?
+   && compgen -G "$SUITE_SPECS/*/spec.md" > /dev/null; then
+  OUT=$(SPECKIT_REQUIREMENTS_FILE="$ROOT_REQUIREMENTS" \
+    SPECKIT_SPECS_ROOT="$SUITE_SPECS" \
+    bash "$VERIFY" 2>&1); RC=$?
   assert_success "phrases table and every committed spec validate against real REQUIREMENTS.md"
   assert_contains "real-requirements run confirms OK" "OK"
 else
   ok "no phrases or no committed specs yet (fresh seed); nothing to validate"
 fi
+
+# 16b. An overridden requirements file is hermetic: the default phrases
+# table is the requirement-phrases.txt beside it, not the discovered
+# project's table.
+TMP_HERMETIC=$(cd -- "$(mktemp -d)" && pwd -P)
+cp "$REQ_TRACE" "$TMP_HERMETIC/requirements.md"
+OUT=$(SPECKIT_REQUIREMENTS_FILE="$TMP_HERMETIC/requirements.md" \
+  SPECKIT_SPECS_ROOT="$FIX" \
+  bash "$VERIFY" "$FIX/spec-traceable.md" 2>&1); RC=$?
+assert_failure "overridden requirements file does not borrow the host phrase table"
+assert_contains "hermetic phrase default names the sibling path" \
+  "phrases file not found: $TMP_HERMETIC/requirement-phrases.txt"
+rm -rf "$TMP_HERMETIC"
 
 # 17. Phrase coverage is complete: every requirement ID in REQUIREMENTS.md
 # has a curated phrases entry, and no entry cites an ID that does not exist

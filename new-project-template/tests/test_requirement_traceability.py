@@ -329,6 +329,7 @@ def test_generated_skill_frontmatter_parses():
 
 
 ROADMAP = ROOT / "ROADMAP.md"
+REQUIREMENTS = ROOT / "REQUIREMENTS.md"
 ASSEMBLE = ROOT / "extensions" / "requirements" / "scripts" / "bash" / "assemble-brief.sh"
 
 
@@ -345,12 +346,31 @@ def _roadmap_rows():
         completes = [] if completes_cell in ("", "-") else [
             tok.strip() for tok in completes_cell.split(",") if tok.strip()
         ]
+        advances_cell = cells[8]
+        advances = [] if advances_cell in ("", "-") else [
+            tok.strip() for tok in advances_cell.split(",") if tok.strip()
+        ]
         depends_cell = cells[5]
         depends = [] if depends_cell in ("", "-") else [
             tok.strip() for tok in depends_cell.split(",") if tok.strip()
         ]
-        rows[rid] = {"completes": completes, "depends": depends, "status": cells[6]}
+        rows[rid] = {
+            "completes": completes,
+            "advances": advances,
+            "depends": depends,
+            "status": cells[6],
+        }
     return rows
+
+
+def _roadmap_classes(row: dict) -> dict[str, str]:
+    """Map each RQ in a roadmap row to its Completes/Advances relation."""
+    classes = {}
+    for rq in row["completes"]:
+        classes[rq] = "Completes"
+    for rq in row["advances"]:
+        classes[rq] = "Advances"
+    return classes
 
 
 def _brief_completes(brief):
@@ -446,10 +466,18 @@ _FR_BULLET_RE = re.compile(
     r"^[-*]\s+\*\*(FR-\d+[a-z]?)\*\*:", re.M
 )
 _FR_TABLE_ROW_RE = re.compile(
-    r"^\|\s*(FR-\d+[a-z]?)\s*\|\s*([^|]*?)\s*\|", re.M
+    r"^\|\s*(FR-\d+[a-z]?)\s*\|\s*([^|]*?)\s*\|\s*([^|]*?)\s*\|", re.M
 )
 _RQ_ID_RE = re.compile(r"^[A-Z]+-[0-9]+[a-z]?$")
+_RQ_DEFINITION_RE = re.compile(r"^-\s+\*\*([A-Z]+-[0-9]+[a-z]?)\*\*:", re.M)
 _COVERAGE_HEADING_RE = re.compile(r"^##\s+Requirements Coverage.*$", re.M)
+
+
+def _product_requirement_ids() -> set[str]:
+    """The authoritative RQ IDs defined in REQUIREMENTS.md."""
+    if not REQUIREMENTS.is_file():
+        return set()
+    return set(_RQ_DEFINITION_RE.findall(REQUIREMENTS.read_text(encoding="utf-8")))
 
 
 def _coverage_section(text: str) -> str:
@@ -461,32 +489,73 @@ def _coverage_section(text: str) -> str:
     return rest[: next_heading.start()] if next_heading else rest
 
 
-def _fr_coverage_failures(text: str) -> list[str]:
+def _fr_coverage_failures(
+    text: str,
+    product_ids: set[str] | None = None,
+    roadmap_classes: dict[str, str] | None = None,
+) -> list[str]:
     bullets = set(_FR_BULLET_RE.findall(text))
-    rows = {}
-    for fr, cell in _FR_TABLE_ROW_RE.findall(_coverage_section(text)):
+    rows: dict[str, set[str]] = {}
+    empty_rows: set[str] = set()
+    malformed_rows: dict[str, set[str]] = {}
+    invalid_relationships: dict[str, set[str]] = {}
+    relationship_mismatches: dict[str, set[str]] = {}
+    for fr, cell, relationship in _FR_TABLE_ROW_RE.findall(_coverage_section(text)):
         tokens = {
             token.strip()
             for token in cell.split(",")
             if token.strip() and token.strip() not in {"-", "(none)", "none"}
         }
-        rows[fr] = tokens
+        if not tokens:
+            empty_rows.add(fr)
+        bad = {token for token in tokens if not _RQ_ID_RE.match(token)}
+        if bad:
+            malformed_rows.setdefault(fr, set()).update(bad)
+        rel = relationship.strip()
+        if rel not in {"Completes", "Advances"}:
+            invalid_relationships.setdefault(fr, set()).add(rel or "(empty)")
+        elif roadmap_classes is not None:
+            for token in tokens:
+                expected = roadmap_classes.get(token)
+                if expected != rel:
+                    relationship_mismatches.setdefault(fr, set()).add(
+                        f"{token} is {expected or 'not in roadmap row'}, "
+                        f"row says {rel}"
+                    )
+        rows.setdefault(fr, set()).update(tokens)
     failures = []
     if not bullets:
         failures.append("no FR bullets found")
     missing = sorted(bullets - set(rows))
     if missing:
         failures.append(f"FRs missing from Requirements Coverage: {missing}")
-    unmapped = sorted(fr for fr, tokens in rows.items() if not tokens)
-    if unmapped:
-        failures.append(f"coverage rows with no RQ ID: {unmapped}")
+    if empty_rows:
+        failures.append(f"coverage rows with no RQ ID: {sorted(empty_rows)}")
     malformed = {
-        fr: sorted(token for token in tokens if not _RQ_ID_RE.match(token))
-        for fr, tokens in rows.items()
+        fr: sorted(tokens) for fr, tokens in malformed_rows.items()
     }
-    malformed = {fr: tokens for fr, tokens in malformed.items() if tokens}
     if malformed:
         failures.append(f"coverage rows cite malformed RQ IDs: {malformed}")
+    if invalid_relationships:
+        invalid = {
+            fr: sorted(values) for fr, values in invalid_relationships.items()
+        }
+        failures.append(f"coverage rows have invalid relationships: {invalid}")
+    if relationship_mismatches:
+        mismatched = {
+            fr: sorted(values) for fr, values in relationship_mismatches.items()
+        }
+        failures.append(
+            f"coverage rows disagree with the roadmap classification: {mismatched}"
+        )
+    if product_ids is not None:
+        unknown = {
+            fr: sorted(token for token in tokens if token not in product_ids)
+            for fr, tokens in rows.items()
+        }
+        unknown = {fr: tokens for fr, tokens in unknown.items() if tokens}
+        if unknown:
+            failures.append(f"coverage rows cite unknown requirement IDs: {unknown}")
     extra = sorted(set(rows) - bullets)
     if extra:
         failures.append(f"coverage rows for FRs absent from the spec: {extra}")
@@ -513,6 +582,75 @@ def test_fr_coverage_check_rejects_a_row_outside_the_coverage_table():
     assert any("FR-001" in failure for failure in failures), failures
 
 
+def test_fr_coverage_check_validates_every_duplicate_row():
+    """Known-bad fixture: a later valid row cannot overwrite an earlier
+    malformed one for the same FR."""
+    text = """## Functional Requirements
+
+- **FR-001**: The system MUST do the thing.
+
+## Requirements Coverage
+
+| FR | Realizes RQ | Relationship |
+| --- | --- | --- |
+| FR-001 | NOT-AN-RQ | Completes |
+| FR-001 | APP-1 | Completes |
+"""
+    failures = _fr_coverage_failures(text)
+    assert any("malformed" in failure.lower() for failure in failures), failures
+
+
+def test_fr_coverage_check_rejects_invalid_relationship():
+    """Known-bad fixture: empty or arbitrary relationship cells."""
+    text = """## Functional Requirements
+
+- **FR-001**: The system MUST do the thing.
+
+## Requirements Coverage
+
+| FR | Realizes RQ | Relationship |
+| --- | --- | --- |
+| FR-001 | APP-1 |  |
+| FR-001 | APP-1 | Bogus |
+"""
+    failures = _fr_coverage_failures(text, {"APP-1"})
+    assert any("relationship" in failure.lower() for failure in failures), failures
+
+
+def test_fr_coverage_check_rejects_relationship_mismatch():
+    """Known-bad fixture: a valid relationship that contradicts the roadmap."""
+    text = """## Functional Requirements
+
+- **FR-001**: The system MUST do the thing.
+
+## Requirements Coverage
+
+| FR | Realizes RQ | Relationship |
+| --- | --- | --- |
+| FR-001 | APP-1 | Advances |
+"""
+    failures = _fr_coverage_failures(
+        text, {"APP-1"}, {"APP-1": "Completes"}
+    )
+    assert any("roadmap classification" in failure.lower() for failure in failures), failures
+
+
+def test_fr_coverage_check_rejects_unknown_product_requirement():
+    """Known-bad fixture: a shape-valid RQ ID absent from REQUIREMENTS.md."""
+    text = """## Functional Requirements
+
+- **FR-001**: The system MUST do the thing.
+
+## Requirements Coverage
+
+| FR | Realizes RQ | Relationship |
+| --- | --- | --- |
+| FR-001 | FAKE-999 | Completes |
+"""
+    failures = _fr_coverage_failures(text, {"APP-1"})
+    assert any("unknown" in failure.lower() for failure in failures), failures
+
+
 def test_every_fr_is_in_the_coverage_table():
     """Every FR bullet appears in the coverage table and cites an RQ.
 
@@ -524,9 +662,19 @@ def test_every_fr_is_in_the_coverage_table():
     specs = sorted((ROOT / "specs").glob("*/spec.md"))
     if not specs:
         pytest.skip("no committed feature specs yet")
+    product_ids = _product_requirement_ids()
+    assert product_ids, (
+        "REQUIREMENTS.md defines no requirement IDs; the FR coverage check "
+        "cannot validate product scope"
+    )
+    roadmap_rows = _roadmap_rows() if ROADMAP.is_file() else {}
     for spec_path in specs:
         text = spec_path.read_text(encoding="utf-8")
-        failures = _fr_coverage_failures(text)
+        match = _SPEC_COVERAGE_RE.search(text)
+        roadmap_classes = None
+        if match and match.group(1) in roadmap_rows:
+            roadmap_classes = _roadmap_classes(roadmap_rows[match.group(1)])
+        failures = _fr_coverage_failures(text, product_ids, roadmap_classes)
         assert not failures, f"{spec_path.parent.name}: " + "; ".join(failures)
 
 

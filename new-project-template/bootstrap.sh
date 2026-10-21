@@ -132,19 +132,8 @@ sed_inplace() {
 echo "Installing extension tooling"
 # The extension tree is regenerated machinery; the manifest's author and
 # repository attribution lines are user content and survive the re-copy.
-# Requirement phrases live at the project root, outside the extension
-# tree. A legacy extension-tree phrases file (projects seeded before the
-# move) is migrated before the tree is replaced.
+# Requirement phrases live at the project root, outside the extension tree.
 PHRASES_DST="$TARGET/requirement-phrases.txt"
-LEGACY_PHRASES="$TARGET/extensions/requirements/data/phrases.txt"
-has_phrases_entries() {
-  [ -f "$1" ] && grep -qvE '^[[:space:]]*(#|$)' "$1"
-}
-if { [ ! -f "$PHRASES_DST" ] || ! has_phrases_entries "$PHRASES_DST"; } \
-  && has_phrases_entries "$LEGACY_PHRASES"; then
-  cp "$LEGACY_PHRASES" "$PHRASES_DST"
-  echo "  ~ migrated extensions/requirements/data/phrases.txt to requirement-phrases.txt"
-fi
 saved_author=""
 saved_repository=""
 if [ -f "$TARGET/extensions/requirements/extension.yml" ]; then
