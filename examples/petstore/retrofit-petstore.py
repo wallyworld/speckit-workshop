@@ -280,8 +280,9 @@ def fill_markers(target: Path) -> None:
         "@FILL-IN@ How operational state is queried through supported interfaces\n"
         "rather than inferred from incidental signals (which query, which signal,\n"
         "and why the wrong signal is wrong).",
-        "Operational state is queried through the FastAPI endpoints (`GET /api/v1/pets`, "
-        "`GET /api/v1/orders`) and, for direct database inspection, through SQLite queries "
+        "Operational state is queried through the FastAPI endpoints under the R1/R2 "
+        "API prefix (the reference run uses `GET /api/v1/pets`, `GET /api/v1/orders`) "
+        "and, for direct database inspection, through SQLite queries "
         "against `pets.db`. Inferring state from log messages or file timestamps is "
         "wrong: the database is the source of truth.",
         "State determination mechanics",

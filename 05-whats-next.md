@@ -111,9 +111,10 @@ Check that the CLI sees the registration, not only the file:
 specify extension info requirements
 ```
 
-On success it prints the extension, its commands, and its hooks; if the
-install did not run, it exits non-zero with `not found`. The raw hook
-registrations are in `.specify/extensions.yml` if you want to inspect them:
+On success it prints the extension, its commands, and `✓ Installed`; a
+local install also prints `Not found in catalog (custom/local extension)`.
+If the extension is not installed, it exits non-zero with `not found`. The
+raw hook registrations are in `.specify/extensions.yml` if you want to inspect them:
 
 ```bash
 grep -n "requirements" .specify/extensions.yml
@@ -168,8 +169,9 @@ make test
 ```
 
 A clean run passes the style gate, traceability verifier, extension Bash
-suite, enforcement-chain mirrors, workshop-action sync, bootstrap-manifest
-mirror, and application tests.
+suite, enforcement-chain mirrors, workshop-action sync, and application
+tests. (The bootstrap-manifest mirror runs only in the template tree,
+where `bootstrap.sh` exists; seeded projects have no such test.)
 
 ## Step 4: Inspect the retrofit
 
@@ -203,11 +205,16 @@ point, not only through internal functions.
 | Entry route | `/` |
 | Hash routes | `#/catalog`, `#/orders`, `#/create-pet` |
 | Authentication | none: no login, roles, passwords, sessions, or credentials |
-| Active orders | `GET /api/v1/orders?status=open`; cancel with `DELETE /api/v1/orders/{id}` |
+| API prefix | the prefix chosen in the R1/R2 plan (empty for root routes); the reference run uses `/api/v1` |
+| Active orders | `GET {prefix}/orders?status=open`; cancel via the R1/R2 route (`DELETE {prefix}/orders/{id}` or `POST {prefix}/orders/{id}/cancel`) |
 | Implementation | static HTML/CSS/JS served by FastAPI; no node runtime or build |
-| API calls | same-origin relative paths (`/api/v1/...`); no hardcoded host or port |
+| API calls | same-origin relative paths under `{prefix}`; no hardcoded host or port |
 | Placeholders | none; the orders page must use the real API |
 | Acceptance | the generated acceptance test is the gate; the manual host-browser pass verifies the visible outcomes |
+
+`{prefix}` is the API prefix your R1/R2 plan chose; read it from the R1/R2
+quickstart or `/docs`. The reference run uses `/api/v1`. Substitute your own
+prefix everywhere below.
 
 ## Step 5: Build Phase 2 (`R3`) through the phased loop
 
@@ -252,8 +259,9 @@ approval; the review still happens first.
 On a fresh run, the agent reads `ROADMAP.md` and `REQUIREMENTS.md` and
 drafts `specs/003-<slug>/spec.md`. The spec template requires Requirements
 Coverage; the spec must contain `UI-1..UI-6` and map its FRs to them. It
-passes when it states `UI-1..UI-6` and claims `R3` with the correct
-Completes set.
+passes when it states `UI-1..UI-6`, contains a curated phrase from each
+claimed-complete requirement, records a matching digest for each, and
+claims `R3` with the correct Completes set.
 
 ### 5.3 Clarify, plan, tasks
 
@@ -263,11 +271,13 @@ Completes set.
 /speckit.tasks
 ```
 
-> **Scope check.** Clarify resolves ambiguity; it does not authorize new
+> **Note.** Clarify resolves ambiguity; it should not authorize new
 > scope. If it asks about a capability absent from `REQUIREMENTS.md` and
-> `ROADMAP.md` (authentication, roles), stop. Remove the capability from
+> `ROADMAP.md` (eg authentication, roles), stop. Remove the capability from
 > the spec or add it as a product requirement first. The answer to "who can
 > create pets?" is "any user; authentication is out of scope."
+> I found that the above happened when I was doing a dry run so am flagging
+> it here.
 
 At `plan`, `before_plan` injects the plan checklist: FR-to-requirement
 traceability, real entry point and acceptance test for user-facing
@@ -279,15 +289,17 @@ through the real entry point that starts the runtime and uses a non-example
 origin for a same-origin UI, sequential IDs, failure paths. The tasks
 template makes tests required.
 
-The plan must reuse the Phase 1 FastAPI app module and record its real
+The plan must reuse the Phase 1 FastAPI app module, use the R1/R2 API
+prefix (or root-relative paths if the plan chose none), and record its real
 launch command in `plan.md` and `quickstart.md`. Do not let it create a
-second application module. If the plan does not name the launch command,
-ask the agent to add it before tasks.
+second application module. If the plan does not name the launch command or
+how it reaches the R1/R2 API, ask the agent to add that before tasks.
 
 **Pass condition**: `plan.md` and `tasks.md` exist, the plan's Constitution
 Check ran, the plan names the real entry point (`/`), runtime launch
-command, and relative API paths for a same-origin UI with no hardcoded host
-or port, and the tasks include an acceptance-test task.
+command, and relative API paths matching the R1/R2 prefix (root-relative if
+none) for a same-origin UI with no hardcoded host or port, and the tasks
+include an acceptance-test task.
 
 ### 5.4 Install the browser and write the acceptance test (manual skill)
 
@@ -329,6 +341,11 @@ The command reads the spec, plan, quickstart, and build/test entry points,
 then writes the test first. It's a manual step, not a hook run automatically.
 It adds isolated state and a known-bad fixture, then wires the test into `make test`.
 
+The test is written before implementation, so: the acceptance test is derived
+from the spec/plan/quickstart while no code exists, run red, and then made
+green by the implement step. The gate (Step 6) runs after implement to confirm
+the feature passes.
+
 Check the generated test:
 
 - it starts the real runtime itself (or the project gate starts it), loads
@@ -343,8 +360,9 @@ Check the generated test:
 - it uses temporary state, cleans up, has a known-bad fixture, and can be
   made to fail;
 - it includes fast contract checks (no auth/session surface, no hardcoded
-  API host or port, no placeholders, real `GET /api/v1/orders`, stock
-  restore on cancel) and runs under `make test`.
+  API host or port, no placeholders, a real order listing at the R1/R2
+  prefix (the reference run uses `GET /api/v1/orders`), stock restore on
+  cancel) and runs under `make test`.
 
 Run it now; it should fail because the feature isn't implemented. Module
 imports, status checks, and static text aren't an acceptance test.
@@ -452,10 +470,10 @@ Try each requirement:
 - **Serving (`UI-5`)**: a static single-page app served by FastAPI, no node
   runtime or frontend build, no full-page reload for in-app actions.
 - **Same-origin (`UI-6`)**: the page works from the workshop hostname (not
-  `localhost:8000`), and network calls go to relative paths such as
-  `/api/v1/pets`, not `http://localhost:8000/api/v1`. The automated
-  acceptance test also serves the app on an ephemeral port to catch a
-  hardcoded port.
+  `localhost:8000`), and network calls go to relative paths under the
+  R1/R2 API prefix (the reference run uses `/api/v1/pets`), not an
+  absolute URL. The automated acceptance test also serves the app on an
+  ephemeral port to catch a hardcoded port.
 
 If the page doesn't load, check that uvicorn is bound to `0.0.0.0`, that
 you used the `workshop info` hostname, and that `/` is served. The DevTools
@@ -492,6 +510,7 @@ From `/project/petstore`, the full gate and working tree:
 
 ```bash
 make test
+git status
 git diff
 ```
 
@@ -506,9 +525,10 @@ fresh digest, and the code all support it.
   for example `uv run uvicorn src.main:app --reload --host 0.0.0.0`.
 - **`NetworkError when attempting to fetch resource` or "Failed to fetch"**:
   the client hardcoded `http://localhost:8000` or another absolute API base
-  URL. Use same-origin relative paths such as `/api/v1/pets`; keep absolute
-  URLs only in curl/quickstart examples. Load the page from the workshop
-  hostname; the acceptance test covers the ephemeral-port case.
+  URL. Use same-origin relative paths under the R1/R2 prefix (the
+  reference run uses `/api/v1/pets`); keep absolute URLs only in
+  curl/quickstart examples. Load the page from the workshop hostname; the
+  acceptance test covers the ephemeral-port case.
 - **Two specs for one roadmap row (`003-*` and `004-*`)**: specify ran
   twice. Keep the first R3 spec (`003-*`), delete the later `004-*`
   directory, set `.specify/feature.json` to the kept directory, and update
@@ -540,14 +560,16 @@ fresh digest, and the code all support it.
 - **Login page or `/auth` 404s**: auth is out of scope. Remove the login
   route, auth module, session middleware, and credentials.
 - **Orders page says the feature would need an endpoint**: UI-4 isn't
-  implemented. Add `GET /api/v1/orders?status=open`; wire the real list and
+  implemented. Add the order-listing endpoint at the R1/R2 prefix
+  (reference: `GET /api/v1/orders?status=open`); wire the real list and
   cancel actions.
 - **Repeated 500s after the first request**: the SQLite connection must
   work across FastAPI's worker threads. Use `check_same_thread=False` or a
   per-request connection.
 - **A request to `/api/...` returns 404**: the client used a prefix or path
-  the backend does not serve. Match the existing R1/R2 routes; the worked
-  sample uses `/api/v1/...`. Do not assume every backend is root-relative.
+  the backend does not serve. Match the prefix and routes your R1/R2 plan
+  chose; the reference run uses `/api/v1/...`. Do not assume every backend
+  is root-relative.
 - **Acceptance-test skill not available**: rerun `bootstrap.sh` or
   `generate-skills.sh`, reinstall the extension. The skill comes from
   `extensions/requirements/commands/speckit.requirements.acceptance-test.md`.

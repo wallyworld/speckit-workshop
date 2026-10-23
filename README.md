@@ -21,31 +21,61 @@ persists the credential in the workshop.
 
 ## New project template
 
-The workshop uses this template in its final phased-delivery stage:
-[05 - What's Next](05-whats-next.md) bootstraps it into the petstore and
-retrofits the existing specs. The same template seeds a new project from
-scratch.
+Spec Kit's core loop is excellent at taking one feature from idea to
+working code. But it has no memory across features and cannot guarantee
+that a spec contains the product requirement it claims to complete, or
+that a completion claim is still current, or that the delivered interface
+was actually tested.
 
-Spec Kit's core loop works one feature at a time. The template adds the
-product-level accounting layer above that loop, so a multi-feature product
-keeps its requirements, delivery order, and completion claims consistent:
+The project template adds that missing layer. The core loop is unchanged.
+The template adds the extra checks that ensure requirements are met
+and interfaces are properly tested.
 
-- **Product-level requirements** - `REQUIREMENTS.md` states every requirement
-  once with a stable ID.
-- **Delivery roadmap** - `ROADMAP.md` maps every requirement to the one
+### What it adds
+
+- **A product source of truth.** `REQUIREMENTS.md` states every requirement
+  once with a stable ID. `ROADMAP.md` maps each requirement to the one
   feature that completes it, in dependency order.
-- **Content and freshness checks** - requirement phrases prove a spec
-  contains the claimed requirement; SHA-256 digests flag claims written
-  against older wording.
-- **Enforcement at authoring time** - a requirements extension adds commands,
-  hooks, workflow gates, and spec/tasks template overrides.
-- **Mirror tests** - plain pytest checks re-verify the same claims in a bare
-  checkout or CI, without the agent tooling installed.
-- **A full starting kit** - a two-part constitution, an authoring guide,
-  starter requirements/roadmap files, generated skills, and wiring for
-  OpenCode, Copilot, agy, and Claude Code.
+- **Claims checked against the text.** Each completion claim must be
+  backed by a curated phrase from its requirement that appears in the
+  spec, so an ID in a table cannot claim content that was never written.
+- **Freshness checked with digests.** Each completion claim records a
+  SHA-256 of the requirement wording it was written against; when the
+  wording changes, the verifier reports the claim as stale instead of
+  silently passing.
+- **Tests are required, including acceptance.** The tasks template and
+  checklist require tests, failure paths, and an acceptance test through
+  the real entry point; the acceptance-test command derives that test
+  before implementation.
+- **Enforcement where the work happens.** A requirements extension adds
+  seven commands, two template overrides, and eight mandatory hooks around
+  plan, tasks, analyze, implement, and converge. Workflow mode turns the
+  coverage, plan, tasks, implement, diff, and final-tree checks into
+  approve/reject gates.
+- **A CI test backstop.** Plain pytest tests re-check the same claims in a
+  bare checkout or CI, without the agent tooling installed, so drift fails
+  the build even when no agent is in the loop.
+- **A complete starting kit.** A two-part constitution, an authoring
+  guide, starter requirements/roadmap files, a phrase extractor, and
+  generated skills for OpenCode, Copilot, agy, and Claude Code.
 
-To seed a new project:
+### What it catches
+
+| In a vanilla Spec Kit project | What this template adds |
+| --- | --- |
+| A spec claims a requirement but omits its content. | The requirement phrase check fails. |
+| A requirement's wording changes after a spec was written. | The recorded digest goes stale and the verifier fails. |
+| Test tasks are optional; the delivered interface is untested. | The tasks template requires tests and a real entry point acceptance test. |
+| The author reviews their own diff. | A fresh context diff review runs after implement. |
+| Analyze findings are reported but not fixed. | The remediation loop forces fixes and re-verification. |
+| Enforcement lives in prose the agent can ignore. | Hooks, workflow gates, and pytest mirrors enforce it. |
+| The roadmap marks a feature done without the code. | The verifier checks content; a human checks the code before status flips. |
+
+### Use it
+
+The workshop uses the template in [05 - What's Next](05-whats-next.md),
+which bootstraps it into the petstore and retrofits the existing specs.
+To seed a new project from scratch:
 
 ```bash
 mkdir myproject && cd myproject

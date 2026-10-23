@@ -120,11 +120,16 @@ extension manifest at install time.
 | Entry route | `/` |
 | Hash routes | `#/catalog`, `#/orders`, `#/create-pet` |
 | Authentication | none: no login, roles, passwords, sessions, or credentials |
-| Active orders | `GET /api/v1/orders?status=open`; cancel with `DELETE /api/v1/orders/{id}` |
+| API prefix | the prefix chosen in the R1/R2 plan (empty for root routes); the reference run uses `/api/v1` |
+| Active orders | `GET {prefix}/orders?status=open`; cancel via the R1/R2 route (`DELETE {prefix}/orders/{id}` or `POST {prefix}/orders/{id}/cancel`) |
 | Implementation | static HTML/CSS/JS served by FastAPI; no node runtime or build |
-| API calls | same-origin relative paths (`/api/v1/...`); no hardcoded host or port |
+| API calls | same-origin relative paths under `{prefix}`; no hardcoded host or port |
 | Placeholders | none; the orders page must use the real API |
 | Acceptance | the generated acceptance test is the gate; the manual host-browser pass verifies the visible outcomes |
+
+`{prefix}` is the API prefix your R1/R2 plan chose; read it from the R1/R2
+quickstart or `/docs`. The reference run uses `/api/v1`. Substitute your own
+prefix everywhere below.
 
 Note: a different product may expose a CLI, API, device, or generated file.
 
@@ -246,8 +251,9 @@ and `#/orders` in the real browser, fail on console/page errors, assert every
 to start it, load the page from an ephemeral port rather than the example
 `localhost:8000` so a hardcoded API base URL fails, include the fast
 contract checks (no auth/session surface, no hardcoded API host or port, no
-placeholder implementation, real `GET /api/v1/orders`, stock restore), and
-run under `make test`. Run it before implementation and confirm it fails for the
+placeholder implementation, a real order listing at the R1/R2 prefix (the
+reference run uses `GET /api/v1/orders`), stock restore), and run under
+`make test`. Run it before implementation and confirm it fails for the
 expected reason. It is the automated acceptance gate.
 
 ### 7. Analyze
@@ -350,9 +356,9 @@ You can:
 - confirm the UI is a static single-page app served by FastAPI, with no
   node runtime or external build (`UI-5`);
 - confirm the page works from the workshop hostname (not `localhost:8000`)
-  and that network calls use relative paths such as `/api/v1/pets`, not
-  `http://localhost:8000/api/v1`; the acceptance test also covers an
-  ephemeral port (`UI-6`).
+  and that network calls use relative paths under the R1/R2 API prefix
+  (the reference run uses `/api/v1/pets`), not an absolute URL; the
+  acceptance test also covers an ephemeral port (`UI-6`).
 
 Open DevTools Console and confirm it is free of red errors on `/`,
 `#/catalog`, `#/create-pet`, and `#/orders`.
@@ -361,9 +367,10 @@ Open DevTools Console and confirm it is free of red errors on `/`,
 
 - `NetworkError when attempting to fetch resource` or "Failed to fetch":
   the client hardcoded `http://localhost:8000` or another absolute API base
-  URL. Use same-origin relative paths such as `/api/v1/pets`; keep absolute
-  URLs only in curl/quickstart examples. Load the page from the workshop
-  hostname; the acceptance test covers the ephemeral-port case.
+  URL. Use same-origin relative paths under the R1/R2 prefix (the
+  reference run uses `/api/v1/pets`); keep absolute URLs only in
+  curl/quickstart examples. Load the page from the workshop hostname; the
+  acceptance test covers the ephemeral-port case.
 - `No module named pytest` or `yaml`: run `make install`.
 - `No module named playwright`: install the driver in the project venv:
   `uv pip install pytest-playwright`.
